@@ -13,6 +13,10 @@ describe Elastictastic::Resource do
       properties['title']['type'].should == 'string'
     end
 
+    it 'should force date format as date_time_no_millis' do
+      properties['published_at']['format'].should == 'date_time_no_millis'
+    end
+
     it 'should accept options' do
       properties['comments_count']['type'].should == 'integer'
     end

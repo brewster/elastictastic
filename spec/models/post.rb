@@ -6,4 +6,5 @@ class Post
   field :tags, :index => 'analyzed' do
     field :non_analyzed, :index => 'not_analyzed'
   end
+  field :published_at, :type => 'date'
 end
