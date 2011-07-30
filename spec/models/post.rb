@@ -7,4 +7,6 @@ class Post
     field :non_analyzed, :index => 'not_analyzed'
   end
   field :published_at, :type => 'date'
+
+  embed :author, Author
 end

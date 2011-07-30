@@ -129,7 +129,7 @@ module Elastictastic
           type = self.class.properties_for_field(field_name)['type'].to_s
           case type
           when 'date'
-            value.to_time.utc.xmlschema
+            (value.to_time.to_f * 1000).to_i
           when 'integer', 'byte', 'short', 'long'
             value.to_i
           when 'float', 'double'
