@@ -15,9 +15,13 @@ ElasticSearch's search functionality to query for those models.
 DESC
 
   s.files = Dir['lib/**/*.rb', 'spec/**/*.rb', 'README.md', 'CHANGELOG.md', 'LICENSE']
+  s.test_files = Dir['spec/examples/**/*.rb']
   s.has_rdoc = true
   s.extra_rdoc_files = 'README.md'
+  s.required_ruby_version = '>= 1.9'
   s.add_runtime_dependency 'activesupport', '~> 3.0'
+  s.add_runtime_dependency 'i18n'
   s.add_runtime_dependency 'hashie'
   s.add_development_dependency 'rspec', '~> 2.0'
+  s.requirements << 'ElasticSearch'
 end

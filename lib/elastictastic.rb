@@ -1,5 +1,15 @@
+require 'active_support/core_ext'
+
 module Elastictastic
-  Elastictastic::CancelBulkOperation = Class.new(StandardError)
+  CancelBulkOperation = Class.new(StandardError)
+
+  autoload :Document, 'elastictastic/document'
+  autoload :Persistence, 'elastictastic/persistence'
+  autoload :Resource, 'elastictastic/resource'
+  autoload :Scope, 'elastictastic/scope'
+  autoload :Scoped, 'elastictastic/scoped'
+  autoload :Search, 'elastictastic/search'
+  autoload :Util, 'elastictastic/util'
 
   class <<self
     def build_transport(&block)
