@@ -23,5 +23,7 @@ DESC
   s.add_runtime_dependency 'i18n'
   s.add_runtime_dependency 'hashie'
   s.add_development_dependency 'rspec', '~> 2.0'
+  s.add_development_dependency 'fakeweb', '~> 1.3'
+  s.add_development_dependency 'ruby-debug19', '~> 0.11'
   s.requirements << 'ElasticSearch'
 end

@@ -1,3 +1,13 @@
+# Sooner #
+* Multiget
+* Percolation
+* Index-level operations
+* Validations
+* Lifecycle hooks
+* Observers
+* More transports
+* More JSON libraries
+
 # Later #
 * Support multiple-index / multiple-type search
 * Support scroll(?)

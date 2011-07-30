@@ -3,9 +3,13 @@ require 'active_support/core_ext'
 module Elastictastic
   CancelBulkOperation = Class.new(StandardError)
 
+  autoload :Configuration, 'elastictastic/configuration'
   autoload :Document, 'elastictastic/document'
   autoload :Field, 'elastictastic/field'
+  autoload :IndividualPersister, 'elastictastic/individual_persister'
+  autoload :NetHttpTransport, 'elastictastic/net_http_transport'
   autoload :Persistence, 'elastictastic/persistence'
+  autoload :Requests, 'elastictastic/requests'
   autoload :Resource, 'elastictastic/resource'
   autoload :Scope, 'elastictastic/scope'
   autoload :Scoped, 'elastictastic/scoped'
@@ -13,8 +17,10 @@ module Elastictastic
   autoload :Util, 'elastictastic/util'
 
   class <<self
-    def build_transport(&block)
-      @transport_builder = block
+    attr_writer :configuration
+
+    def config
+      @config ||= Elastictastic::Configuration.new
     end
 
     def transport=(transport)
@@ -50,7 +56,8 @@ module Elastictastic
     private
 
     def new_transport
-      @transport_builder.call
+      transport_class = const_get("#{config.transport.camelize}Transport")
+      transport_class.new(config)
     end
   end
 end

@@ -25,10 +25,6 @@ module Elastictastic
       def type
         name.underscore
       end
-
-      def default_index
-        type.pluralize
-      end
     end
 
     module InstanceMethods
@@ -44,9 +40,21 @@ module Elastictastic
         initialize_from_elasticsearch_doc(doc)
       end
 
+      def id=(id)
+        @id = id
+      end
+
       def index
         return @index if defined? @index
-        self.class.default_index
+        @index = Elastictastic.config.default_index
+      end
+
+      def persisted?
+        !!@persisted
+      end
+
+      def persisted!
+        @persisted = true
       end
 
       def ==(other)

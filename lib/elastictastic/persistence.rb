@@ -45,7 +45,11 @@ module Elastictastic
     
     module InstanceMethods
       def save
-        Elastictastic.persister.save(self)
+        if id
+          Elastictastic.persister.update(self)
+        else
+          Elastictastic.persister.create(self)
+        end
       end
       
       def destroy
