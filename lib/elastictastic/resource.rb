@@ -55,19 +55,14 @@ module Elastictastic
         @embeds ||= {}
       end
 
-      def field(*field_names)
+      def field(*field_names, &block)
         options = field_names.extract_options!
 
         field_names.each do |field_name|
           attr_accessor(field_name)
 
-          field_properties =
-            { 'type' => 'string' }.merge(Util.deep_stringify(options))
-          if field_properties['type'].to_s == 'date'
-            field_properties['format'] = 'date_time_no_millis'
-          end
-
-          properties[field_name.to_s] = field_properties
+          properties[field_name.to_s] =
+            Field.process(field_name, options, &block)
         end
       end
 

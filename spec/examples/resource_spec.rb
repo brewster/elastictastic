@@ -8,5 +8,23 @@ describe Elastictastic::Resource do
     it 'should set basic field' do
       properties.should have_key('title')
     end
+
+    it 'should default type to string' do
+      properties['title']['type'].should == 'string'
+    end
+
+    it 'should accept options' do
+      properties['comments_count']['type'].should == 'integer'
+    end
+
+    it 'should set up multifield' do
+      properties['tags'].should == {
+        'type' => 'multi_field',
+        'fields' => {
+          'tags' => { 'type' => 'string', 'index' => 'analyzed' },
+          'non_analyzed' => { 'type' => 'string', 'index' => 'not_analyzed' }
+        }
+      }
+    end
   end
 end

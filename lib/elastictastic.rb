@@ -4,6 +4,7 @@ module Elastictastic
   CancelBulkOperation = Class.new(StandardError)
 
   autoload :Document, 'elastictastic/document'
+  autoload :Field, 'elastictastic/field'
   autoload :Persistence, 'elastictastic/persistence'
   autoload :Resource, 'elastictastic/resource'
   autoload :Scope, 'elastictastic/scope'
