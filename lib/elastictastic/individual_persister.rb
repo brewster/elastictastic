@@ -9,9 +9,9 @@ module Elastictastic
 
     def create(doc, params = {})
       params[:refresh] = true if auto_refresh
-      path = "/#{doc.index}/#{doc.class.type}"
+      path = doc.elasticsearch_path
       if doc.id
-        path << "/" << doc.id << "/_create"
+        path << '/_create'
         method = :put
       else
         method = :post

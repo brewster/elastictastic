@@ -57,7 +57,9 @@ module Elastictastic
       end
 
       def elasticsearch_path
-        "/#{index}/#{self.class.type}/#{id}"
+        "/#{index}/#{self.class.type}".tap do |path|
+          path << '/' << id if id
+        end
       end
     end
   end
