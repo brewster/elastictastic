@@ -62,6 +62,10 @@ module Elastictastic
         @persisted = true
       end
 
+      def transient!
+        @persisted = false
+      end
+
       def ==(other)
         index == other.index && id == other.id
       end

@@ -28,7 +28,7 @@ describe Elastictastic::Document do
       post.index = 'my_index'
       path.should == '/my_index/post/123'
     end
-  end
+  end # describe '#elasticsearch_path'
 
   describe '#save' do
     context 'new object' do
@@ -60,7 +60,7 @@ describe Elastictastic::Document do
       it 'should mark object as persisted' do
         post.should be_persisted
       end
-    end
+    end # context 'new object'
 
     context 'new object with ID' do
       let(:post) { Post.new.tap { |post| post.id = '123' }}
@@ -82,7 +82,7 @@ describe Elastictastic::Document do
         it 'should send document in body' do
           last_request.body.should == post.to_elasticsearch_doc.to_json
         end
-      end
+      end # context 'with unique ID'
 
       context 'with duplicate ID' do
         before do
@@ -112,8 +112,8 @@ describe Elastictastic::Document do
             error.status.should == 409
           }
         end
-      end
-    end
+      end # context 'with duplicate ID'
+    end # context 'new object with ID'
 
     shared_examples_for 'persisted object' do
       describe 'identity attributes' do
@@ -124,7 +124,7 @@ describe Elastictastic::Document do
         it 'should not allow setting of index' do
           lambda { post.index = 'silly_index' }.should raise_error(Elastictastic::IllegalModificationError)
         end
-      end
+      end # describe 'identity attributes'
 
       describe '#save' do
         before do
@@ -144,8 +144,8 @@ describe Elastictastic::Document do
         it "should send document's body in request" do
           last_request.body.should == post.to_elasticsearch_doc.to_json
         end
-      end
-    end
+      end # describe '#save'
+    end # shared_examples_for 'persisted object'
 
     context 'object after save' do
       let(:post) do
@@ -154,7 +154,7 @@ describe Elastictastic::Document do
       end
 
       it_should_behave_like 'persisted object'
-    end
+    end # context 'object after save'
 
     context 'existing persisted object' do
       let(:post) do
@@ -165,6 +165,89 @@ describe Elastictastic::Document do
       end
 
       it_should_behave_like 'persisted object'
+    end # context 'existing persisted object'
+  end # describe '#save'
+
+  describe '#destroy' do
+    context 'existing persisted object' do
+      let(:post) do
+        Post.new.tap do |post|
+          post.id = '123'
+          post.persisted!
+        end
+      end
+
+      before do
+        stub_elasticsearch_destroy('default', 'post', '123')
+        @result = post.destroy
+      end
+
+      it 'should send DELETE request' do
+        last_request.method.should == 'DELETE'
+      end
+
+      it 'should send request to document resource path' do
+        last_request.path.should == post.elasticsearch_path
+      end
+
+      it 'should mark post as non-persisted' do
+        post.should_not be_persisted
+      end
+
+      it 'should return true' do
+        @result.should be_true
+      end
+    end # context 'existing persisted object'
+
+    context 'transient object' do
+      let(:post) { Post.new }
+
+      it 'should raise OperationNotAllowed' do
+        expect { post.destroy }.to raise_error(Elastictastic::OperationNotAllowed)
+      end
+    end # context 'transient object'
+
+    context 'non-existent persistent object' do
+      let(:post) do
+        Post.new.tap do |post|
+          post.id = '123'
+          post.persisted!
+        end
+      end
+
+      before do
+        stub_elasticsearch_destroy(
+          'default', 'post', '123',
+          :body => {
+            'ok' => true,
+            'found' => false,
+            '_index' => 'default',
+            '_type' => 'post',
+            '_id' => '123',
+            '_version' => 0
+          }.to_json
+        )
+        @result = post.destroy
+      end
+
+      it 'should return false' do
+        @result.should be_false
+      end
+    end # describe 'non-existent persistent object'
+  end # describe '#destroy'
+
+  describe '#destroy_all' do
+    before do
+      stub_elasticsearch_destroy_all('default', 'post')
+      Post.destroy_all
+    end
+
+    it 'should send DELETE' do
+      last_request.method.should == 'DELETE'
+    end
+
+    it 'should send to index/type path' do
+      last_request.path.should == '/default/post'
     end
   end
 end

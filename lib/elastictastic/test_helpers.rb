@@ -43,10 +43,33 @@ module Elastictastic
       )
     end
 
-    def stub_elasticsearch_get(index, type, id, attributes = {})
+    def stub_elasticsearch_get(index, type, id)
       FakeWeb.register_uri(
         :get,
         TestHelpers.uri_for_path("/#{index}/#{type}/#{id}")
+      )
+    end
+
+    def stub_elasticsearch_destroy(index, type, id, options = {})
+      FakeWeb.register_uri(
+        :delete,
+        TestHelpers.uri_for_path("/#{index}/#{type}/#{id}"),
+        options.reverse_merge(:body => {
+          'ok' => true,
+          'found' => true,
+          '_index' => 'test',
+          '_type' => 'test',
+          '_id' => id,
+          '_version' => 1
+        }.to_json)
+      )
+    end
+
+    def stub_elasticsearch_destroy_all(index, type)
+      FakeWeb.register_uri(
+        :delete,
+        TestHelpers.uri_for_path("/#{index}/#{type}"),
+        :body => { 'ok' => true }.to_json
       )
     end
 

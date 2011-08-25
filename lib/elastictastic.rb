@@ -1,8 +1,7 @@
 require 'active_support/core_ext'
+require 'elastictastic/errors'
 
 module Elastictastic
-  CancelBulkOperation = Class.new(StandardError)
-  IllegalModificationError = Class.new(StandardError)
 
   autoload :Configuration, 'elastictastic/configuration'
   autoload :Document, 'elastictastic/document'

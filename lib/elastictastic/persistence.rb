@@ -29,17 +29,9 @@ module Elastictastic
       end
 
       def destroy_all
-        scope = current_scope
-        index = scope._index if scope
-        index ||= '_all'
-        if scope && scope.params['query']
-          Elastictastic.transport.delete(
-            "/#{index}/#{type}/_query",
-            scope.params['query'].to_json
-          )
-        else
-          Elastictastic.transport.delete("/#{index}/#{type}")
-        end
+        index = Elastictastic.config.default_index
+        # TODO handle delete by query
+        Elastictastic.transport.delete("/#{index}/#{type}")
       end
     end
     
@@ -53,7 +45,11 @@ module Elastictastic
       end
       
       def destroy
-        Elastictastic.persister.destroy(self)
+        if persisted?
+          Elastictastic.persister.destroy(self)
+        else
+          raise OperationNotAllowed, "Cannot destroy transient document: #{inspect}"
+        end
       end
 
       def elasticsearch_path

@@ -34,7 +34,9 @@ module Elastictastic
       params[:refresh] = true if auto_refresh
       path = doc.elasticsearch_path
       path = "#{path}?#{params.to_query}" if params.present?
-      request(:delete, path)
+      response = request(:delete, path)
+      doc.transient!
+      response['found']
     end
   end
 end

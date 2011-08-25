@@ -24,7 +24,7 @@ module Elastictastic
       unless data.nil?
         raise ArgumentError, 'Cannot make this request with the Net::HTTP adapter, as Net::HTTP does not support DELETE requests with bodies.'
       end
-      @http.delete(path, headers)
+      @http.delete(path, headers).body
     end
   end
 end
