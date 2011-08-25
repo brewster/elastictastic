@@ -4,9 +4,9 @@ require 'elastictastic/errors'
 module Elastictastic
 
   autoload :Configuration, 'elastictastic/configuration'
+  autoload :DiscretePersistenceStrategy, 'elastictastic/discrete_persistence_strategy'
   autoload :Document, 'elastictastic/document'
   autoload :Field, 'elastictastic/field'
-  autoload :IndividualPersister, 'elastictastic/individual_persister'
   autoload :NetHttpTransport, 'elastictastic/net_http_transport'
   autoload :Persistence, 'elastictastic/persistence'
   autoload :Requests, 'elastictastic/requests'
@@ -39,13 +39,13 @@ module Elastictastic
 
     def persister
       Thread.current['Elastictastic::persister'] ||=
-        Elastictastic::IndividualPersister.instance
+        Elastictastic::DiscretePersistenceStrategy.instance
     end
 
     def bulk
       original_persister = self.persister
       begin
-        self.persister = Elastictastic::BulkPersister.new
+        self.persister = Elastictastic::BulkPersistenceStrategy.new
         yield
         self.persister.flush
       rescue Elastictastic::CancelBulkOperation

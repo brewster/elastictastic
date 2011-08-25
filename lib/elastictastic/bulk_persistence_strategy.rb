@@ -1,7 +1,7 @@
 require 'stringio'
 
 module Elastictastic
-  class BulkPersister
+  class BulkPersistenceStrategy
     def initialize
       @buffer = StringIO.new
     end
@@ -18,7 +18,7 @@ module Elastictastic
     def flush
       return if @buffer.length.zero?
       path = '/_bulk'
-      path << '?refresh=true' if IndividualPersister.instance.auto_refresh
+      path << '?refresh=true' if DiscretePersistenceStrategy.instance.auto_refresh
       response = JSON.parse(Elastictastic.transport.post(
         path,
         @buffer.string

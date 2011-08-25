@@ -1,7 +1,7 @@
 require 'singleton'
 
 module Elastictastic
-  class IndividualPersister
+  class DiscretePersistenceStrategy
     include Singleton
     include Elastictastic::Requests
 
