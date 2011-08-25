@@ -29,7 +29,6 @@ module Elastictastic
 
     module InstanceMethods
       attr_reader :id
-      attr_writer :index
 
       def initialize_from_elasticsearch_response(response)
         @id = response['_id']
@@ -41,7 +40,13 @@ module Elastictastic
       end
 
       def id=(id)
+        assert_transient!
         @id = id
+      end
+
+      def index=(index)
+        assert_transient!
+        @index = index
       end
 
       def index
@@ -59,6 +64,15 @@ module Elastictastic
 
       def ==(other)
         index == other.index && id == other.id
+      end
+
+      private
+
+      def assert_transient!
+        if persisted?
+          raise IllegalModificationError,
+            "Cannot modify identity attribute after model has been saved."
+        end
       end
     end
   end

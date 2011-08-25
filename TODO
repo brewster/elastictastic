@@ -1,13 +1,17 @@
-# Sooner #
 * Multiget
+* first/last/all
+* Find in batches
 * Percolation
+* Versioning
+* Identity map
+* Copy to new index
+* Migrations?
 * Index-level operations
+* ES load balancing
 * Validations
 * Lifecycle hooks
 * Observers
 * More transports
 * More JSON libraries
-
-# Later #
 * Support multiple-index / multiple-type search
 * Support scroll(?)

@@ -45,7 +45,7 @@ module Elastictastic
     
     module InstanceMethods
       def save
-        if id
+        if persisted?
           Elastictastic.persister.update(self)
         else
           Elastictastic.persister.create(self)

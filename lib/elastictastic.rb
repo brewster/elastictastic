@@ -2,6 +2,7 @@ require 'active_support/core_ext'
 
 module Elastictastic
   CancelBulkOperation = Class.new(StandardError)
+  IllegalModificationError = Class.new(StandardError)
 
   autoload :Configuration, 'elastictastic/configuration'
   autoload :Document, 'elastictastic/document'
@@ -14,10 +15,12 @@ module Elastictastic
   autoload :Scope, 'elastictastic/scope'
   autoload :Scoped, 'elastictastic/scoped'
   autoload :Search, 'elastictastic/search'
+  autoload :ServerError, 'elastictastic/server_error'
+  autoload :TestHelpers, 'elastictastic/test_helpers'
   autoload :Util, 'elastictastic/util'
 
   class <<self
-    attr_writer :configuration
+    attr_writer :config
 
     def config
       @config ||= Elastictastic::Configuration.new

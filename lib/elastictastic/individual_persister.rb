@@ -10,8 +10,14 @@ module Elastictastic
     def create(doc, params = {})
       params[:refresh] = true if auto_refresh
       path = "/#{doc.index}/#{doc.class.type}"
+      if doc.id
+        path << "/" << doc.id << "/_create"
+        method = :put
+      else
+        method = :post
+      end
       path << '?' << params.to_query if params.present?
-      response = request(:post, path, doc.to_elasticsearch_doc.to_json)
+      response = request(method, path, doc.to_elasticsearch_doc.to_json)
       doc.id = response['_id']
       doc.persisted!
     end
