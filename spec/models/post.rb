@@ -8,5 +8,5 @@ class Post
   end
   field :published_at, :type => 'date'
 
-  embed :author, ::Author
+  embed :author, Author
 end

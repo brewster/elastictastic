@@ -2,9 +2,8 @@ require 'bundler'
 Bundler.require(:default, :test, :development)
 require 'fakeweb'
 
-Dir[File.expand_path('../../models/**/*.rb', __FILE__)].each do |mock|
-  require mock
-end
+require File.dirname(__FILE__) + '/../models/author'
+require File.dirname(__FILE__) + '/../models/post'
 
 RSpec.configure do |config|
   config.before(:all) do
