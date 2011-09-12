@@ -3,6 +3,8 @@ module Elastictastic
     extend ActiveSupport::Concern
 
     module ClassMethods
+      delegate :destroy_all, :sync_mapping, :to => :in_default_index
+
       def get(*args)
         if args.length < 1 || args.length > 2
           raise NoMethodError, "wrong number of arguments (#{args.length} for 1-2)"
@@ -22,16 +24,6 @@ module Elastictastic
         else
           raise data['error'] || "Unexpected response from ElasticSearch: #{data.inspect}"
         end
-      end
-
-      def sync_mapping(index = '_all')
-        Elastictastic.transport.put("/#{index}/#{type}/_mapping", mapping.to_json)
-      end
-
-      def destroy_all
-        index = Elastictastic.config.default_index
-        # TODO handle delete by query
-        Elastictastic.transport.delete("/#{index}/#{type}")
       end
     end
     

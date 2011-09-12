@@ -25,6 +25,16 @@ module Elastictastic
       def type
         name.underscore
       end
+
+      def in_index(name_or_index)
+        TypeInIndex.new(self, Elastictastic::Index(name_or_index))
+      end
+
+      private
+
+      def in_default_index
+        in_index(Index.default)
+      end
     end
 
     module InstanceMethods
@@ -42,11 +52,6 @@ module Elastictastic
       def id=(id)
         assert_transient!
         @id = id
-      end
-
-      def index=(index)
-        assert_transient!
-        @index = index
       end
 
       def index

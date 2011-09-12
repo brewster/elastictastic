@@ -6,27 +6,32 @@ describe Elastictastic::Document do
   let(:last_request) { FakeWeb.last_request }
 
   describe 'elasticsearch_path' do
-    let(:post) { Post.new }
     let(:path) { post.elasticsearch_path }
 
-    it 'should be default index/type by default' do
-      path.should == '/default/post'
+    context 'with default index' do
+      let(:post) { Post.new }
+
+      it 'should be default index/type' do
+        path.should == '/default/post'
+      end
+
+      it 'should include ID if post has ID' do
+        post.id = '123'
+        path.should == '/default/post/123'
+      end
     end
 
-    it 'should include ID if post has ID' do
-      post.id = '123'
-      path.should == '/default/post/123'
-    end
+    context 'with user-specified index' do
+      let(:post) { Post.in_index('my_index').new }
 
-    it 'should use user-specified index' do
-      post.index = 'my_index'
-      path.should == '/my_index/post'
-    end
+      it 'should use user-specified index' do
+        path.should == '/my_index/post'
+      end
 
-    it 'should use user-specified index and ID' do
-      post.id = '123'
-      post.index = 'my_index'
-      path.should == '/my_index/post/123'
+      it 'should use user-specified index and ID' do
+        post.id = '123'
+        path.should == '/my_index/post/123'
+      end
     end
   end # describe '#elasticsearch_path'
 
@@ -119,10 +124,6 @@ describe Elastictastic::Document do
       describe 'identity attributes' do
         it 'should not allow setting of ID' do
           lambda { post.id = 'bogus' }.should raise_error(Elastictastic::IllegalModificationError)
-        end
-
-        it 'should not allow setting of index' do
-          lambda { post.index = 'silly_index' }.should raise_error(Elastictastic::IllegalModificationError)
         end
       end # describe 'identity attributes'
 
@@ -237,17 +238,51 @@ describe Elastictastic::Document do
   end # describe '#destroy'
 
   describe '#destroy_all' do
-    before do
-      stub_elasticsearch_destroy_all('default', 'post')
-      Post.destroy_all
+    describe 'with default index' do
+      before do
+        stub_elasticsearch_destroy_all('default', 'post')
+        Post.destroy_all
+      end
+
+      it 'should send DELETE' do
+        last_request.method.should == 'DELETE'
+      end
+
+      it 'should send to index/type path' do
+        last_request.path.should == '/default/post'
+      end
     end
 
-    it 'should send DELETE' do
-      last_request.method.should == 'DELETE'
-    end
+    describe 'with specified index' do
+      before do
+        stub_elasticsearch_destroy_all('my_index', 'post')
+        Post.in_index('my_index').destroy_all
+      end
 
-    it 'should send to index/type path' do
-      last_request.path.should == '/default/post'
+      it 'should send to specified index' do
+        last_request.path.should == '/my_index/post'
+      end
+    end
+  end
+
+  describe '::sync_mapping' do
+    context 'with default index' do
+      before do
+        stub_elasticsearch_put_mapping('default', 'post')
+        Post.sync_mapping
+      end
+
+      it 'should send PUT request' do
+        last_request.method.should == 'PUT'
+      end
+
+      it 'should send to resource path for mapping' do
+        last_request.path.should == '/default/post/_mapping'
+      end
+
+      it 'should send mapping to ES' do
+        last_request.body.should == Post.mapping.to_json
+      end
     end
   end
 end

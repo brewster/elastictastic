@@ -8,6 +8,7 @@ module Elastictastic
   autoload :DiscretePersistenceStrategy, 'elastictastic/discrete_persistence_strategy'
   autoload :Document, 'elastictastic/document'
   autoload :Field, 'elastictastic/field'
+  autoload :Index, 'elastictastic/index'
   autoload :NetHttpTransport, 'elastictastic/net_http_transport'
   autoload :Persistence, 'elastictastic/persistence'
   autoload :Requests, 'elastictastic/requests'
@@ -17,6 +18,7 @@ module Elastictastic
   autoload :Search, 'elastictastic/search'
   autoload :ServerError, 'elastictastic/server_error'
   autoload :TestHelpers, 'elastictastic/test_helpers'
+  autoload :TypeInIndex, 'elastictastic/type_in_index'
   autoload :Util, 'elastictastic/util'
 
   class <<self
@@ -54,6 +56,10 @@ module Elastictastic
       ensure
         self.persister = original_persister
       end
+    end
+
+    def Index(name_or_index)
+      Index === name_or_index ?  name_or_index : Index.new(name_or_index)
     end
 
     private

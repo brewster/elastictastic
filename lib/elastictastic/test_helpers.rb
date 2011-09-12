@@ -81,6 +81,14 @@ module Elastictastic
       )
     end
 
+    def stub_elasticsearch_put_mapping(index, type)
+      FakeWeb.register_uri(
+        :put,
+        TestHelpers.uri_for_path("/#{index}/#{type}/_mapping"),
+        :body => { 'ok' => true, 'acknowledged' =>  true }.to_json
+      )
+    end
+
     def self.uri_for_path(path)
       URI::HTTP.build(
         :host => Elastictastic.config.host,

@@ -11,9 +11,5 @@ module Elastictastic
         end
       RUBY
     end
-
-    def index(name)
-      scoped({}, name)
-    end
   end
 end
