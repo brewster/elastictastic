@@ -77,8 +77,8 @@ mapping; thus, the above is the same as the following:
 field :title,
   :type => 'multi_field',
   :fields => {
-:title => { :type => 'string', :index => 'analyzed' },
-:unanalyzed => { :type => 'string', :index => 'not_analyzed' }
+    :title => { :type => 'string', :index => 'analyzed' },
+    :unanalyzed => { :type => 'string', :index => 'not_analyzed' }
   }
 ```
 
@@ -146,7 +146,7 @@ attribute on the model; to retrieve a document from a non-default index, use
 the `index` method:
 
 ```ruby
-new_post = Post.in_index('my_special_index').new# create in an index
+new_post = Post.in_index('my_special_index').new # create in an index
 post = Post.in_index('my_special_index').get('123') # retrieve from an index
 ```
 
