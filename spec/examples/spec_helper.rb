@@ -2,8 +2,11 @@ require 'bundler'
 Bundler.require(:default, :test, :development)
 require 'fakeweb'
 
-require File.dirname(__FILE__) + '/../models/author'
-require File.dirname(__FILE__) + '/../models/post'
+$: << File.expand_path('../../models', __FILE__)
+
+%w(author comment post).each do |model|
+  require File.expand_path("../../models/#{model}", __FILE__)
+end
 
 RSpec.configure do |config|
   config.before(:all) do

@@ -302,4 +302,60 @@ describe Elastictastic::Document do
       it_should_behave_like 'put mapping'
     end # context 'with specified index'
   end # describe '::sync_mapping'
+
+  describe '::find' do
+    let(:post) { Post.find('1') }
+
+    before do
+      stub_elasticsearch_get(
+        'default', 'post', '1',
+        'title' => 'Testy time',
+        'tags' => %w(search lucene),
+        'author' => { 'name' => 'Mat Brown' },
+        'comments' => [
+          { 'body' => 'first comment' },
+          { 'body' => 'lol' }
+        ],
+        'created_at' => '2011-09-12T13:27:16.345Z',
+        'published_at' => 1315848697123
+      )
+    end
+
+    it 'should return post instance' do
+      post.should be_a(Post)
+    end
+
+    it 'should populate id' do
+      post.id.should == '1'
+    end
+
+    it 'should populate index' do
+      post.index.name.should == 'default'
+    end
+
+    it 'should populate scalar in document' do
+      post.title.should == 'Testy time'
+    end
+
+    it 'should populate time from formatted string' do
+      post.created_at.should == Time.gm(2011, 9, 12, 13, 27, BigDecimal.new("16.345"))
+    end
+
+    it 'should populate time from millis since epoch' do
+      post.published_at.should == Time.gm(2011, 9, 12, 17, 31, BigDecimal.new("37.123"))
+    end
+
+    it 'should populate array in document' do
+      post.tags.should == %w(search lucene)
+    end
+
+    it 'should populate embedded field' do
+      post.author.name.should == 'Mat Brown'
+    end
+
+    it 'should populate array of embedded objects' do
+      post.comments.map { |comment| comment.body }.should ==
+        ['first comment', 'lol']
+    end
+  end # describe '#find'
 end

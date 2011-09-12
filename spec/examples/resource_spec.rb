@@ -48,7 +48,7 @@ describe Elastictastic::Resource do
     it 'should serialize dates to integers' do
       time = Time.now
       post.published_at = time
-      doc['published_at'].should == (time.to_f * 1000).to_i
+      doc['published_at'].should == time.to_i * 1000 + time.usec / 1000
     end
 
     it 'should serialize an array of dates' do

@@ -24,5 +24,20 @@ module Elastictastic
     def type
       @clazz.type
     end
+
+    def find(id)
+      data = JSON.parse(Elastictastic.transport.get(
+        "/#{index}/#{type}/#{id}"
+      ))
+      return nil if data['exists'] == false
+      case data['status']
+      when nil
+        @clazz.new_from_elasticsearch_hit(data)
+      when 404
+        nil
+      else
+        raise data['error'] || "Unexpected response from ElasticSearch: #{data.inspect}"
+      end
+    end
   end
 end

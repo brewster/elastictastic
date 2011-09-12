@@ -129,7 +129,8 @@ module Elastictastic
           type = self.class.properties_for_field(field_name)['type'].to_s
           case type
           when 'date'
-            (value.to_time.to_f * 1000).to_i
+            time = value.to_time
+            time.to_i * 1000 + time.usec / 1000
           when 'integer', 'byte', 'short', 'long'
             value.to_i
           when 'float', 'double'
@@ -148,7 +149,12 @@ module Elastictastic
         if embed_class
           embed_class.new_from_elasticsearch_doc(value)
         elsif self.class.properties_for_field(field_name)['type'].to_s == 'date'
-          Time.xmlschema(value)
+          if value.is_a? Fixnum
+            sec, usec = value / 1000, (value % 1000) * 1000
+            Time.at(sec, usec).utc
+          else
+            Time.parse(value)
+          end
         else
           value
         end

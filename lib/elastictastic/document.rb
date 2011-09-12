@@ -10,10 +10,10 @@ module Elastictastic
     end
 
     module ClassMethods
-      def new_from_elasticsearch_response(response)
+      def new_from_elasticsearch_hit(response)
         allocate.tap do |instance|
           instance.instance_eval do
-            initialize_from_elasticsearch_response(response)
+            initialize_from_elasticsearch_hit(response)
           end
         end
       end
@@ -40,9 +40,9 @@ module Elastictastic
     module InstanceMethods
       attr_reader :id
 
-      def initialize_from_elasticsearch_response(response)
+      def initialize_from_elasticsearch_hit(response)
         @id = response['_id']
-        @index = response['_index']
+        @index = Index.new(response['_index'])
 
         doc = response['_source'] || Util.unflatten_hash(response['fields'] || {})
 
