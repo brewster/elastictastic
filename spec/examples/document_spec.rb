@@ -237,7 +237,7 @@ describe Elastictastic::Document do
     end # describe 'non-existent persistent object'
   end # describe '#destroy'
 
-  describe '#destroy_all' do
+  describe '::destroy_all' do
     describe 'with default index' do
       before do
         stub_elasticsearch_destroy_all('default', 'post')
@@ -251,7 +251,7 @@ describe Elastictastic::Document do
       it 'should send to index/type path' do
         last_request.path.should == '/default/post'
       end
-    end
+    end # describe 'with default index'
 
     describe 'with specified index' do
       before do
@@ -262,27 +262,44 @@ describe Elastictastic::Document do
       it 'should send to specified index' do
         last_request.path.should == '/my_index/post'
       end
-    end
-  end
+    end # describe 'with specified index'
+  end # describe '::destroy_all'
 
   describe '::sync_mapping' do
+    shared_examples_for 'put mapping' do
+      it 'should send PUT request' do
+        last_request.method.should == 'PUT'
+      end
+
+      it 'should send mapping to ES' do
+        last_request.body.should == Post.mapping.to_json
+      end
+    end # shared_examples_for 'put mapping'
+
     context 'with default index' do
       before do
         stub_elasticsearch_put_mapping('default', 'post')
         Post.sync_mapping
       end
 
-      it 'should send PUT request' do
-        last_request.method.should == 'PUT'
-      end
-
       it 'should send to resource path for mapping' do
         last_request.path.should == '/default/post/_mapping'
       end
 
-      it 'should send mapping to ES' do
-        last_request.body.should == Post.mapping.to_json
+      it_should_behave_like 'put mapping'
+    end # context 'with default index'
+
+    context 'with specified index' do
+      before do
+        stub_elasticsearch_put_mapping('my_cool_index', 'post')
+        Post.in_index('my_cool_index').sync_mapping
       end
-    end
-  end
+
+      it 'should send to specified index resource path' do
+        last_request.path.should == '/my_cool_index/post/_mapping'
+      end
+
+      it_should_behave_like 'put mapping'
+    end # context 'with specified index'
+  end # describe '::sync_mapping'
 end
