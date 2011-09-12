@@ -17,5 +17,9 @@ module Elastictastic
     def default_index
       @default_index ||= 'default'
     end
+
+    def auto_refresh
+      !!@auto_refresh
+    end
   end
 end

@@ -58,6 +58,10 @@ module Elastictastic
         !!@persisted
       end
 
+      def transient?
+        !persisted?
+      end
+
       def persisted!
         @persisted = true
       end

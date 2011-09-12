@@ -73,6 +73,14 @@ module Elastictastic
       )
     end
 
+    def stub_elasticsearch_bulk(*responses)
+      FakeWeb.register_uri(
+        :post,
+        TestHelpers.uri_for_path("/_bulk"),
+        :body => { 'took' => 1, 'items' => responses }.to_json
+      )
+    end
+
     def self.uri_for_path(path)
       URI::HTTP.build(
         :host => Elastictastic.config.host,

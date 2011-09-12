@@ -3,6 +3,7 @@ require 'elastictastic/errors'
 
 module Elastictastic
 
+  autoload :BulkPersistenceStrategy, 'elastictastic/bulk_persistence_strategy'
   autoload :Configuration, 'elastictastic/configuration'
   autoload :DiscretePersistenceStrategy, 'elastictastic/discrete_persistence_strategy'
   autoload :Document, 'elastictastic/document'
