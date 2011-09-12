@@ -105,4 +105,20 @@ describe Elastictastic::Search do
         { 'query' => { 'match_all' => {} }}
     end
   end
+
+  describe 'class methods' do
+    let(:named_scope) do
+      Post.from(10).search_keywords('hey guy')
+    end
+
+    it 'should delegate to class singleton' do
+      named_scope.params['query'].should == {
+        'query_string' => { 'query' => 'hey guy', 'fields' => %w(title body) }
+      }
+    end
+
+    it 'should retain current scope' do
+      named_scope.params['from'].should == 10
+    end
+  end
 end

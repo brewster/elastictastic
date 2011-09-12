@@ -11,4 +11,13 @@ class Post
 
   embed :author, Author
   embed :comments, Comment
+
+  def self.search_keywords(keywords)
+    query do
+      query_string do
+        query(keywords)
+        fields 'title', 'body'
+      end
+    end
+  end
 end

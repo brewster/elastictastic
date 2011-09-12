@@ -364,13 +364,13 @@ describe Elastictastic::Document do
       let(:index) { 'default' }
 
       it_should_behave_like 'single document lookup'
-    end
+    end # context 'with default index'
 
     context 'with specified index' do
       let(:post) { Post.in_index('my_index').find('1') }
       let(:index) { 'my_index' }
 
       it_should_behave_like 'single document lookup'
-    end
+    end # context 'with specified index'
   end # describe '::find'
 end
