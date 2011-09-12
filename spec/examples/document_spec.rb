@@ -305,7 +305,7 @@ describe Elastictastic::Document do
 
   describe '::find' do
 
-    shared_examples_for 'single document' do
+    shared_examples_for 'single document lookup' do
       before do
         stub_elasticsearch_get(
           index, 'post', '1',
@@ -363,14 +363,14 @@ describe Elastictastic::Document do
       let(:post) { Post.find('1') }
       let(:index) { 'default' }
 
-      it_should_behave_like 'single document'
+      it_should_behave_like 'single document lookup'
     end
 
     context 'with specified index' do
       let(:post) { Post.in_index('my_index').find('1') }
       let(:index) { 'my_index' }
 
-      it_should_behave_like 'single document'
+      it_should_behave_like 'single document lookup'
     end
-  end # describe '#find'
+  end # describe '::find'
 end

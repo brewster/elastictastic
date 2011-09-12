@@ -5,9 +5,16 @@ module Elastictastic
 
     SEARCH_KEYS.each do |search_key|
       module_eval <<-RUBY
-        def #{search_key}(*values)
-          values = values.first if values.length == 1
-          scoped(#{search_key.inspect} => values)
+        def #{search_key}(*values, &block)
+          values << ScopeBuilder.build(&block) if block
+
+          case values.length
+          when 0 then raise ArgumentError, "wrong number of arguments (0 for 1)"
+          when 1 then value = values.first
+          else value = values
+          end
+
+          scoped(#{search_key.inspect} => value)
         end
       RUBY
     end

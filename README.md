@@ -186,10 +186,7 @@ Elastictastic also has an alternate block-based query builder, if you prefer:
 ```ruby
 Post.query do
   query_string { query('pizza') }
-  facets { cuisine { term { field :tags }}}
-  from 10
-  size 10
-end
+end.facets { cuisine { term { field :tags }}}.from(10).size(10)
 # Same effect as the previous example
 ```
 

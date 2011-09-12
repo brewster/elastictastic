@@ -14,6 +14,7 @@ module Elastictastic
   autoload :Requests, 'elastictastic/requests'
   autoload :Resource, 'elastictastic/resource'
   autoload :Scope, 'elastictastic/scope'
+  autoload :ScopeBuilder, 'elastictastic/scope_builder'
   autoload :Scoped, 'elastictastic/scoped'
   autoload :Search, 'elastictastic/search'
   autoload :ServerError, 'elastictastic/server_error'
