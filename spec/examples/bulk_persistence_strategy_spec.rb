@@ -41,6 +41,10 @@ describe Elastictastic::BulkPersistenceStrategy do
     it 'should set persisted' do
       post.should be_persisted
     end
+
+    it 'should have final newline' do
+      last_request.body[-1].should == "\n"
+    end
   end
 
   describe 'before bulk operation completes' do
@@ -141,5 +145,53 @@ describe Elastictastic::BulkPersistenceStrategy do
     it 'should mark record as not persistent' do
       post.should_not be_persisted
     end
+  end
+
+  shared_examples_for 'block with error' do
+    it 'should not run bulk operation' do
+      error_proc.call rescue nil
+      last_request.should_not be
+    end
+
+    it 'should return to individual persistence strategy' do
+      error_proc.call rescue nil
+      stub_elasticsearch_create('default', 'post')
+      Post.new.save
+      last_request.path.should == '/default/post'
+    end
+  end
+
+  describe 'with uncaught exception raised' do
+    let :error_proc  do
+      lambda do
+        Elastictastic.bulk do
+          Post.new.save
+          raise
+        end
+      end
+    end
+
+    it 'should propagate error up' do
+      expect(&error_proc).to raise_error(RuntimeError)
+    end
+
+    it_should_behave_like 'block with error'
+  end
+
+  describe 'raising CancelBulkOperation' do
+    let :error_proc do
+      lambda do
+        Elastictastic.bulk do
+          Post.new.save
+          raise Elastictastic::CancelBulkOperation
+        end
+      end
+    end
+
+    it 'should not propagate error' do
+      expect(&error_proc).not_to raise_error
+    end
+
+    it_should_behave_like 'block with error'
   end
 end

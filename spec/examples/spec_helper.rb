@@ -9,4 +9,8 @@ RSpec.configure do |config|
   config.before(:all) do
     FakeWeb.allow_net_connect = false
   end
+
+  config.before(:each) do
+    FakeWeb.last_request = nil
+  end
 end
