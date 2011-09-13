@@ -40,7 +40,9 @@ module Elastictastic
     end
 
     def count
-      @count
+      return @count if defined? @count
+      response = @type_in_index.search(self, :search_type => 'count')
+      @count = response['hits']['total']
     end
 
     def scoped(params, index = @index)
@@ -102,6 +104,7 @@ module Elastictastic
       }
       scan_response = @type_in_index.search(
         self, scroll_options.merge(:search_type => 'scan'))
+      @count = scan_response['hits']['total']
       scroll_id = scan_response['_scroll_id']
 
       begin

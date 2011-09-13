@@ -15,7 +15,7 @@ describe Elastictastic::Scope do
     let(:noop) { lambda { |arg| } }
 
     context 'with query only' do
-      let(:scope) { Post.query { match_all }.fields('title') }
+      let(:scope) { Post.all.fields('title') }
       let(:scan_request) { FakeWeb.requests[0] }
       let(:scroll_requests) { FakeWeb.requests[1..-1] }
 
@@ -172,4 +172,86 @@ describe Elastictastic::Scope do
       end
     end # context 'with sort but no from/size'
   end # describe '#each'
+
+  describe '#count' do
+    context 'with no operations performed yet' do
+      let!(:count) do
+        stub_elasticsearch_search('default', 'post', 3)
+        Post.all.count
+      end
+
+      it 'should send search_type as count' do
+        last_request_params.should include('search_type=count')
+      end
+
+      it 'should get count' do
+        count.should == 3
+      end
+    end # context 'with no operations performed yet'
+
+    context 'with scan search performed' do
+      let!(:count) do
+        stub_elasticsearch_scan(
+          'default', 'post', 2,
+          { '_id' => '1', '_source' => {}},
+          { '_id' => '2', '_source' => {}},
+          { '_id' => '3', '_source' => {}}
+        )
+        scope = Post.all
+        scope.to_a
+        scope.count
+      end
+
+      it 'should get count from scan request' do
+        count.should == 3
+      end
+
+      it 'should not send count request' do
+        FakeWeb.should have(4).requests
+      end
+    end
+
+    context 'with paginated search performed' do
+      let!(:count) do
+        stub_elasticsearch_search(
+          'default', 'post', 3,
+          { '_id' => '1', '_source' => {}},
+          { '_id' => '2', '_source' => {}},
+          { '_id' => '3', '_source' => {}}
+        )
+        scope = Post.size(10)
+        scope.to_a
+        scope.count
+      end
+
+      it 'should get count from query_then_fetch search' do
+        count.should == 3
+      end
+
+      it 'should not perform extra request' do
+        FakeWeb.should have(1).request
+      end
+    end
+
+    context 'with paginated scan performed' do
+      let!(:count) do
+        stub_elasticsearch_search(
+          'default', 'post', 2,
+          { '_id' => '1', '_source' => {}},
+          { '_id' => '2', '_source' => {}}
+        )
+        scope = Post.sort('title' => 'asc')
+        scope.to_a
+        scope.count
+      end
+
+      it 'should return count from internal paginated request' do
+        count.should == 2
+      end
+
+      it 'should not perform extra request' do
+        FakeWeb.should have(1).request
+      end
+    end # context 'with paginated scan performed'
+  end # describe '#count'
 end

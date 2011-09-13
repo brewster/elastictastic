@@ -1,5 +1,9 @@
 module Elastictastic
   module Scoped
+    def all
+      scoped({})
+    end
+
     def scoped(params, index = nil)
       if current_scope
         current_scope.scoped(params)
