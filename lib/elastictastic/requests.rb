@@ -7,7 +7,13 @@ module Elastictastic
     def request(method, *args)
       JSON.parse(Elastictastic.transport.__send__(method, *args)).tap do |parsed|
         if parsed['error']
-          match = ERROR_PATTERN.match(parsed['error'])
+          error = parsed['error']
+        elsif parsed['_shards'] && parsed['_shards']['failures']
+          error = parsed['_shards']['failures'].first['reason']
+        end
+
+        if error
+          match = ERROR_PATTERN.match(error)
           if match
             clazz = Elastictastic::ServerError.const_get(match[1])
             error = clazz.new(match[2])
