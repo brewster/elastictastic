@@ -1,8 +1,6 @@
 module Elastictastic
   module Scoped
-    def all
-      scoped({})
-    end
+    delegate :find_each, :find_in_batches, :count, :to => :all
 
     def scoped(params, index = nil)
       if current_scope
