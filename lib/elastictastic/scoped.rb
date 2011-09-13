@@ -4,7 +4,7 @@ module Elastictastic
       if current_scope
         current_scope.scoped(params)
       else
-        Scope.new(self, params, index)
+        Scope.new(in_default_index, params)
       end
     end
 

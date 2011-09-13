@@ -1,19 +1,14 @@
-require 'bundler'
-Bundler.require(:default, :test, :development)
+require File.expand_path('../../environment', __FILE__)
 require 'fakeweb'
 
-$: << File.expand_path('../../models', __FILE__)
-
-%w(author comment post).each do |model|
-  require File.expand_path("../../models/#{model}", __FILE__)
-end
+require File.expand_path('../../support/fakeweb_request_history', __FILE__)
 
 RSpec.configure do |config|
   config.before(:all) do
     FakeWeb.allow_net_connect = false
   end
 
-  config.before(:each) do
-    FakeWeb.last_request = nil
+  config.after(:each) do
+    FakeWeb.requests.clear
   end
 end

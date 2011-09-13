@@ -1,6 +1,6 @@
 module Elastictastic
   class TypeInIndex
-    attr_reader :index
+    attr_reader :clazz, :index
 
     def initialize(clazz, index)
       @clazz, @index = clazz, index

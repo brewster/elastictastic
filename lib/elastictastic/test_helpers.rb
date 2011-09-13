@@ -96,6 +96,31 @@ module Elastictastic
       )
     end
 
+    def stub_elasticsearch_scan(index, type, batch_size, *hits)
+      scan_uri = Regexp.escape(TestHelpers.uri_for_path("/#{index}/#{type}/_search").to_s)
+      scroll_ids = Array.new(batch_size + 1) { rand(10**100).to_s(36) }
+      FakeWeb.register_uri(
+        :post,
+        /^#{scan_uri}\?.*search_type=scan/,
+        :body => {
+          '_scroll_id' => scroll_ids.first,
+          'hits' => { 'total' => hits.length, 'hits' => [] }
+        }.to_json
+      )
+
+      batches = hits.each_slice(batch_size).each_with_index.map do |hit_batch, i|
+        { :body => { '_scroll_id' => scroll_ids[i+1], 'hits' => { 'hits' => hit_batch }}.to_json }
+      end
+      batches << { :body => { 'hits' => { 'hits' => [] }}.to_json }
+      scroll_uri = Regexp.escape(TestHelpers.uri_for_path("/_search/scroll").to_s)
+      FakeWeb.register_uri(
+        :post,
+        /^#{scroll_uri}/,
+        batches
+      )
+      scroll_ids
+    end
+
     def self.uri_for_path(path)
       URI::HTTP.build(
         :host => Elastictastic.config.host,
