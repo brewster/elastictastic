@@ -70,9 +70,8 @@ module Elastictastic
       @params = Util.deep_merge(@params, Util.deep_stringify(params))
     end
 
-    def search_all(options = {})
-      response = @type_in_index.search(
-        self, options.reverse_merge(:search_type => 'query_then_fetch'))
+    def search_all
+      response = @type_in_index.search(self, :search_type => 'query_then_fetch')
 
       @count = response['hits']['total']
       response['hits']['hits'].map do |hit|
@@ -87,7 +86,7 @@ module Elastictastic
       scope_with_size = self.size(size)
       begin
         scope = scope_with_size.from(from)
-        results = scope.search_all(:search_type => 'query_and_fetch')
+        results = scope.search_all
         yield(results)
         from += size
         result_count += results.length

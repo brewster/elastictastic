@@ -160,10 +160,10 @@ describe Elastictastic::Scope do
         end
       end
 
-      it 'should perform query_and_fetch search' do
+      it 'should perform query_then_fetch search' do
         scope.to_a
         requests.each do |request|
-          request.path.should =~ /search_type=query_and_fetch/
+          request.path.should =~ /[\?&]search_type=query_then_fetch(&|$)/
         end
       end
 
