@@ -1,5 +1,6 @@
 module Elastictastic
   class Scope < BasicObject
+    include ::Enumerable
     include Search
 
     attr_reader :params
@@ -21,11 +22,11 @@ module Elastictastic
         :scroll => "#{batch_options[:ttl] || 60}s",
         :size => batch_options[:batch_size] || 100
       }
-      scan_response = scan_search(scroll_options)
+      scan_response = @type_in_index.scan_search(params, scroll_options)
       scroll_id = scan_response['_scroll_id']
 
       begin
-        response = scroll(scroll_id, scroll_options.slice(:scroll))
+        response = @type_in_index.scroll(scroll_id, scroll_options.slice(:scroll))
         scroll_id = response['_scroll_id']
         docs = response['hits']['hits'].map do |hit|
           @type_in_index.clazz.new_from_elasticsearch_hit(hit)
@@ -73,25 +74,6 @@ module Elastictastic
 
     def merge!(params)
       @params = Util.deep_merge(@params, Util.deep_stringify(params))
-    end
-
-    private
-
-    #FIXME get this out of here!
-    def scan_search(options = {})
-      path = "/#{@type_in_index.index}/#{@type_in_index.type}/_search"
-      ::JSON.parse(::Elastictastic.transport.post(
-        "#{path}?#{options.merge(:search_type => :scan).to_query}",
-        params.to_json
-      ))
-    end
-
-    #FIXME this too!
-    def scroll(id, options = {})
-      ::JSON.parse(::Elastictastic.transport.post(
-        "/_search/scroll?#{options.to_query}",
-        id
-      ))
     end
   end
 end

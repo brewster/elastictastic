@@ -1,5 +1,6 @@
 module Elastictastic
   class TypeInIndex
+    include Requests
     attr_reader :clazz, :index
 
     def initialize(clazz, index)
@@ -14,11 +15,11 @@ module Elastictastic
     end
 
     def destroy_all
-      Elastictastic.transport.delete("/#{index}/#{type}")
+      request :delete, "/#{index}/#{type}"
     end
 
     def sync_mapping
-      Elastictastic.transport.put("/#{index}/#{type}/_mapping", @clazz.mapping.to_json)
+      request :put, "/#{index}/#{type}/_mapping", @clazz.mapping.to_json
     end
 
     def type
@@ -26,9 +27,7 @@ module Elastictastic
     end
 
     def find(id)
-      data = JSON.parse(Elastictastic.transport.get(
-        "/#{index}/#{type}/#{id}"
-      ))
+      data = request :get, "/#{index}/#{type}/#{id}"
       return nil if data['exists'] == false
       case data['status']
       when nil
@@ -38,6 +37,24 @@ module Elastictastic
       else
         raise data['error'] || "Unexpected response from ElasticSearch: #{data.inspect}"
       end
+    end
+
+    def scan_search(params, options = {})
+      path = "/#{index}/#{type}/_search"
+      request(
+        :post, 
+        "#{path}?#{options.merge(:search_type => :scan).to_query}",
+        params.to_json
+      )
+    end
+
+    # XXX This doesn't really belong here.
+    def scroll(id, options = {})
+      request(
+        :post,
+        "/_search/scroll?#{options.to_query}",
+        id
+      )
     end
   end
 end
