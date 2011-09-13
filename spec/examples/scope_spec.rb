@@ -21,19 +21,7 @@ describe Elastictastic::Scope do
 
       before do
         @scroll_ids = stub_elasticsearch_scan(
-          'default', 'post', 2,
-          {
-            '_id' => '1', '_type' => 'post', '_index' => 'default',
-            '_source' => { 'title' => 'post the first' }
-          },
-          {
-            '_id' => '2', '_type' => 'post', '_index' => 'default',
-            '_source' => { 'title' => 'post the second' }
-          },
-          {
-            '_id' => '3', '_type' => 'post', '_index' => 'default',
-            '_source' => { 'title' => 'post the third' }
-          }
+          'default', 'post', 2, *make_hits(3)
         )
       end
 
@@ -92,9 +80,10 @@ describe Elastictastic::Scope do
 
       before do
         stub_elasticsearch_search(
-          'default', 'post', 2,
-          { '_id' => '1', '_source' => { 'title' => 'post 1' }},
-          { '_id' => '2', '_source' => { 'title' => 'post 2' }}
+          'default', 'post', 'hits' => {
+            'total' => 2,
+            'hits' => make_hits(2)
+          }
         )
       end
 
@@ -114,7 +103,7 @@ describe Elastictastic::Scope do
       end
 
       it 'should return documents' do
-        scope.map { |post| post.title }.should == ['post 1', 'post 2']
+        scope.map { |post| post.title }.should == ['Post 1', 'Post 2']
       end
     end # context 'with from/size'
 
@@ -128,10 +117,10 @@ describe Elastictastic::Scope do
       end
 
       before do
-        hits = Array.new(101) do |i|
-          { '_id' => i.to_s, '_source' => { 'title' => "post #{i}" }}
-        end
-        stub_elasticsearch_search('default', 'post', 101, *hits.each_slice(100).to_a)
+        stub_elasticsearch_search(
+          'default', 'post',
+          make_hits(101).each_slice(100).map { |batch| { 'hits' => { 'hits' => batch, 'total' => 101 }} }
+        )
       end
 
       it 'should send two requests' do
@@ -168,7 +157,7 @@ describe Elastictastic::Scope do
       end
 
       it 'should return all results' do
-        scope.map { |post| post.id }.should == (0...101).map(&:to_s)
+        scope.map { |post| post.id }.should == (1..101).map(&:to_s)
       end
     end # context 'with sort but no from/size'
   end # describe '#each'
@@ -176,7 +165,7 @@ describe Elastictastic::Scope do
   describe '#count' do
     context 'with no operations performed yet' do
       let!(:count) do
-        stub_elasticsearch_search('default', 'post', 3)
+        stub_elasticsearch_search('default', 'post', 'hits' => { 'total' => 3 })
         Post.all.count
       end
 
@@ -192,10 +181,7 @@ describe Elastictastic::Scope do
     context 'with scan search performed' do
       let!(:count) do
         stub_elasticsearch_scan(
-          'default', 'post', 2,
-          { '_id' => '1', '_source' => {}},
-          { '_id' => '2', '_source' => {}},
-          { '_id' => '3', '_source' => {}}
+          'default', 'post', 2, *make_hits(3)
         )
         scope = Post.all
         scope.to_a
@@ -214,10 +200,10 @@ describe Elastictastic::Scope do
     context 'with paginated search performed' do
       let!(:count) do
         stub_elasticsearch_search(
-          'default', 'post', 3,
-          { '_id' => '1', '_source' => {}},
-          { '_id' => '2', '_source' => {}},
-          { '_id' => '3', '_source' => {}}
+          'default', 'post', 'hits' => {
+            'hits' => make_hits(3),
+            'total' => 3
+          }
         )
         scope = Post.size(10)
         scope.to_a
@@ -236,9 +222,10 @@ describe Elastictastic::Scope do
     context 'with paginated scan performed' do
       let!(:count) do
         stub_elasticsearch_search(
-          'default', 'post', 2,
-          { '_id' => '1', '_source' => {}},
-          { '_id' => '2', '_source' => {}}
+          'default', 'post', 'hits' => {
+            'hits' => make_hits(2),
+            'total' => 2
+          }
         )
         scope = Post.sort('title' => 'asc')
         scope.to_a
@@ -254,4 +241,111 @@ describe Elastictastic::Scope do
       end
     end # context 'with paginated scan performed'
   end # describe '#count'
+
+  describe '#all_facets' do
+    let(:facet_response) do
+      {
+        'comments_count' => {
+          '_type' => 'terms', 'total' => 2,
+          'terms' => [
+            { 'term' => 4, 'count' => 1 },
+            { 'term' => 2, 'count' => 1 }
+          ]
+        }
+      }
+    end
+    let(:base_scope) { Post.facets(:comments_count => { :terms => { :field => :comments_count }}) }
+
+    context 'with no requests performed' do
+      let!(:facets) do
+        stub_elasticsearch_search(
+          'default', 'post',
+          'hits' => { 'hits' => [], 'total' => 2 },
+          'facets' => facet_response
+        )
+        base_scope.all_facets
+      end
+
+      it 'should make count search_type' do
+        last_request_params.should include("search_type=count")
+      end
+
+      it 'should expose facets with object traversal' do
+        facets.comments_count.terms.first.term.should == 4
+      end
+    end # context 'with no requests performed'
+
+    context 'with count request performed' do
+      let!(:facets) do
+        stub_elasticsearch_search(
+          'default', 'post',
+          'hits' => { 'hits' => [], 'total' => 2 },
+          'facets' => facet_response
+        )
+        base_scope.count
+        base_scope.all_facets
+      end
+
+      it 'should only perform one request' do
+        FakeWeb.should have(1).request
+      end
+
+      it 'should set facets' do
+        facets.comments_count.should be
+      end
+    end # context 'with count request performed'
+
+    context 'with single-page search performed' do
+      let!(:facets) do
+        stub_elasticsearch_search(
+          'default', 'post',
+          'hits' => { 'hits' => make_hits(2), 'total' => 2 },
+          'facets' => facet_response
+        )
+        scope = base_scope.size(10)
+        scope.to_a
+        scope.all_facets
+      end
+
+      it 'should only perform one request' do
+        FakeWeb.should have(1).request
+      end
+
+      it 'should get facets' do
+        facets.comments_count.should be
+      end
+    end # context 'with single-page search performed'
+
+    context 'with multi-page search performed' do
+      let!(:facets) do
+        stub_elasticsearch_search(
+          'default', 'post',
+          'hits' => { 'hits' => make_hits(2), 'total' => 2 },
+          'facets' => facet_response
+        )
+        scope = base_scope.sort(:comments_count => :asc)
+        scope.to_a
+        scope.all_facets
+      end
+
+      it 'should only peform one request' do
+        FakeWeb.should have(1).request
+      end
+
+      it 'should populate facets' do
+        facets.comments_count.should be
+      end
+    end # context 'with multi-page search performed'
+  end # describe '#all_facets'
+
+  def make_hits(count)
+    Array.new(count) do |i|
+      {
+        '_id' => (i + 1).to_s,
+        '_type' => 'post',
+        '_index' => 'default',
+        '_source' => { 'title' => "Post #{i + 1}" }
+      }
+    end
+  end
 end

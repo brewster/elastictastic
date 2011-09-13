@@ -96,13 +96,13 @@ module Elastictastic
       )
     end
 
-    def stub_elasticsearch_search(index, type, total, *hits)
-      if Array === hits.first
-        response = hits.map do |batch_hits|
-          { :body => { 'hits' => { 'total' => total, 'hits' => batch_hits }}.to_json }
+    def stub_elasticsearch_search(index, type, data)
+      if Array === data
+        response = data.map do |datum|
+          { :body => datum.to_json }
         end
       else
-        response = { :body =>  { 'hits' => { 'total' => total, 'hits' => hits }}.to_json }
+        response = { :body =>  data.to_json }
       end
 
       uri = TestHelpers.uri_for_path("/#{index}/#{type}/_search").to_s

@@ -1,3 +1,5 @@
+require 'hashie'
+
 module Elastictastic
   class Scope < BasicObject
     include ::Enumerable
@@ -29,20 +31,16 @@ module Elastictastic
       end
     end
 
-    def response
-      index = @index || '_all'
-      @response ||= ::JSON.parse(::Elastictastic.transport.post(
-        "/#{index}/#{@type}/_search",
-        params.to_json
-      ))
-      raise @response['error'] if @response['error']
-      @response
-    end
-
     def count
       return @count if defined? @count
-      response = @type_in_index.search(self, :search_type => 'count')
-      @count = response['hits']['total']
+      populate_counts
+      @count
+    end
+
+    def all_facets
+      return @all_facets if defined? @all_facets
+      populate_counts
+      @all_facets ||= nil
     end
 
     def scoped(params, index = @index)
@@ -72,23 +70,27 @@ module Elastictastic
       @params = Util.deep_merge(@params, Util.deep_stringify(params))
     end
 
+    private
+
     def search_all
       response = @type_in_index.search(self, :search_type => 'query_then_fetch')
 
-      @count = response['hits']['total']
+      populate_counts(response)
       response['hits']['hits'].map do |hit|
         @type_in_index.clazz.new_from_elasticsearch_hit(hit)
       end
     end
-
-    private
 
     def search_in_batches(&block)
       from, size, result_count = 0, 100, 0
       scope_with_size = self.size(size)
       begin
         scope = scope_with_size.from(from)
-        results = scope.search_all
+        response = @type_in_index.search(scope, :search_type => 'query_then_fetch')
+        populate_counts(response)
+        results = response['hits']['hits'].map do |hit|
+          @type_in_index.clazz.new_from_elasticsearch_hit(hit)
+        end
         yield(results)
         from += size
         result_count += results.length
@@ -115,6 +117,14 @@ module Elastictastic
         end
         yield(docs)
       end until response['hits']['hits'].empty?
+    end
+
+    def populate_counts(response = nil)
+      response ||= @type_in_index.search(self, :search_type => 'count')
+      @count ||= response['hits']['total']
+      if response['facets']
+        @all_facets ||= ::Hashie::Mash.new(response['facets'])
+      end
     end
   end
 end
