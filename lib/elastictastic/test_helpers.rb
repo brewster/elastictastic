@@ -96,6 +96,23 @@ module Elastictastic
       )
     end
 
+    def stub_elasticsearch_search(index, type, total, *hits)
+      if Array === hits.first
+        response = hits.map do |batch_hits|
+          { :body => { 'hits' => { 'total' => total, 'hits' => batch_hits }}.to_json }
+        end
+      else
+        response = { :body =>  { 'hits' => { 'total' => total, 'hits' => hits }}.to_json }
+      end
+
+      uri = TestHelpers.uri_for_path("/#{index}/#{type}/_search").to_s
+      FakeWeb.register_uri(
+        :post,
+        /^#{Regexp.escape(uri)}/,
+        response
+      )
+    end
+
     def stub_elasticsearch_scan(index, type, batch_size, *hits)
       scan_uri = Regexp.escape(TestHelpers.uri_for_path("/#{index}/#{type}/_search").to_s)
       scroll_ids = Array.new(batch_size + 1) { rand(10**100).to_s(36) }

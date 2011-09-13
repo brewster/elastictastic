@@ -39,12 +39,12 @@ module Elastictastic
       end
     end
 
-    def scan_search(params, options = {})
+    def search(scope, options = {})
       path = "/#{index}/#{type}/_search"
       request(
-        :post, 
-        "#{path}?#{options.merge(:search_type => :scan).to_query}",
-        params.to_json
+        :post,
+        "#{path}?#{options.to_query}",
+        scope.params.to_json
       )
     end
 

@@ -51,7 +51,14 @@ describe Elastictastic::BulkPersistenceStrategy do
     let(:post) { Post.new }
 
     around do |example|
-      Elastictastic.bulk { example.run }
+      Elastictastic.bulk do
+        example.run
+        # have to do this here because the before/after hooks run inside the
+        # around hook
+        stub_elasticsearch_bulk(
+          'create' => { '_index' => 'default', '_type' => 'post', '_id' => '123', '_version' => 1, 'ok' => true }
+        )
+      end
     end
 
     it 'should not set ID' do
@@ -130,10 +137,10 @@ describe Elastictastic::BulkPersistenceStrategy do
     end
 
     before do
-      Elastictastic.bulk { post.destroy }
       stub_elasticsearch_bulk(
         'destroy' => { '_index' => 'default', '_type' => 'post', '_id' => '123', '_version' => 1, 'ok' => true }
       )
+      Elastictastic.bulk { post.destroy }
     end
 
     it 'should send destroy' do

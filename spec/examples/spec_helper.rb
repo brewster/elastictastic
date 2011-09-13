@@ -10,5 +10,6 @@ RSpec.configure do |config|
 
   config.after(:each) do
     FakeWeb.requests.clear
+    FakeWeb.clean_registry
   end
 end
