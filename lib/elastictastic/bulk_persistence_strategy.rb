@@ -2,6 +2,8 @@ require 'stringio'
 
 module Elastictastic
   class BulkPersistenceStrategy
+    include Requests
+
     def initialize
       @buffer = StringIO.new
       @handlers = []
@@ -17,6 +19,13 @@ module Elastictastic
       end
     end
 
+    def update(instance)
+      add(
+        { 'index' => bulk_identifier(instance) },
+        instance.to_elasticsearch_doc
+      )
+    end
+
     def destroy(instance)
       add(:delete => bulk_identifier(instance)) do |response|
         instance.transient!
@@ -28,11 +37,7 @@ module Elastictastic
 
       path = '/_bulk'
       path << '?refresh=true' if Elastictastic.config.auto_refresh
-      response = JSON.parse(Elastictastic.transport.post(
-        path,
-        @buffer.string
-      ))
-      raise response['error'] if response['error']
+      response = request :post, path, @buffer.string
 
       response['items'].each_with_index do |op_response, i|
         handler = @handlers[i]
@@ -44,7 +49,7 @@ module Elastictastic
     private
 
     def bulk_identifier(instance)
-      identifier = { :_index => instance.index, :_type => instance.class.type }
+      identifier = { :_index => instance.index.name, :_type => instance.class.type }
       identifier['_id'] = instance.id if instance.id
       identifier
     end

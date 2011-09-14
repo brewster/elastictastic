@@ -127,6 +127,30 @@ describe Elastictastic::BulkPersistenceStrategy do
     end
   end
 
+  describe '#update' do
+    let(:post) do
+      Post.new.tap do |post|
+        post.id = '123'
+        post.persisted!
+      end
+    end
+
+    before do
+      stub_elasticsearch_bulk(
+        'index' => { '_index' => 'default', '_type' => 'post', '_id' => '123', '_version' => 1, 'ok' => true }
+      )
+    end
+
+    it 'should send update' do
+      Elastictastic.bulk { post.save }
+
+      bulk_requests.should == [
+        { 'index' => { '_index' => 'default', '_type' => 'post', '_id' => '123' }},
+        post.to_elasticsearch_doc
+      ]
+    end
+  end
+
   describe 'destroy' do
     let(:post) do
       Post.new.tap do |post|
