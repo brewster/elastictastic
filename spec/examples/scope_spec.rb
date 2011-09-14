@@ -26,9 +26,11 @@ describe Elastictastic::Scope do
       end
 
       it 'should return all contact documents' do
-        documents = []
-        scope.each { |post| documents << post }
-        documents.map { |doc| doc.id }.should == %w(1 2 3)
+        scope.map { |doc| doc.id }.should == %w(1 2 3)
+      end
+
+      it 'should mark contact documents persisted' do
+        scope.each { |doc| doc.should be_persisted }
       end
 
       describe 'initiating scan search' do
@@ -158,6 +160,10 @@ describe Elastictastic::Scope do
 
       it 'should return all results' do
         scope.map { |post| post.id }.should == (1..101).map(&:to_s)
+      end
+
+      it 'should mark documents persisent' do
+        scope.each { |post| post.should be_persisted }
       end
     end # context 'with sort but no from/size'
   end # describe '#each'
@@ -350,6 +356,10 @@ describe Elastictastic::Scope do
 
     it 'should retrieve first document' do
       Post.first.id.should == '1'
+    end
+
+    it 'should mark document persisted' do
+      Post.first.should be_persisted
     end
 
     it 'should send size param' do

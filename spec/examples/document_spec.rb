@@ -108,7 +108,7 @@ describe Elastictastic::Document do
 
         it 'should inject the error message into the exception' do
           expect(&save).to raise_error { |error|
-            error.message.should == 'document already exists'
+            error.message.should == '[[post][2] [post][1]]: document already exists'
           }
         end
 
@@ -208,7 +208,7 @@ describe Elastictastic::Document do
       end
     end # context 'transient object'
 
-    context 'non-existent persistent object' do
+    context 'non-existent persisted object' do
       let(:post) do
         Post.new.tap do |post|
           post.id = '123'
@@ -234,7 +234,7 @@ describe Elastictastic::Document do
       it 'should return false' do
         @result.should be_false
       end
-    end # describe 'non-existent persistent object'
+    end # describe 'non-existent persisted object'
   end # describe '#destroy'
 
   describe '::destroy_all' do
@@ -331,6 +331,10 @@ describe Elastictastic::Document do
 
       it 'should populate index' do
         post.index.name.should == index
+      end
+
+      it 'should mark document perisistent' do
+        post.should be_persisted
       end
 
       it 'should populate scalar in document' do

@@ -5,11 +5,13 @@ module Elastictastic
     included do
       include Elastictastic::Resource
       include Elastictastic::Persistence
-      extend Elastictastic::Scoped
       extend Elastictastic::Search
+      extend Elastictastic::Scoped
     end
 
     module ClassMethods
+      delegate :scoped, :find_each, :find_in_batches, :first, :count, :empty, :any?, :all, :to => :in_default_index
+
       def new_from_elasticsearch_hit(response)
         allocate.tap do |instance|
           instance.instance_eval do
@@ -43,6 +45,7 @@ module Elastictastic
       def initialize_from_elasticsearch_hit(response)
         @id = response['_id']
         @index = Index.new(response['_index'])
+        persisted!
 
         doc = response['_source'] || Util.unflatten_hash(response['fields'] || {})
 
@@ -56,7 +59,7 @@ module Elastictastic
 
       def index
         return @index if defined? @index
-        @index = Elastictastic.config.default_index
+        @index = Index.default
       end
 
       def persisted?

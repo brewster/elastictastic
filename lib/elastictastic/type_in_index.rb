@@ -1,16 +1,23 @@
 module Elastictastic
   class TypeInIndex
     include Requests
+    include Search
+
     attr_reader :clazz, :index
+
+    delegate :find_each, :find_in_batches, :first, :count, :empty, :any?, :to => :all
 
     def initialize(clazz, index)
       @clazz, @index = clazz, index
     end
 
     def new(*args)
-      @clazz.new(*args).tap do |document|
+      @clazz.allocate.tap do |document|
         index = @index
-        document.instance_eval { @index = index }
+        document.instance_eval do
+          @index = index
+          initialize(*args)
+        end
       end
     end
 
@@ -39,6 +46,15 @@ module Elastictastic
       end
     end
 
+    def scoped(params, index = nil)
+      if @clazz.current_scope
+        @clazz.current_scope.scoped(params)
+      else
+        Scope.new(self, params)
+      end
+    end
+
+    # XXX This doesn't really belong here.
     def search(scope, options = {})
       path = "/#{index}/#{type}/_search"
       request(

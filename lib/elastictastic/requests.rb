@@ -1,6 +1,6 @@
 module Elastictastic
   module Requests
-    ERROR_PATTERN = /^([A-Z][A-Za-z]*).*?:\s*(.*)$/
+    ERROR_PATTERN = /^([A-Z][A-Za-z]*)(?::\s*)?(.*)$/
 
     private
 
