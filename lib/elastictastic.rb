@@ -9,7 +9,6 @@ module Elastictastic
   autoload :Document, 'elastictastic/document'
   autoload :Field, 'elastictastic/field'
   autoload :Index, 'elastictastic/index'
-  autoload :NetHttpTransport, 'elastictastic/net_http_transport'
   autoload :Persistence, 'elastictastic/persistence'
   autoload :Requests, 'elastictastic/requests'
   autoload :Resource, 'elastictastic/resource'
@@ -21,6 +20,10 @@ module Elastictastic
   autoload :TestHelpers, 'elastictastic/test_helpers'
   autoload :TypeInIndex, 'elastictastic/type_in_index'
   autoload :Util, 'elastictastic/util'
+
+  autoload :NetHttpTransport, 'elastictastic/net_http_transport'
+  autoload :LoggingTransport, 'elastictastic/logging_transport'
+  autoload :PatronTransport, 'elastictastic/patron_transport'
 
   class <<self
     attr_writer :config
