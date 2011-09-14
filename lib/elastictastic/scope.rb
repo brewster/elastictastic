@@ -37,6 +37,19 @@ module Elastictastic
       @count
     end
 
+    def empty?
+      count == 0
+    end
+
+    def any?
+      !empty?
+    end
+
+    def first
+      @type_in_index.clazz.scoped(
+        params.merge('from' => 0, 'size' => 1)).to_a.first
+    end
+
     def all_facets
       return @all_facets if defined? @all_facets
       populate_counts

@@ -338,6 +338,37 @@ describe Elastictastic::Scope do
     end # context 'with multi-page search performed'
   end # describe '#all_facets'
 
+  describe '#first' do
+    before do
+      stub_elasticsearch_search(
+        'default', 'post', 'hits' => {
+          'total' => 12,
+          'hits' => make_hits(1)
+        }
+      )
+    end
+
+    it 'should retrieve first document' do
+      Post.first.id.should == '1'
+    end
+
+    it 'should send size param' do
+      Post.first
+      last_request_body['size'].should == 1
+    end
+
+    it 'should send from param' do
+      Post.first
+      last_request_body['from'].should == 0
+    end
+
+    it 'should override from and size param in scope' do
+      Post.from(10).size(10).first
+      last_request_body['from'].should == 0
+      last_request_body['size'].should == 1
+    end
+  end # describe '#first'
+
   def make_hits(count)
     Array.new(count) do |i|
       {

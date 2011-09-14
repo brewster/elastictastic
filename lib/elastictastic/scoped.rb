@@ -1,6 +1,6 @@
 module Elastictastic
   module Scoped
-    delegate :find_each, :find_in_batches, :count, :to => :all
+    delegate :find_each, :find_in_batches, :first, :count, :empty?, :any?, :to => :all
 
     def scoped(params, index = nil)
       if current_scope
