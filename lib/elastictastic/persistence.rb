@@ -25,7 +25,7 @@ module Elastictastic
 
       def elasticsearch_path
         "/#{index}/#{self.class.type}".tap do |path|
-          path << '/' << id if id
+          path << '/' << id.to_s if id
         end
       end
     end
