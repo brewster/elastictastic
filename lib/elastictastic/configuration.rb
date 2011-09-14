@@ -1,6 +1,6 @@
 module Elastictastic
   class Configuration
-    attr_writer :host, :port, :transport, :default_index
+    attr_writer :host, :port, :transport, :default_index, :auto_refresh
 
     def host
       @host ||= 'localhost'
