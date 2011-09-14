@@ -1,8 +1,8 @@
 module Elastictastic
   class PatronTransport
-    def initialize(options = {})
+    def initialize(config)
       @http = Patron::Session.new
-      @http.base_url = URI::HTTP.build(options.symbolize_keys.slice(:host, :port)).to_s
+      @http.base_url = URI::HTTP.build(:host => config.host, :port => config.port).to_s
       @http.timeout = 60
     end
 
