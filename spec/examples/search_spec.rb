@@ -121,4 +121,18 @@ describe Elastictastic::Search do
       named_scope.params['from'].should == 10
     end
   end
+
+  describe 'class methods directly on type-in-index' do
+    let(:named_scope) { Post.in_index('my_index').search_keywords('hey guy') }
+
+    it 'should delegate to class singleton when called on type_in_index' do
+      named_scope.params['query'].should == {
+        'query_string' => { 'query' => 'hey guy', 'fields' => %w(title body) }
+      }
+    end
+
+    it 'should use proper index in scope' do
+      named_scope.index.name.should == 'my_index'
+    end
+  end
 end

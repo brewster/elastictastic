@@ -69,8 +69,8 @@ module Elastictastic
       end
     end
 
-    def _index
-      @index
+    def index
+      @type_in_index.index
     end
 
     def inspect

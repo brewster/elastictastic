@@ -1,11 +1,9 @@
 module Elastictastic
-  class TypeInIndex
+  class TypeInIndex < BasicObject
     include Requests
     include Search
 
     attr_reader :clazz, :index
-
-    delegate :find_each, :find_in_batches, :first, :count, :empty, :any?, :to => :all
 
     def initialize(clazz, index)
       @clazz, @index = clazz, index
@@ -51,6 +49,12 @@ module Elastictastic
         @clazz.current_scope.scoped(params)
       else
         Scope.new(self, params)
+      end
+    end
+
+    def method_missing(method, *args, &block)
+      @clazz.with_scope(all) do
+        @clazz.__send__(method, *args, &block)
       end
     end
 
