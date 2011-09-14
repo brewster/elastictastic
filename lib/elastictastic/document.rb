@@ -10,7 +10,7 @@ module Elastictastic
     end
 
     module ClassMethods
-      delegate :scoped, :find_each, :find_in_batches, :first, :count, :empty, :any?, :all, :to => :in_default_index
+      delegate :scoped, :to => :in_default_index
 
       def new_from_elasticsearch_hit(response)
         allocate.tap do |instance|
