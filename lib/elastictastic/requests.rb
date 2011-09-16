@@ -18,9 +18,9 @@ module Elastictastic
             clazz = Elastictastic::ServerError.const_get(match[1])
             error = clazz.new(match[2])
             error.status = parsed['status']
-            raise error
+            Kernel.raise error
           else
-            raise Elastictastic::ServerError::ServerError, parsed['error']
+            Kernel.raise Elastictastic::ServerError::ServerError, parsed['error']
           end
         end
       end
