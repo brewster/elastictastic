@@ -1,9 +1,11 @@
 module Elastictastic
   module Search
+    include Enumerable
+
     SEARCH_KEYS = %w(query filter from size sort highlight fields script_fields
                      preference facets)
 
-    delegate :find_each, :find_in_batches, :first, :count, :empty, :any?, :to => :all
+    delegate :each, :find_each, :find_in_batches, :first, :count, :empty?, :any?, :to => :all
 
     SEARCH_KEYS.each do |search_key|
       module_eval <<-RUBY
