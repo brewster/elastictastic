@@ -46,7 +46,7 @@ module Elastictastic
     end
 
     def first
-      @type_in_index.clazz.scoped(
+      @type_in_index.scoped(
         params.merge('from' => 0, 'size' => 1)).to_a.first
     end
 

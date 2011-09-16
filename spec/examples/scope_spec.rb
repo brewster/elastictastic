@@ -345,37 +345,72 @@ describe Elastictastic::Scope do
   end # describe '#all_facets'
 
   describe '#first' do
-    before do
-      stub_elasticsearch_search(
-        'default', 'post', 'hits' => {
-          'total' => 12,
-          'hits' => make_hits(1)
-        }
-      )
+    shared_examples_for 'first method' do
+      before do
+        stub_elasticsearch_search(
+          index, 'post', 'hits' => {
+            'total' => 12,
+            'hits' => make_hits(1)
+          }
+        )
+      end
+
+      it 'should retrieve first document' do
+        scope.first.id.should == '1'
+      end
+
+      it 'should mark document persisted' do
+        scope.first.should be_persisted
+      end
+
+      it 'should send size param' do
+        scope.first
+        last_request_body['size'].should == 1
+      end
+
+      it 'should send scope params' do
+        scope.first
+        last_request_body['query'].should == scope.all.params['query']
+      end
+
+      it 'should send from param' do
+        scope.first
+        last_request_body['from'].should == 0
+      end
+
+      it 'should override from and size param in scope' do
+        scope.from(10).size(10).first
+        last_request_body['from'].should == 0
+        last_request_body['size'].should == 1
+      end
     end
 
-    it 'should retrieve first document' do
-      Post.first.id.should == '1'
+    describe 'called on class singleton' do
+      let(:scope) { Post }
+      let(:index) { 'default' }
+
+      it_should_behave_like 'first method'
     end
 
-    it 'should mark document persisted' do
-      Post.first.should be_persisted
+    describe 'called on index proxy' do
+      let(:scope) { Post.in_index('my_index') }
+      let(:index) { 'my_index' }
+
+      it_should_behave_like 'first method'
     end
 
-    it 'should send size param' do
-      Post.first
-      last_request_body['size'].should == 1
+    describe 'called on scope' do
+      let(:scope) { Post.query { match_all }}
+      let(:index) { 'default' }
+
+      it_should_behave_like 'first method'
     end
 
-    it 'should send from param' do
-      Post.first
-      last_request_body['from'].should == 0
-    end
+    describe 'called on scope with index proxy' do
+      let(:scope) { Post.in_index('my_index').query { match_all }}
+      let(:index) { 'my_index' }
 
-    it 'should override from and size param in scope' do
-      Post.from(10).size(10).first
-      last_request_body['from'].should == 0
-      last_request_body['size'].should == 1
+      it_should_behave_like 'first method'
     end
   end # describe '#first'
 
