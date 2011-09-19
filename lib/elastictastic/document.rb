@@ -49,6 +49,9 @@ module Elastictastic
 
         doc = response['_source'] || Util.unflatten_hash(response['fields'] || {})
 
+        if doc.has_key?('_source')
+          doc.merge!(doc.delete('_source'))
+        end
         initialize_from_elasticsearch_doc(doc)
       end
 

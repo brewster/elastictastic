@@ -309,15 +309,6 @@ describe Elastictastic::Document do
       before do
         stub_elasticsearch_get(
           index, 'post', '1',
-          'title' => 'Testy time',
-          'tags' => %w(search lucene),
-          'author' => { 'name' => 'Mat Brown' },
-          'comments' => [
-            { 'body' => 'first comment' },
-            { 'body' => 'lol' }
-          ],
-          'created_at' => '2011-09-12T13:27:16.345Z',
-          'published_at' => 1315848697123
         )
       end
 
@@ -325,12 +316,55 @@ describe Elastictastic::Document do
         post.should be_a(Post)
       end
 
+      it 'should request specified fields if specified' do
+        type_in_index.find(1, :fields => %w(name author.name) )
+        last_request.path.should == "/#{index}/post/1?fields=name%2Cauthor.name"
+      end
+    end # shared_examples_for 'single document'
+
+    context 'with default index' do
+      let(:type_in_index) { Post }
+      let(:post) { Post.find(1) }
+      let(:index) { 'default' }
+
+      it_should_behave_like 'single document lookup'
+    end # context 'with default index'
+
+    context 'with specified index' do
+      let(:type_in_index) { Post.in_index('my_index') }
+      let(:post) { Post.in_index('my_index').find(1) }
+      let(:index) { 'my_index' }
+
+      it_should_behave_like 'single document lookup'
+    end # context 'with specified index'
+  end # describe '::find'
+
+  describe '::new_from_elasticsearch_hit' do
+    context 'with full _source' do
+      let :post do
+        Post.new_from_elasticsearch_hit(
+          '_id' => '1',
+          '_index' => 'my_index',
+          '_source' => {
+            'title' => 'Testy time',
+            'tags' => %w(search lucene),
+            'author' => { 'name' => 'Mat Brown' },
+            'comments' => [
+              { 'body' => 'first comment' },
+              { 'body' => 'lol' }
+            ],
+            'created_at' => '2011-09-12T13:27:16.345Z',
+            'published_at' => 1315848697123
+          }
+        )
+      end
+
       it 'should populate id' do
         post.id.should == '1'
       end
 
       it 'should populate index' do
-        post.index.name.should == index
+        post.index.name.should == 'my_index'
       end
 
       it 'should mark document perisistent' do
@@ -361,27 +395,49 @@ describe Elastictastic::Document do
         post.comments.map { |comment| comment.body }.should ==
           ['first comment', 'lol']
       end
+    end # context 'with full _source'
 
-      it 'should request specified fields if specified' do
-        type_in_index.find(1, :fields => %w(name author.name) )
-        last_request.path.should == "/#{index}/post/1?fields=name%2Cauthor.name"
+    context 'with specified fields' do
+      let(:post) do
+        Post.new_from_elasticsearch_hit(
+          '_id' => '1',
+          '_index' => 'my_index',
+          '_type' => 'post',
+          'fields' => {
+            'title' => 'Get efficient',
+            '_source.comments_count' => 2,
+            '_source.author' => {
+              'id' => '1',
+              'name' => 'Pontificator',
+              'email' => 'pontificator@blogosphere.biz'
+            },
+            '_source.comments' => [{
+              'body' => '#1 fun'
+            }, {
+              'body' => 'good fortune'
+            }]
+          }
+        )
       end
-    end # shared_examples_for 'single document'
 
-    context 'with default index' do
-      let(:type_in_index) { Post }
-      let(:post) { Post.find(1) }
-      let(:index) { 'default' }
+      it 'should populate scalar from stored field' do
+        post.title.should == 'Get efficient'
+      end
 
-      it_should_behave_like 'single document lookup'
-    end # context 'with default index'
+      it 'should populate scalar from _source' do
+        post.comments_count.should == 2
+      end
 
-    context 'with specified index' do
-      let(:type_in_index) { Post.in_index('my_index') }
-      let(:post) { Post.in_index('my_index').find(1) }
-      let(:index) { 'my_index' }
+      it 'should populate single-valued embedded object' do
+        post.author.name.should == 'Pontificator'
+      end
 
-      it_should_behave_like 'single document lookup'
-    end # context 'with specified index'
-  end # describe '::find'
+      it 'should populate multi-valued embedded objects' do
+        post.comments.map { |comment| comment.body }.should == [
+          '#1 fun',
+          'good fortune'
+        ]
+      end
+    end
+  end
 end

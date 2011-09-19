@@ -117,6 +117,7 @@ module Elastictastic
       def initialize_from_elasticsearch_doc(doc)
         return if doc.nil?
         doc.each_pair do |field_name, value|
+          next unless self.class.properties.has_key?(field_name)
           deserialized = Util.call_or_map(value) { |item| deserialize_value(field_name, item) }
           instance_variable_set(:"@#{field_name}", deserialized)
         end
