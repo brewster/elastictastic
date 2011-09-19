@@ -46,7 +46,7 @@ module Elastictastic
     def stub_elasticsearch_get(index, type, id, doc = {})
       FakeWeb.register_uri(
         :get,
-        TestHelpers.uri_for_path("/#{index}/#{type}/#{id}"),
+        /^#{Regexp.escape(TestHelpers.uri_for_path("/#{index}/#{type}/#{id}").to_s)}/,
         :body => {
           'ok' => true,
           '_index' => index,

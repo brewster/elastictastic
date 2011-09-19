@@ -361,17 +361,24 @@ describe Elastictastic::Document do
         post.comments.map { |comment| comment.body }.should ==
           ['first comment', 'lol']
       end
+
+      it 'should request specified fields if specified' do
+        type_in_index.find(1, :fields => %w(name author.name) )
+        last_request.path.should == "/#{index}/post/1?fields=name%2Cauthor.name"
+      end
     end # shared_examples_for 'single document'
 
     context 'with default index' do
-      let(:post) { Post.find('1') }
+      let(:type_in_index) { Post }
+      let(:post) { Post.find(1) }
       let(:index) { 'default' }
 
       it_should_behave_like 'single document lookup'
     end # context 'with default index'
 
     context 'with specified index' do
-      let(:post) { Post.in_index('my_index').find('1') }
+      let(:type_in_index) { Post.in_index('my_index') }
+      let(:post) { Post.in_index('my_index').find(1) }
       let(:index) { 'my_index' }
 
       it_should_behave_like 'single document lookup'

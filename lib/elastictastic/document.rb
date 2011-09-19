@@ -4,8 +4,8 @@ module Elastictastic
 
     included do
       include Elastictastic::Resource
+      extend Elastictastic::Search # needs to go before Elastictastic::Persistence
       include Elastictastic::Persistence
-      extend Elastictastic::Search
       extend Elastictastic::Scoped
     end
 

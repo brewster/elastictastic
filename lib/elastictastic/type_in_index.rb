@@ -31,8 +31,12 @@ module Elastictastic
       @clazz.type
     end
 
-    def find(id)
-      data = request :get, "/#{index}/#{type}/#{id}"
+    def find(id, options = {})
+      params = {}
+      if options[:fields]
+        params[:fields] = Array(options[:fields]).join(',')
+      end
+      data = request :get, "/#{index}/#{type}/#{id}", params
       return nil if data['exists'] == false
       case data['status']
       when nil
