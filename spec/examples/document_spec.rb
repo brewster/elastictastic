@@ -439,5 +439,31 @@ describe Elastictastic::Document do
         ]
       end
     end
+
+    describe 'with missing values for requested fields' do
+      let(:post) do
+        Post.new_from_elasticsearch_hit(
+          '_id' => '1',
+          '_index' => 'my_index',
+          'fields' => {
+            'title' => nil,
+            'author.name' => nil,
+            '_source.comments' => nil
+          }
+        )
+      end
+
+      it 'should set scalar from stored field to nil' do
+        post.title.should be_nil
+      end
+
+      it 'should set embedded field to nil' do
+        post.author.should be_nil
+      end
+
+      it 'should set object field from source ot nil' do
+        post.comments.should be_nil
+      end
+    end
   end
 end
