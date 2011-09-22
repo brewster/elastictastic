@@ -136,6 +136,12 @@ module Elastictastic
             value.to_i
           when 'float', 'double'
             value.to_f
+          when 'geo_point'
+            if Hash === value
+              value
+            else
+              value.to_f
+            end
           when 'boolean'
             !!value
           else
