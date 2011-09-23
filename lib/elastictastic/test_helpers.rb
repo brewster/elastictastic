@@ -57,6 +57,28 @@ module Elastictastic
       )
     end
 
+    def stub_elasticsearch_mget(index, type, *ids)
+      path = index ? "/#{index}/#{type}/_mget" : "/_mget"
+      docs = ids.map do |id|
+        id, index = *id if Array === id
+        {
+          '_index' => index,
+          '_type' => type,
+          '_id' => id,
+          'exists' => true,
+          '_source' => {}
+        }
+      end
+
+      FakeWeb.register_uri(
+        :post,
+        TestHelpers.uri_for_path(path).to_s,
+        :body => {
+          'docs' => docs
+        }.to_json
+      )
+    end
+
     def stub_elasticsearch_destroy(index, type, id, options = {})
       FakeWeb.register_uri(
         :delete,

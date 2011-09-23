@@ -31,7 +31,16 @@ module Elastictastic
       @clazz.type
     end
 
-    def find(id, options = {})
+    def find(*args)
+      options = args.extract_options!
+      if args.length == 1
+        find_one(args.first, options)
+      else
+        find_many(args, options)
+      end
+    end
+
+    def find_one(id, options = {})
       params = {}
       if options[:fields]
         params[:fields] = Array(options[:fields]).join(',')
@@ -45,6 +54,18 @@ module Elastictastic
         nil
       else
         raise data['error'] || "Unexpected response from ElasticSearch: #{data.inspect}"
+      end
+    end
+
+    def find_many(ids, options = {})
+      docs = ids.map do |id|
+        { '_id' => id }.tap do |identifier|
+          identifier['fields'] = Array(options[:fields]) if options[:fields]
+        end
+      end
+      data = request :post, "/#{index}/#{type}/_mget", { 'docs' => docs }.to_json
+      data['docs'].map do |hit|
+        @clazz.new_from_elasticsearch_hit(hit)
       end
     end
 

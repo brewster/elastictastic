@@ -4,6 +4,7 @@ describe Elastictastic::Document do
   include Elastictastic::TestHelpers
 
   let(:last_request) { FakeWeb.last_request }
+  let(:last_request_body) { JSON.parse(last_request.body) }
 
   describe 'elasticsearch_path' do
     let(:path) { post.elasticsearch_path }
@@ -322,12 +323,115 @@ describe Elastictastic::Document do
       end
     end # shared_examples_for 'single document'
 
+    shared_examples_for 'multi document single index lookup' do
+
+      before do
+        stub_elasticsearch_mget(index, 'post', '1', '2')
+        posts
+      end
+
+      context 'with no options' do
+        let(:posts) { type_in_index.find('1', '2') }
+
+        it 'should send request to index multiget endpoint' do
+          last_request.path.should == "/#{index}/post/_mget"
+        end
+
+        it 'should ask for IDs' do
+          last_request_body.should == {
+            'docs' => [{ '_id' => '1'}, { '_id' => '2' }]
+          }
+        end
+
+        it 'should return documents' do
+          posts.map { |post| post.id }.should == %w(1 2)
+        end
+      end # context 'with no options'
+
+      context 'with fields option provided' do
+        let(:posts) { type_in_index.find('1', '2', :fields => 'title') }
+
+        it 'should send fields with each id' do
+          last_request_body.should == {
+            'docs' => [
+              { '_id' => '1', 'fields' => %w(title) },
+              { '_id' => '2', 'fields' => %w(title) }
+            ]
+          }
+        end
+      end
+
+    end # shared_examples_for 'multi document single index lookup'
+
     context 'with default index' do
       let(:type_in_index) { Post }
       let(:post) { Post.find(1) }
       let(:index) { 'default' }
 
       it_should_behave_like 'single document lookup'
+      it_should_behave_like 'multi document single index lookup'
+
+      describe 'multi-index multi-get' do
+        before do
+          stub_elasticsearch_mget(
+            nil,
+            nil,
+            ['1', 'default'], ['2', 'my_index'], ['3', 'my_index']
+          )
+          posts
+        end
+
+        describe 'with no options' do
+          let(:posts) { Post.find('default' => '1', 'my_index' => %w(2 3)) }
+
+          it 'should send request to base path' do
+            last_request.path.should == '/_mget'
+          end
+
+          it 'should request ids with type and index' do
+            last_request_body.should == {
+              'docs' => [{
+                '_id' => '1',
+                '_type' => 'post',
+                '_index' => 'default'
+              }, {
+                '_id' => '2',
+                '_type' => 'post',
+                '_index' => 'my_index'
+              }, {
+                '_id' => '3',
+                '_type' => 'post',
+                '_index' => 'my_index'
+              }]
+            }
+          end
+        end # context 'with no options' 
+
+        context 'with fields specified' do
+          let(:posts) { Post.find({ 'default' => '1', 'my_index' => %w(2 3) }, :fields => 'title' ) }
+
+          it 'should inject fields into each identifier' do
+            last_request_body.should == {
+              'docs' => [{
+                '_id' => '1',
+                '_type' => 'post',
+                '_index' => 'default',
+                'fields' => %w(title)
+              }, {
+                '_id' => '2',
+                '_type' => 'post',
+                '_index' => 'my_index',
+                'fields' => %w(title)
+              }, {
+                '_id' => '3',
+                '_type' => 'post',
+                '_index' => 'my_index',
+                'fields' => %w(title)
+              }]
+            }
+          end
+        end
+      end # describe 'multi-index multi-get'
     end # context 'with default index'
 
     context 'with specified index' do
@@ -336,6 +440,7 @@ describe Elastictastic::Document do
       let(:index) { 'my_index' }
 
       it_should_behave_like 'single document lookup'
+      it_should_behave_like 'multi document single index lookup'
     end # context 'with specified index'
   end # describe '::find'
 
