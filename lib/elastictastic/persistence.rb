@@ -3,8 +3,6 @@ module Elastictastic
     extend ActiveSupport::Concern
 
     module ClassMethods
-      include Requests
-
       delegate :destroy_all, :sync_mapping, :to => :in_default_index
 
       def find(*args)
@@ -27,7 +25,7 @@ module Elastictastic
             doc['fields'] = Array(options[:fields]) if options[:fields]
           end
         end
-        request :post, '/_mget', { 'docs' => docs }.to_json
+        Elastictastic.client.mget(docs)
       end
     end
     

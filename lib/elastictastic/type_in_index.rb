@@ -1,6 +1,5 @@
 module Elastictastic
   class TypeInIndex < BasicObject
-    include Requests
     include Search
 
     attr_reader :clazz, :index
@@ -20,11 +19,11 @@ module Elastictastic
     end
 
     def destroy_all
-      request :delete, "/#{index}/#{type}"
+      ::Elastictastic.client.delete(index, type)
     end
 
     def sync_mapping
-      request :put, "/#{index}/#{type}/_mapping", @clazz.mapping.to_json
+      ::Elastictastic.client.put_mapping(index, type, @clazz.mapping)
     end
 
     def type
@@ -45,7 +44,7 @@ module Elastictastic
       if options[:fields]
         params[:fields] = Array(options[:fields]).join(',')
       end
-      data = request :get, "/#{index}/#{type}/#{id}", params
+      data = ::Elastictastic.client.get(index, type, id, params)
       return nil if data['exists'] == false
       case data['status']
       when nil
@@ -58,12 +57,12 @@ module Elastictastic
     end
 
     def find_many(ids, options = {})
-      docs = ids.map do |id|
+      docspec = ids.map do |id|
         { '_id' => id }.tap do |identifier|
           identifier['fields'] = Array(options[:fields]) if options[:fields]
         end
       end
-      data = request :post, "/#{index}/#{type}/_mget", { 'docs' => docs }.to_json
+      data = ::Elastictastic.client.mget(docspec, index, type)
       data['docs'].map do |hit|
         @clazz.new_from_elasticsearch_hit(hit)
       end
@@ -81,25 +80,6 @@ module Elastictastic
       @clazz.with_scope(all) do
         @clazz.__send__(method, *args, &block)
       end
-    end
-
-    # XXX This doesn't really belong here.
-    def search(scope, options = {})
-      path = "/#{index}/#{type}/_search"
-      request(
-        :post,
-        "#{path}?#{options.to_query}",
-        scope.params.to_json
-      )
-    end
-
-    # XXX This doesn't really belong here.
-    def scroll(id, options = {})
-      request(
-        :post,
-        "/_search/scroll?#{options.to_query}",
-        id
-      )
     end
   end
 end

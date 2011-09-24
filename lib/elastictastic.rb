@@ -2,15 +2,15 @@ require 'active_support/core_ext'
 require 'elastictastic/errors'
 
 module Elastictastic
-
   autoload :BulkPersistenceStrategy, 'elastictastic/bulk_persistence_strategy'
+  autoload :Client, 'elastictastic/client'
   autoload :Configuration, 'elastictastic/configuration'
   autoload :DiscretePersistenceStrategy, 'elastictastic/discrete_persistence_strategy'
   autoload :Document, 'elastictastic/document'
   autoload :Field, 'elastictastic/field'
   autoload :Index, 'elastictastic/index'
+  autoload :Middleware, 'elastictastic/middleware'
   autoload :Persistence, 'elastictastic/persistence'
-  autoload :Requests, 'elastictastic/requests'
   autoload :Resource, 'elastictastic/resource'
   autoload :Scope, 'elastictastic/scope'
   autoload :ScopeBuilder, 'elastictastic/scope_builder'
@@ -21,23 +21,15 @@ module Elastictastic
   autoload :TypeInIndex, 'elastictastic/type_in_index'
   autoload :Util, 'elastictastic/util'
 
-  autoload :NetHttpTransport, 'elastictastic/net_http_transport'
-  autoload :LoggingTransport, 'elastictastic/logging_transport'
-  autoload :PatronTransport, 'elastictastic/patron_transport'
-
   class <<self
     attr_writer :config
 
     def config
-      @config ||= Elastictastic::Configuration.new
+      @config ||= Configuration.new
     end
 
-    def transport=(transport)
-      Thread.current['Elastictastic::transport'] = transport
-    end
-
-    def transport
-      Thread.current['Elastictastic::transport'] ||= new_transport
+    def client
+      Thread.current['Elastictastic::client'] ||= Client.new(config)
     end
 
     def persister=(persister)

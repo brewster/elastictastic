@@ -83,11 +83,19 @@ module Elastictastic
       @params = Util.deep_merge(@params, Util.deep_stringify(params))
     end
 
+    def search(search_params = {})
+      ::Elastictastic.client.search(
+        @type_in_index.index,
+        @type_in_index.type,
+        params,
+        search_params
+      )
+    end
+
     private
 
     def search_all
-      response = @type_in_index.search(self, :search_type => 'query_then_fetch')
-
+      response = search(:search_type => 'query_then_fetch')
       populate_counts(response)
       response['hits']['hits'].map do |hit|
         @type_in_index.clazz.new_from_elasticsearch_hit(hit)
@@ -99,7 +107,7 @@ module Elastictastic
       scope_with_size = self.size(size)
       begin
         scope = scope_with_size.from(from)
-        response = @type_in_index.search(scope, :search_type => 'query_then_fetch')
+        response = scope.search(:search_type => 'query_then_fetch')
         populate_counts(response)
         results = response['hits']['hits'].map do |hit|
           @type_in_index.clazz.new_from_elasticsearch_hit(hit)
@@ -117,13 +125,18 @@ module Elastictastic
         :scroll => "#{batch_options[:ttl] || 60}s",
         :size => batch_options[:batch_size] || 100
       }
-      scan_response = @type_in_index.search(
-        self, scroll_options.merge(:search_type => 'scan'))
+      scan_response = ::Elastictastic.client.search(
+        @type_in_index.index,
+        @type_in_index.type,
+        params,
+        scroll_options.merge(:search_type => 'scan')
+      )
+
       @count = scan_response['hits']['total']
       scroll_id = scan_response['_scroll_id']
 
       begin
-        response = @type_in_index.scroll(scroll_id, scroll_options.slice(:scroll))
+        response = ::Elastictastic.client.scroll(scroll_id, scroll_options.slice(:scroll))
         scroll_id = response['_scroll_id']
         docs = response['hits']['hits'].map do |hit|
           @type_in_index.clazz.new_from_elasticsearch_hit(hit)
@@ -133,7 +146,7 @@ module Elastictastic
     end
 
     def populate_counts(response = nil)
-      response ||= @type_in_index.search(self, :search_type => 'count')
+      response ||= search(:search_type => 'count')
       @count ||= response['hits']['total']
       if response['facets']
         @all_facets ||= ::Hashie::Mash.new(response['facets'])

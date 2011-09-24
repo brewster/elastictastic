@@ -2,8 +2,6 @@ require 'stringio'
 
 module Elastictastic
   class BulkPersistenceStrategy
-    include Requests
-
     def initialize
       @buffer = StringIO.new
       @handlers = []
@@ -35,9 +33,9 @@ module Elastictastic
     def flush
       return if @buffer.length.zero?
 
-      path = '/_bulk'
-      path << '?refresh=true' if Elastictastic.config.auto_refresh
-      response = request :post, path, @buffer.string
+      params = {}
+      params[:refresh] = true if Elastictastic.config.auto_refresh
+      response = Elastictastic.client.bulk(@buffer.string, params)
 
       response['items'].each_with_index do |op_response, i|
         handler = @handlers[i]
