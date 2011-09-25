@@ -63,7 +63,7 @@ module Elastictastic
         @app.call(env).on_complete do
           method = env[:method].to_s.upcase
           time = ((Time.now - now) * 1000).to_i
-          message = "ElasticSearch #{method} (#{time}ms) #{env[:url]}"
+          message = "ElasticSearch #{method} (#{time}ms) #{env[:url].path}"
           message << ' ' << body if body
           @logger.debug(message)
         end
