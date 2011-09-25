@@ -10,6 +10,9 @@ module Elastictastic
         builder.use Middleware::RaiseServerErrors
         builder.use Middleware::JsonEncodeBody
         builder.use Middleware::JsonDecodeResponse
+        if config.logger
+          builder.use Middleware::LogRequests, config.logger
+        end
         builder.adapter config.transport.to_sym
       end
     end

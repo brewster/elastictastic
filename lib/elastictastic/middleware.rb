@@ -1,3 +1,5 @@
+require 'faraday'
+
 module Elastictastic
   module Middleware
     class JsonEncodeBody < Faraday::Middleware
@@ -45,6 +47,25 @@ module Elastictastic
           Kernel.raise error
         else
           Kernel.raise Elastictastic::ServerError::ServerError, server_message
+        end
+      end
+    end
+
+    class LogRequests < Faraday::Middleware
+      def initialize(app, logger)
+        super(app)
+        @logger = logger
+      end
+
+      def call(env)
+        now = Time.now
+        body = env[:body]
+        @app.call(env).on_complete do
+          method = env[:method].to_s.upcase
+          time = ((Time.now - now) * 1000).to_i
+          message = "ElasticSearch #{method} (#{time}ms) #{env[:url]}"
+          message << ' ' << body if body
+          @logger.debug(message)
         end
       end
     end
