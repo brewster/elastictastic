@@ -1,18 +1,18 @@
 module Elastictastic
   class Configuration
-    attr_writer :host, :port, :transport, :default_index, :auto_refresh
+    attr_writer :hosts, :adapter, :default_index, :auto_refresh
     attr_accessor :logger
 
-    def host
-      @host ||= 'localhost'
+    def host=(host)
+      @hosts = [host]
     end
 
-    def port
-      @port ||= 9200
+    def hosts
+      @hosts ||= ['http://localhost:9200']
     end
 
-    def transport
-      @transport ||= 'net_http'
+    def adapter
+      @adapter ||= :net_http
     end
 
     def default_index

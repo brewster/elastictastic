@@ -5,15 +5,22 @@ module Elastictastic
     attr_reader :connection
 
     def initialize(config)
-      uri = URI::HTTP.build(:host => config.host, :port => config.port)
-      @connection = Faraday.new(:url => uri.to_s) do |builder|
+      builder = Faraday::Builder.new do |builder|
         builder.use Middleware::RaiseServerErrors
         builder.use Middleware::JsonEncodeBody
         builder.use Middleware::JsonDecodeResponse
         if config.logger
           builder.use Middleware::LogRequests, config.logger
         end
-        builder.adapter config.transport.to_sym
+      end
+      if config.hosts.length == 1
+        builder.adapter config.adapter
+        @connection =
+          Faraday.new(:url => config.hosts.first, :builder => builder)
+      else
+        builder.use Middleware::Rotor, *config.hosts
+        builder.adapter config.adapter
+        @connection = Faraday.new(:builder => builder)
       end
     end
 

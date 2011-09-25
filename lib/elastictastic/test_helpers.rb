@@ -166,11 +166,7 @@ module Elastictastic
     end
 
     def self.uri_for_path(path)
-      URI::HTTP.build(
-        :host => Elastictastic.config.host,
-        :port => Elastictastic.config.port,
-        :path => path
-      )
+      "#{Elastictastic.config.hosts.first}#{path}"
     end
   end
 end
