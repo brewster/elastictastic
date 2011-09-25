@@ -25,7 +25,9 @@ module Elastictastic
             doc['fields'] = Array(options[:fields]) if options[:fields]
           end
         end
-        Elastictastic.client.mget(docs)
+        new_from_elasticsearch_hits(
+          Elastictastic.client.mget(docs)['docs']
+        )
       end
     end
     

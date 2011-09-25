@@ -12,10 +12,18 @@ module Elastictastic
     module ClassMethods
       delegate :scoped, :to => :in_default_index
 
-      def new_from_elasticsearch_hit(response)
+      def new_from_elasticsearch_hit(hit)
         allocate.tap do |instance|
           instance.instance_eval do
-            initialize_from_elasticsearch_hit(response)
+            initialize_from_elasticsearch_hit(hit)
+          end
+        end
+      end
+
+      def new_from_elasticsearch_hits(hits)
+        [].tap do |docs|
+          hits.each do |hit|
+            docs << new_from_elasticsearch_hit(hit) unless hit['exists'] == false
           end
         end
       end

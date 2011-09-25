@@ -62,10 +62,9 @@ module Elastictastic
           identifier['fields'] = Array(options[:fields]) if options[:fields]
         end
       end
-      data = ::Elastictastic.client.mget(docspec, index, type)
-      data['docs'].map do |hit|
-        @clazz.new_from_elasticsearch_hit(hit)
-      end
+      @clazz.new_from_elasticsearch_hits(
+        ::Elastictastic.client.mget(docspec, index, type)['docs']
+      )
     end
 
     def scoped(params, index = nil)

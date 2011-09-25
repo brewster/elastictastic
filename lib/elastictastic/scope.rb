@@ -97,26 +97,21 @@ module Elastictastic
     def search_all
       response = search(:search_type => 'query_then_fetch')
       populate_counts(response)
-      response['hits']['hits'].map do |hit|
-        @type_in_index.clazz.new_from_elasticsearch_hit(hit)
-      end
+      @type_in_index.clazz.new_from_elasticsearch_hits(response['hits']['hits'])
     end
 
     def search_in_batches(&block)
-      from, size, result_count = 0, 100, 0
+      from, size = 0, 100
       scope_with_size = self.size(size)
       begin
         scope = scope_with_size.from(from)
         response = scope.search(:search_type => 'query_then_fetch')
         populate_counts(response)
-        results = response['hits']['hits'].map do |hit|
-          @type_in_index.clazz.new_from_elasticsearch_hit(hit)
-        end
-        yield(results)
+        yield(@type_in_index.clazz.new_from_elasticsearch_hits(
+          response['hits']['hits']))
         from += size
-        result_count += results.length
         @count ||= scope.count
-      end while result_count < @count
+      end while from < @count
     end
 
     def scan_in_batches(batch_options, &block)

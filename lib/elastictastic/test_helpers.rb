@@ -52,21 +52,26 @@ module Elastictastic
           '_index' => index,
           '_type' => type,
           '_id' => id,
-          '_source' => doc
+          '_source' => doc,
+          'exists' => !doc.nil?
         }.to_json
       )
     end
 
     def stub_elasticsearch_mget(index, type, *ids)
+      given_ids_with_docs = ids.extract_options!
+      ids_with_docs = {}
+      ids.each { |id| ids_with_docs[id] = {} }
+      ids_with_docs.merge!(given_ids_with_docs)
       path = index ? "/#{index}/#{type}/_mget" : "/_mget"
-      docs = ids.map do |id|
+      docs = ids_with_docs.each_pair.map do |id, doc|
         id, index = *id if Array === id
         {
           '_index' => index,
           '_type' => type,
           '_id' => id,
-          'exists' => true,
-          '_source' => {}
+          'exists' => !!doc,
+          '_source' => doc
         }
       end
 

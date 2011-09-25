@@ -307,19 +307,31 @@ describe Elastictastic::Document do
   describe '::find' do
 
     shared_examples_for 'single document lookup' do
-      before do
-        stub_elasticsearch_get(
-          index, 'post', '1',
-        )
+      context 'when document is found' do
+        before do
+          stub_elasticsearch_get(
+            index, 'post', '1',
+          )
+        end
+
+        it 'should return post instance' do
+          post.should be_a(Post)
+        end
+
+        it 'should request specified fields if specified' do
+          type_in_index.find(1, :fields => %w(name author.name) )
+          last_request.path.should == "/#{index}/post/1?fields=name%2Cauthor.name"
+        end
       end
 
-      it 'should return post instance' do
-        post.should be_a(Post)
-      end
+      context 'when document is not found' do
+        before do
+          stub_elasticsearch_get(index, 'post', '1', nil)
+        end
 
-      it 'should request specified fields if specified' do
-        type_in_index.find(1, :fields => %w(name author.name) )
-        last_request.path.should == "/#{index}/post/1?fields=name%2Cauthor.name"
+        it 'should return nil' do
+          type_in_index.find(1).should be_nil
+        end
       end
     end # shared_examples_for 'single document'
 
@@ -360,7 +372,6 @@ describe Elastictastic::Document do
           }
         end
       end
-
     end # shared_examples_for 'multi document single index lookup'
 
     context 'with default index' do
@@ -405,6 +416,15 @@ describe Elastictastic::Document do
               }]
             }
           end
+
+          it 'should return docs with IDs' do
+            posts.map(&:id).should == %w(1 2 3)
+          end
+
+          it 'should set proper indices' do
+            posts.map { |post| post.index.name }.should ==
+              %w(default my_index my_index)
+          end
         end # context 'with no options' 
 
         context 'with fields specified' do
@@ -432,6 +452,18 @@ describe Elastictastic::Document do
           end
         end
       end # describe 'multi-index multi-get'
+
+      context 'when documents are missing' do
+        let(:posts) { Post.find('1', '2') }
+
+        before do
+          stub_elasticsearch_mget('default', 'post', '1' => {}, '2' => nil)
+        end
+
+        it 'should only return docs that exist' do
+          posts.map(&:id).should == ['1']
+        end
+      end
     end # context 'with default index'
 
     context 'with specified index' do
