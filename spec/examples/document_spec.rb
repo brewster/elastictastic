@@ -322,6 +322,12 @@ describe Elastictastic::Document do
           type_in_index.find(1, :fields => %w(name author.name) )
           last_request.path.should == "/#{index}/post/1?fields=name%2Cauthor.name"
         end
+
+        it 'should return an array if id is passed in single-element array' do
+          posts = type_in_index.find([1])
+          posts.should be_a(Array)
+          posts.first.id.should == '1'
+        end
       end
 
       context 'when document is not found' do
@@ -368,6 +374,19 @@ describe Elastictastic::Document do
             'docs' => [
               { '_id' => '1', 'fields' => %w(title) },
               { '_id' => '2', 'fields' => %w(title) }
+            ]
+          }
+        end
+      end
+
+      context 'with multi-element array passed' do
+        let(:posts) { type_in_index.find(%w(1 2)) }
+
+        it 'should request listed elements' do
+          last_request_body.should == {
+            'docs' => [
+              { '_id' => '1' },
+              { '_id' => '2' }
             ]
           }
         end

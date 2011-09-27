@@ -32,8 +32,11 @@ module Elastictastic
 
     def find(*args)
       options = args.extract_options!
+      force_array = ::Array === args.first
+      args = args.flatten
       if args.length == 1
-        find_one(args.first, options)
+        instance = find_one(args.first, options)
+        force_array ? [instance] : instance
       else
         find_many(args, options)
       end
