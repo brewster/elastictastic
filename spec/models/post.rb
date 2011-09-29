@@ -9,8 +9,8 @@ class Post
   field :created_at, :type => 'date'
   field :published_at, :type => 'date'
 
-  embed :author, Author
-  embed :comments, Comment
+  embed :author
+  embed :comments
 
   def self.search_keywords(keywords)
     query do

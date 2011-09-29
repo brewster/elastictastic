@@ -93,14 +93,14 @@ macro:
 class Post
   include Elastictastic::Document
 
-  embed :author, Author
+  embed :author
+  embed :recent_comments, :class_name => 'Comment' 
 end
 ```
 
-The second argument is the model class you intend to embed; this model class
-should include the `Elastictastic::Resource` mixin, which exposes the same
-configuration DSL as `Elastictastic::Document` but does not give the class the
-functionality of a top-level persistent object:
+The class that's embedded should include the `Elastictastic::Resource` mixin,
+which exposes the same configuration DSL as `Elastictastic::Document` but does
+not give the class the functionality of a top-level persistent object:
 
 ```ruby
 class Author
@@ -116,7 +116,7 @@ end
 All `Elastictastic::Document` models have an `id` and an `index` field, which
 combine to define the full resource locator for the document in ElasticSearch.
 You should not define fields or methods with these names. You may, however, set
-one or both values explicitly on new (not yet saved) model instances.
+the id explicitly on new (not yet saved) model instances.
 
 ## Persistence ##
 
@@ -131,7 +131,7 @@ post.save
 To retrieve a document from the data store, use `get`:
 
 ```ruby
-Post.get('123')
+Post.find('123')
 ```
 
 ### Specifying the index ###
@@ -143,7 +143,7 @@ change this using the `default_index` configuration key.
 
 To persist a document to an index other than the default, set the `index`
 attribute on the model; to retrieve a document from a non-default index, use
-the `index` method:
+the `in_index` method:
 
 ```ruby
 new_post = Post.in_index('my_special_index').new # create in an index
@@ -156,7 +156,9 @@ If you wish to retrieve multiple documents from the same index, pass all
 the IDs into the `get` method:
 
 ```ruby
-Post.get('123', '456', '789')
+Post.find('123', '456', '789')
+Post.find(['123', '456', '789']) # this is fine too
+Post.find(['123']) # returns a one-element array
 ```
 
 To retrieve documents from multiple indices at the same time, pass a hash into

@@ -43,8 +43,15 @@ module Elastictastic
         end
       end
 
+      def field_properties
+        @field_properties ||= {}
+      end
+
       def properties
-        @properties ||= {}
+        embeds.values.inject(field_properties) do |properties, embed|
+          debugger if embed.is_a?(Array)
+          properties.merge(embed.properties)
+        end.freeze
       end
 
       def properties_for_field(field_name)
@@ -61,33 +68,31 @@ module Elastictastic
         field_names.each do |field_name|
           attr_accessor(field_name)
 
-          properties[field_name.to_s] =
+          field_properties[field_name.to_s] =
             Field.process(field_name, options, &block)
         end
       end
 
       def embed(*embed_names)
-        clazz = embed_names.pop
+        options = embed_names.extract_options!
 
         embed_names.each do |embed_name|
+          embed_name = embed_name.to_s
+          embed = Embed.new(embed_name, options[:class_name])
+
           attr_reader(embed_name)
           module_eval <<-RUBY
             def #{embed_name}=(value)
               Util.call_or_each(value) do |check_value|
-                unless check_value.nil? || check_value.is_a?(#{clazz.name})
-                  raise TypeError, "Expected instance of class #{clazz.name}; got \#{check_value.inspect}"
+                unless check_value.nil? || check_value.is_a?(#{embed.class_name})
+                  raise TypeError, "Expected instance of class #{embed.class_name}; got \#{check_value.inspect}"
                 end
               end
               @#{embed_name} = value
             end
           RUBY
 
-          embed_name = embed_name.to_s
-
-          properties[embed_name] = {
-            'properties' => clazz.properties
-          }
-          embeds[embed_name] = clazz
+          embeds[embed_name] = embed
         end
       end
     end
@@ -146,9 +151,9 @@ module Elastictastic
 
       def deserialize_value(field_name, value)
         return nil if value.nil?
-        embed_class = self.class.embeds[field_name]
-        if embed_class
-          embed_class.new_from_elasticsearch_doc(value)
+        embed = self.class.embeds[field_name]
+        if embed
+          embed.clazz.new_from_elasticsearch_doc(value)
         elsif self.class.properties_for_field(field_name)['type'].to_s == 'date'
           if value.is_a? Fixnum
             sec, usec = value / 1000, (value % 1000) * 1000

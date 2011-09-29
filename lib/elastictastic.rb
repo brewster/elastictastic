@@ -7,6 +7,7 @@ module Elastictastic
   autoload :Configuration, 'elastictastic/configuration'
   autoload :DiscretePersistenceStrategy, 'elastictastic/discrete_persistence_strategy'
   autoload :Document, 'elastictastic/document'
+  autoload :Embed, 'elastictastic/embed'
   autoload :Field, 'elastictastic/field'
   autoload :Index, 'elastictastic/index'
   autoload :Middleware, 'elastictastic/middleware'
