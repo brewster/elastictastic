@@ -29,7 +29,9 @@ module Elastictastic
       end
 
       def mapping
-        { type => { 'properties' => properties }}
+        { type => { 'properties' => properties }}.tap do |mapping|
+          mapping[type]['_parent'] = { 'type' => @parent.clazz.type } if @parent
+        end
       end
 
       def type
@@ -38,6 +40,20 @@ module Elastictastic
 
       def in_index(name_or_index)
         TypeInIndex.new(self, Elastictastic::Index(name_or_index))
+      end
+
+      def belongs_to(parent_name, options = {})
+        @parent = Association.new(parent_name, options)
+
+        module_eval(<<-RUBY, __FILE__, __LINE__+1)
+          def #{parent_name}
+            @_parent
+          end
+
+          def #{parent_name}=(parent)
+            @_parent = parent
+          end
+        RUBY
       end
 
       private
@@ -49,6 +65,7 @@ module Elastictastic
 
     module InstanceMethods
       attr_reader :id
+      attr_accessor :_parent #:nodoc:
 
       def initialize_from_elasticsearch_hit(response)
         @id = response['_id']

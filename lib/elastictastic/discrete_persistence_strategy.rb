@@ -8,6 +8,7 @@ module Elastictastic
 
     def create(doc, params = {})
       params[:refresh] = true if Elastictastic.config.auto_refresh
+      params[:parent] = doc._parent.id if doc._parent
       response = Elastictastic.client.create(doc.index, doc.class.type, doc.id, doc.to_elasticsearch_doc, params)
       doc.id = response['_id']
       doc.persisted!

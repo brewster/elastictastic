@@ -19,7 +19,7 @@ module Elastictastic
 
       FakeWeb.register_uri(
         method,
-        TestHelpers.uri_for_path(path),
+        /^#{Regexp.escape(TestHelpers.uri_for_path(path))}/,
         options.reverse_merge(:body => {
           'ok' => 'true',
           '_index' => index,

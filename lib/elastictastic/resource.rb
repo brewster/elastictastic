@@ -49,9 +49,9 @@ module Elastictastic
 
       def properties
         embeds.values.inject(field_properties) do |properties, embed|
-          debugger if embed.is_a?(Array)
-          properties.merge(embed.properties)
-        end.freeze
+          properties.merge(
+            embed.name => { 'properties' => embed.clazz.properties })
+        end
       end
 
       def properties_for_field(field_name)
@@ -78,7 +78,7 @@ module Elastictastic
 
         embed_names.each do |embed_name|
           embed_name = embed_name.to_s
-          embed = Embed.new(embed_name, options[:class_name])
+          embed = Association.new(embed_name, options)
 
           attr_reader(embed_name)
           module_eval <<-RUBY

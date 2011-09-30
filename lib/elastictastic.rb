@@ -2,12 +2,12 @@ require 'active_support/core_ext'
 require 'elastictastic/errors'
 
 module Elastictastic
+  autoload :Association, 'elastictastic/association'
   autoload :BulkPersistenceStrategy, 'elastictastic/bulk_persistence_strategy'
   autoload :Client, 'elastictastic/client'
   autoload :Configuration, 'elastictastic/configuration'
   autoload :DiscretePersistenceStrategy, 'elastictastic/discrete_persistence_strategy'
   autoload :Document, 'elastictastic/document'
-  autoload :Embed, 'elastictastic/embed'
   autoload :Field, 'elastictastic/field'
   autoload :Index, 'elastictastic/index'
   autoload :Middleware, 'elastictastic/middleware'

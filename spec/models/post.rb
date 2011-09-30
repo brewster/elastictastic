@@ -12,6 +12,8 @@ class Post
   embed :author
   embed :comments
 
+  belongs_to :blog
+
   def self.search_keywords(keywords)
     query do
       query_string do
