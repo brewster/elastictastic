@@ -73,16 +73,17 @@ module Elastictastic
       ::Elastictastic.client.put_mapping(index, type, @clazz.mapping)
     end
 
-    def find(*args)
+    def find(*ids)
       #XXX support combining this with other filters/query
-      options = args.extract_options!
-      force_array = ::Array === args.first
-      args = args.flatten
-      if args.length == 1
-        instance = find_one(args.first, options)
+      force_array = ::Array === ids.first
+      ids = ids.flatten
+      if ::Hash === ids.first
+        find_many_in_many_indices(*ids)
+      elsif ids.length == 1
+        instance = find_one(ids.first)
         force_array ? [instance] : instance
       else
-        find_many(args, options)
+        find_many(ids)
       end
     end
 
@@ -167,10 +168,10 @@ module Elastictastic
       end
     end
 
-    def find_one(id, options = {})
+    def find_one(id)
       params = {}
-      if options[:fields]
-        params[:fields] = Array(options[:fields]).join(',')
+      if @params['fields']
+        params[:fields] = Array(@params['fields']).join(',')
       end
       data = ::Elastictastic.client.get(index, type, id, params)
       return nil if data['exists'] == false
@@ -184,14 +185,31 @@ module Elastictastic
       end
     end
 
-    def find_many(ids, options = {})
+    def find_many(ids)
       docspec = ids.map do |id|
         { '_id' => id }.tap do |identifier|
-          identifier['fields'] = Array(options[:fields]) if options[:fields]
+          identifier['fields'] = Array(@params['fields']) if @params['fields']
         end
       end
       @clazz.new_from_elasticsearch_hits(
         ::Elastictastic.client.mget(docspec, index, type)['docs']
+      )
+    end
+
+    def find_many_in_many_indices(ids_by_index)
+      docs = []
+      ids_by_index.each_pair do |index, ids|
+        Array(ids).each do |id|
+          docs << doc = {
+            '_id' => id.to_s,
+            '_type' => type,
+            '_index' => index
+          }
+          doc['fields'] = Array(@params['fields']) if @params['fields']
+        end
+      end
+      new_from_elasticsearch_hits(
+        ::Elastictastic.client.mget(docs)['docs']
       )
     end
   end

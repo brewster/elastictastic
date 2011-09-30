@@ -3,32 +3,7 @@ module Elastictastic
     extend ActiveSupport::Concern
 
     module ClassMethods
-      delegate :destroy_all, :sync_mapping, :to => :default_scope
-
-      def find(*args)
-        if Hash === args.first
-          multi_index_find_many(*args)
-        else
-          default_scope.find(*args)
-        end
-      end
-
-      def multi_index_find_many(ids_by_index, options = {})
-        docs = []
-        ids_by_index.each_pair do |index, ids|
-          Array(ids).each do |id|
-            docs << doc = {
-              '_id' => id.to_s,
-              '_type' => type,
-              '_index' => index
-            }
-            doc['fields'] = Array(options[:fields]) if options[:fields]
-          end
-        end
-        new_from_elasticsearch_hits(
-          Elastictastic.client.mget(docs)['docs']
-        )
-      end
+      delegate :find, :destroy_all, :sync_mapping, :to => :default_scope
     end
     
     module InstanceMethods

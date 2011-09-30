@@ -319,12 +319,12 @@ describe Elastictastic::Document do
         end
 
         it 'should request specified fields if specified' do
-          type_in_index.find(1, :fields => %w(name author.name) )
+          scope.fields('name', 'author.name').find(1)
           last_request.path.should == "/#{index}/post/1?fields=name%2Cauthor.name"
         end
 
         it 'should return an array if id is passed in single-element array' do
-          posts = type_in_index.find([1])
+          posts = scope.find([1])
           posts.should be_a(Array)
           posts.first.id.should == '1'
         end
@@ -336,7 +336,7 @@ describe Elastictastic::Document do
         end
 
         it 'should return nil' do
-          type_in_index.find(1).should be_nil
+          scope.find(1).should be_nil
         end
       end
     end # shared_examples_for 'single document'
@@ -349,7 +349,7 @@ describe Elastictastic::Document do
       end
 
       context 'with no options' do
-        let(:posts) { type_in_index.find('1', '2') }
+        let(:posts) { scope.find('1', '2') }
 
         it 'should send request to index multiget endpoint' do
           last_request.path.should == "/#{index}/post/_mget"
@@ -367,7 +367,7 @@ describe Elastictastic::Document do
       end # context 'with no options'
 
       context 'with fields option provided' do
-        let(:posts) { type_in_index.find('1', '2', :fields => 'title') }
+        let(:posts) { scope.fields('title').find('1', '2') }
 
         it 'should send fields with each id' do
           last_request_body.should == {
@@ -380,7 +380,7 @@ describe Elastictastic::Document do
       end
 
       context 'with multi-element array passed' do
-        let(:posts) { type_in_index.find(%w(1 2)) }
+        let(:posts) { scope.find(%w(1 2)) }
 
         it 'should request listed elements' do
           last_request_body.should == {
@@ -394,7 +394,7 @@ describe Elastictastic::Document do
     end # shared_examples_for 'multi document single index lookup'
 
     context 'with default index' do
-      let(:type_in_index) { Post }
+      let(:scope) { Post }
       let(:post) { Post.find(1) }
       let(:index) { 'default' }
 
@@ -447,7 +447,7 @@ describe Elastictastic::Document do
         end # context 'with no options' 
 
         context 'with fields specified' do
-          let(:posts) { Post.find({ 'default' => '1', 'my_index' => %w(2 3) }, :fields => 'title' ) }
+          let(:posts) { Post.fields('title').find('default' => '1', 'my_index' => %w(2 3)) }
 
           it 'should inject fields into each identifier' do
             last_request_body.should == {
@@ -486,7 +486,7 @@ describe Elastictastic::Document do
     end # context 'with default index'
 
     context 'with specified index' do
-      let(:type_in_index) { Post.in_index('my_index') }
+      let(:scope) { Post.in_index('my_index') }
       let(:post) { Post.in_index('my_index').find(1) }
       let(:index) { 'my_index' }
 
