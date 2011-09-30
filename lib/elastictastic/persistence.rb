@@ -3,13 +3,13 @@ module Elastictastic
     extend ActiveSupport::Concern
 
     module ClassMethods
-      delegate :destroy_all, :sync_mapping, :to => :in_default_index
+      delegate :destroy_all, :sync_mapping, :to => :default_scope
 
       def find(*args)
         if Hash === args.first
           multi_index_find_many(*args)
         else
-          in_default_index.find(*args)
+          default_scope.find(*args)
         end
       end
 

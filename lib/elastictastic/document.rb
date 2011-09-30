@@ -10,7 +10,15 @@ module Elastictastic
     end
 
     module ClassMethods
-      delegate :scoped, :to => :in_default_index
+      def new(*args)
+        allocate.tap do |instance|
+          index = current_scope ? current_scope.index : default_scope.index
+          instance.instance_eval do
+            @index = index
+            initialize(*args)
+          end
+        end
+      end
 
       def new_from_elasticsearch_hit(hit)
         allocate.tap do |instance|
@@ -39,7 +47,11 @@ module Elastictastic
       end
 
       def in_index(name_or_index)
-        TypeInIndex.new(self, Elastictastic::Index(name_or_index))
+        Scope.new(Elastictastic::Index(name_or_index), self, {})
+      end
+
+      def scoped(params)
+        (current_scope || default_scope).scoped(params)
       end
 
       def belongs_to(parent_name, options = {})
@@ -58,7 +70,7 @@ module Elastictastic
 
       private
 
-      def in_default_index
+      def default_scope
         in_index(Index.default)
       end
     end

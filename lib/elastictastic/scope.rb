@@ -5,10 +5,10 @@ module Elastictastic
     include ::Enumerable
     include Search
 
-    attr_reader :params
+    attr_reader :clazz, :index, :params
 
-    def initialize(type_in_index, params)
-      @type_in_index, @params = type_in_index, Util.deep_stringify(params)
+    def initialize(index, clazz, params)
+      @index, @clazz, @params = index, clazz, Util.deep_stringify(params)
     end
 
     def each(&block)
@@ -46,7 +46,7 @@ module Elastictastic
     end
 
     def first
-      @type_in_index.scoped(
+      Scope.new(@index, @clazz, 
         params.merge('from' => 0, 'size' => 1)).to_a.first
     end
 
@@ -58,19 +58,38 @@ module Elastictastic
 
     def scoped(params, index = @index)
       dup_params = ::Marshal.load(::Marshal.dump(@params))
-      copy = ::Elastictastic::Scope.new(@type_in_index, dup_params)
+      copy = ::Elastictastic::Scope.new(@index, @clazz, dup_params)
       copy.merge!(params)
       copy
     end
 
-    def method_missing(method, *args, &block)
-      @type_in_index.clazz.with_scope(self) do
-        @type_in_index.clazz.__send__(method, *args, &block)
+    def destroy_all
+      #FIXME support delete-by-query
+      ::Elastictastic.client.delete(@index, @clazz.type)
+    end
+
+    def sync_mapping
+      #XXX is this a weird place to have this?
+      ::Elastictastic.client.put_mapping(index, type, @clazz.mapping)
+    end
+
+    def find(*args)
+      #XXX support combining this with other filters/query
+      options = args.extract_options!
+      force_array = ::Array === args.first
+      args = args.flatten
+      if args.length == 1
+        instance = find_one(args.first, options)
+        force_array ? [instance] : instance
+      else
+        find_many(args, options)
       end
     end
 
-    def index
-      @type_in_index.index
+    def method_missing(method, *args, &block)
+      @clazz.with_scope(self) do
+        @clazz.__send__(method, *args, &block)
+      end
     end
 
     def inspect
@@ -85,8 +104,8 @@ module Elastictastic
 
     def search(search_params = {})
       ::Elastictastic.client.search(
-        @type_in_index.index,
-        @type_in_index.type,
+        @index,
+        @clazz.type,
         params,
         search_params
       )
@@ -97,7 +116,7 @@ module Elastictastic
     def search_all
       response = search(:search_type => 'query_then_fetch')
       populate_counts(response)
-      @type_in_index.clazz.new_from_elasticsearch_hits(response['hits']['hits'])
+      @clazz.new_from_elasticsearch_hits(response['hits']['hits'])
     end
 
     def search_in_batches(&block)
@@ -107,7 +126,7 @@ module Elastictastic
         scope = scope_with_size.from(from)
         response = scope.search(:search_type => 'query_then_fetch')
         populate_counts(response)
-        yield(@type_in_index.clazz.new_from_elasticsearch_hits(
+        yield(@clazz.new_from_elasticsearch_hits(
           response['hits']['hits']))
         from += size
         @count ||= scope.count
@@ -121,8 +140,8 @@ module Elastictastic
         :size => batch_options[:batch_size] || 100
       }
       scan_response = ::Elastictastic.client.search(
-        @type_in_index.index,
-        @type_in_index.type,
+        @index,
+        @clazz.type,
         params,
         scroll_options.merge(:search_type => 'scan')
       )
@@ -134,7 +153,7 @@ module Elastictastic
         response = ::Elastictastic.client.scroll(scroll_id, scroll_options.slice(:scroll))
         scroll_id = response['_scroll_id']
         docs = response['hits']['hits'].map do |hit|
-          @type_in_index.clazz.new_from_elasticsearch_hit(hit)
+          @clazz.new_from_elasticsearch_hit(hit)
         end
         yield(docs)
       end until response['hits']['hits'].empty?
@@ -146,6 +165,34 @@ module Elastictastic
       if response['facets']
         @all_facets ||= ::Hashie::Mash.new(response['facets'])
       end
+    end
+
+    def find_one(id, options = {})
+      params = {}
+      if options[:fields]
+        params[:fields] = Array(options[:fields]).join(',')
+      end
+      data = ::Elastictastic.client.get(index, type, id, params)
+      return nil if data['exists'] == false
+      case data['status']
+      when nil
+        @clazz.new_from_elasticsearch_hit(data)
+      when 404
+        nil
+      else
+        raise data['error'] || "Unexpected response from ElasticSearch: #{data.inspect}"
+      end
+    end
+
+    def find_many(ids, options = {})
+      docspec = ids.map do |id|
+        { '_id' => id }.tap do |identifier|
+          identifier['fields'] = Array(options[:fields]) if options[:fields]
+        end
+      end
+      @clazz.new_from_elasticsearch_hits(
+        ::Elastictastic.client.mget(docspec, index, type)['docs']
+      )
     end
   end
 end

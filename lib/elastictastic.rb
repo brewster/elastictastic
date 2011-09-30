@@ -19,7 +19,6 @@ module Elastictastic
   autoload :Search, 'elastictastic/search'
   autoload :ServerError, 'elastictastic/server_error'
   autoload :TestHelpers, 'elastictastic/test_helpers'
-  autoload :TypeInIndex, 'elastictastic/type_in_index'
   autoload :Util, 'elastictastic/util'
 
   class <<self
