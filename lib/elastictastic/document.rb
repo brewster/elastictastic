@@ -9,7 +9,9 @@ module Elastictastic
     end
 
     module ClassMethods
-      delegate :find, :destroy_all, :sync_mapping, :inspect, :to => :default_scope
+      delegate :find, :destroy_all, :sync_mapping, :inspect, :find_each,
+               :find_in_batches, :first, :count, :empty?, :any?,
+               :to => :default_scope
 
       def new(*args)
         allocate.tap do |instance|
