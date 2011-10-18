@@ -11,23 +11,26 @@ module Elastictastic
       @index, @clazz, @params = index, clazz, Util.deep_stringify(params)
     end
 
-    def each(&block)
-      find_each(&block)
-    end
-
     def find_each(batch_options = {}, &block)
-      find_in_batches(batch_options) do |batch|
-        batch.each(&block)
+      if block then enumerate_each(batch_options, &block)
+      else Enumerator.new(self, :enumerate_each, batch_options)
       end
     end
+    alias_method :each, :find_each
 
     def find_in_batches(batch_options = {}, &block)
       if params.key?('size') || params.key('from')
-        yield search_all
+        if block then yield search_all
+        else ::Enumerator.new([search_all], :each)
+        end
       elsif params.key?('sort') || params.key('facets')
-        search_in_batches(&block)
+        if block then search_in_batches(&block)
+        else ::Enumerator.new(self, :search_in_batches)
+        end
       else
-        scan_in_batches(batch_options, &block)
+        if block then scan_in_batches(batch_options, &block)
+        else ::Enumerator.new(self, :scan_in_batches, batch_options)
+        end
       end
     end
 
@@ -88,8 +91,14 @@ module Elastictastic
     end
 
     def method_missing(method, *args, &block)
-      @clazz.with_scope(self) do
-        @clazz.__send__(method, *args, &block)
+      if ::Enumerable.method_defined?(method)
+        find_each.__send__(:method, *args, &block)
+      elsif @clazz.respond_to?(method)
+        @clazz.with_scope(self) do
+          @clazz.__send__(method, *args, &block)
+        end
+      else
+        super
       end
     end
 
@@ -171,7 +180,7 @@ module Elastictastic
     def find_one(id)
       params = {}
       if @params['fields']
-        params[:fields] = Array(@params['fields']).join(',')
+        params[:fields] = ::Kernel.Array(@params['fields']).join(',')
       end
       data = ::Elastictastic.client.get(index, type, id, params)
       return nil if data['exists'] == false
@@ -188,7 +197,7 @@ module Elastictastic
     def find_many(ids)
       docspec = ids.map do |id|
         { '_id' => id }.tap do |identifier|
-          identifier['fields'] = Array(@params['fields']) if @params['fields']
+          identifier['fields'] = ::Kernel.Array(@params['fields']) if @params['fields']
         end
       end
       @clazz.new_from_elasticsearch_hits(
@@ -199,18 +208,24 @@ module Elastictastic
     def find_many_in_many_indices(ids_by_index)
       docs = []
       ids_by_index.each_pair do |index, ids|
-        Array(ids).each do |id|
+        ::Kernel.Array(ids).each do |id|
           docs << doc = {
             '_id' => id.to_s,
             '_type' => type,
             '_index' => index
           }
-          doc['fields'] = Array(@params['fields']) if @params['fields']
+          doc['fields'] = ::Kernel.Array(@params['fields']) if @params['fields']
         end
       end
       new_from_elasticsearch_hits(
         ::Elastictastic.client.mget(docs)['docs']
       )
+    end
+
+    def enumerate_each(batch_options = {}, &block)
+      find_in_batches(batch_options) do |batch|
+        batch.each(&block)
+      end
     end
   end
 end
