@@ -1,22 +1,18 @@
 module Elastictastic
-  module Search
-    SEARCH_KEYS = %w(query filter from size sort highlight fields script_fields
-                     preference facets)
+  class Search
+    KEYS = %w(query filter from size sort highlight fields script_fields
+              preference facets)
 
-    SEARCH_KEYS.each do |search_key|
-      module_eval <<-RUBY
-        def #{search_key}(*values, &block)
-          values << ScopeBuilder.build(&block) if block
+    attr_reader :params
+    delegate :[], :to => :params
 
-          case values.length
-          when 0 then Kernel.raise ArgumentError, "wrong number of arguments (0 for 1)"
-          when 1 then value = values.first
-          else value = values
-          end
+    def initialize(params = {})
+      @params = Util.deep_stringify(params)
+    end
 
-          scoped(#{search_key.inspect} => value)
-        end
-      RUBY
+    def merge(merge_params)
+      dup_params = Marshal.load(Marshal.dump(merge_params))
+      Search.new(Util.deep_merge(@params, dup_params))
     end
   end
 end

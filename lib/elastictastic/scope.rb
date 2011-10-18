@@ -2,18 +2,20 @@ require 'hashie'
 
 module Elastictastic
   class Scope < BasicObject
-    include ::Enumerable
-    include Search
+    attr_reader :clazz, :index
 
-    attr_reader :clazz, :index, :params
+    def initialize(index, clazz, search = Search.new)
+      ::Kernel.raise ::ArgumentError, "Wrong type for #{search.inspect}" unless search.is_a? Search
+      @index, @clazz, @search = index, clazz, search
+    end
 
-    def initialize(index, clazz, params)
-      @index, @clazz, @params = index, clazz, Util.deep_stringify(params)
+    def params
+      @search.params
     end
 
     def find_each(batch_options = {}, &block)
       if block then enumerate_each(batch_options, &block)
-      else Enumerator.new(self, :enumerate_each, batch_options)
+      else ::Enumerator.new(self, :enumerate_each, batch_options)
       end
     end
     alias_method :each, :find_each
@@ -50,7 +52,8 @@ module Elastictastic
 
     def first
       Scope.new(@index, @clazz, 
-        params.merge('from' => 0, 'size' => 1)).to_a.first
+        #XXX when Search has smarter merging, this needn't be so roundabout
+        Search.new(@search.params.merge('from' => 0, 'size' => 1))).to_a.first
     end
 
     def all
@@ -64,10 +67,7 @@ module Elastictastic
     end
 
     def scoped(params, index = @index)
-      dup_params = ::Marshal.load(::Marshal.dump(@params))
-      copy = ::Elastictastic::Scope.new(@index, @clazz, dup_params)
-      copy.merge!(params)
-      copy
+      ::Elastictastic::Scope.new(@index, @clazz, @search.merge(params))
     end
 
     def destroy_all
@@ -94,9 +94,25 @@ module Elastictastic
       end
     end
 
+    Search::KEYS.each do |search_key|
+      module_eval <<-RUBY
+        def #{search_key}(*values, &block)
+          values << ScopeBuilder.build(&block) if block
+
+          case values.length
+          when 0 then ::Kernel.raise ::ArgumentError, "wrong number of arguments (0 for 1)"
+          when 1 then value = values.first
+          else value = values
+          end
+
+          scoped(#{search_key.inspect} => value)
+        end
+      RUBY
+    end
+
     def method_missing(method, *args, &block)
       if ::Enumerable.method_defined?(method)
-        find_each.__send__(:method, *args, &block)
+        find_each.__send__(method, *args, &block)
       elsif @clazz.respond_to?(method)
         @clazz.with_scope(self) do
           @clazz.__send__(method, *args, &block)
@@ -108,15 +124,11 @@ module Elastictastic
 
     def inspect
       inspected = "#{@clazz.name}:#{@index.name}"
-      inspected << @params.to_json unless params.empty?
+      inspected << @search.params.to_json unless @search.params.empty?
       inspected
     end
 
     protected
-
-    def merge!(params)
-      @params = Util.deep_merge(@params, Util.deep_stringify(params))
-    end
 
     def search(search_params = {})
       ::Elastictastic.client.search(
@@ -185,8 +197,8 @@ module Elastictastic
 
     def find_one(id)
       params = {}
-      if @params['fields']
-        params[:fields] = ::Kernel.Array(@params['fields']).join(',')
+      if @search['fields']
+        params[:fields] = ::Kernel.Array(@search['fields']).join(',')
       end
       data = ::Elastictastic.client.get(index, type, id, params)
       return nil if data['exists'] == false
@@ -201,7 +213,7 @@ module Elastictastic
     def find_many(ids)
       docspec = ids.map do |id|
         { '_id' => id }.tap do |identifier|
-          identifier['fields'] = ::Kernel.Array(@params['fields']) if @params['fields']
+          identifier['fields'] = ::Kernel.Array(@search['fields']) if @search['fields']
         end
       end
       @clazz.new_from_elasticsearch_hits(
@@ -218,7 +230,7 @@ module Elastictastic
             '_type' => type,
             '_index' => index
           }
-          doc['fields'] = ::Kernel.Array(@params['fields']) if @params['fields']
+          doc['fields'] = ::Kernel.Array(@search['fields']) if @search['fields']
         end
       end
       new_from_elasticsearch_hits(

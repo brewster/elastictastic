@@ -50,7 +50,7 @@ module Elastictastic
       end
 
       def in_index(name_or_index)
-        Scope.new(Elastictastic::Index(name_or_index), self, {})
+        Scope.new(Elastictastic::Index(name_or_index), self)
       end
 
       def scoped(params)
