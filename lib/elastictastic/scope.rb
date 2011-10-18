@@ -103,7 +103,9 @@ module Elastictastic
     end
 
     def inspect
-      @params.inspect
+      inspected = "#{@clazz.name}:#{@index.name}"
+      inspected << @params.to_json unless params.empty?
+      inspected
     end
 
     protected
