@@ -195,8 +195,6 @@ module Elastictastic
         @clazz.new_from_elasticsearch_hit(data)
       when 404
         nil
-      else
-        raise data['error'] || "Unexpected response from ElasticSearch: #{data.inspect}"
       end
     end
 

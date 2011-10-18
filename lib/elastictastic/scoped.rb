@@ -14,7 +14,7 @@ module Elastictastic
     end
 
     def current_scope
-      scope_stack.last
+      scope_stack.last || default_scope
     end
   end
 end

@@ -9,7 +9,7 @@ module Elastictastic
           values << ScopeBuilder.build(&block) if block
 
           case values.length
-          when 0 then raise ArgumentError, "wrong number of arguments (0 for 1)"
+          when 0 then Kernel.raise ArgumentError, "wrong number of arguments (0 for 1)"
           when 1 then value = values.first
           else value = values
           end

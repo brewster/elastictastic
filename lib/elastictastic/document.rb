@@ -4,18 +4,18 @@ module Elastictastic
 
     included do
       include Elastictastic::Resource
-      extend Elastictastic::Search # needs to go before Elastictastic::Persistence
       extend Elastictastic::Scoped
     end
 
     module ClassMethods
       delegate :find, :destroy_all, :sync_mapping, :inspect, :find_each,
                :find_in_batches, :first, :count, :empty?, :any?, :all,
-               :to => :default_scope
+               :query, :filter, :from, :size, :sort, :highlight, :fields,
+               :script_fields, :preference, :facets, :to => :current_scope
 
       def new(*args)
         allocate.tap do |instance|
-          index = current_scope ? current_scope.index : default_scope.index
+          index = current_scope.index
           instance.instance_eval do
             @index = index
             initialize(*args)
@@ -54,7 +54,7 @@ module Elastictastic
       end
 
       def scoped(params)
-        (current_scope || default_scope).scoped(params)
+        current_scope.scoped(params)
       end
 
       def belongs_to(parent_name, options = {})
