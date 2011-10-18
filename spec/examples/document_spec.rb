@@ -6,41 +6,10 @@ describe Elastictastic::Document do
   let(:last_request) { FakeWeb.last_request }
   let(:last_request_body) { JSON.parse(last_request.body) }
 
-  describe 'elasticsearch_path' do
-    let(:path) { post.elasticsearch_path }
-
-    context 'with default index' do
-      let(:post) { Post.new }
-
-      it 'should be default index/type' do
-        path.should == '/default/post'
-      end
-
-      it 'should include ID if post has ID' do
-        post.id = '123'
-        path.should == '/default/post/123'
-      end
-    end
-
-    context 'with user-specified index' do
-      let(:post) { Post.in_index('my_index').new }
-
-      it 'should use user-specified index' do
-        path.should == '/my_index/post'
-      end
-
-      it 'should use user-specified index and ID' do
-        post.id = '123'
-        path.should == '/my_index/post/123'
-      end
-    end
-  end # describe '#elasticsearch_path'
-
   describe '#save' do
     context 'new object' do
       let!(:id) { stub_elasticsearch_create('default', 'post') }
       let(:post) { Post.new }
-      let!(:path_before_save) { post.elasticsearch_path }
 
       before do
         post.title = 'Hot Pasta'
@@ -52,7 +21,7 @@ describe Elastictastic::Document do
       end
 
       it 'should send to index/type path' do
-        last_request.path.should == path_before_save
+        last_request.path.should == '/default/post'
       end
 
       it 'should send document in the body' do
@@ -82,7 +51,7 @@ describe Elastictastic::Document do
         end
 
         it 'should send request to _create verb for document resource' do
-          last_request.path.should == "#{post.elasticsearch_path}/_create"
+          last_request.path.should == "/default/post/123/_create"
         end
 
         it 'should send document in body' do
@@ -140,7 +109,7 @@ describe Elastictastic::Document do
         end
 
         it "should send to document's resource path" do
-          last_request.path.should == post.elasticsearch_path
+          last_request.path.should == "/default/post/#{post.id}"
         end
 
         it "should send document's body in request" do
@@ -189,7 +158,7 @@ describe Elastictastic::Document do
       end
 
       it 'should send request to document resource path' do
-        last_request.path.should == post.elasticsearch_path
+        last_request.path.should == '/default/post/123'
       end
 
       it 'should mark post as non-persisted' do

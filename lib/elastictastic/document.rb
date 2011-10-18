@@ -5,11 +5,12 @@ module Elastictastic
     included do
       include Elastictastic::Resource
       extend Elastictastic::Search # needs to go before Elastictastic::Persistence
-      include Elastictastic::Persistence
       extend Elastictastic::Scoped
     end
 
     module ClassMethods
+      delegate :find, :destroy_all, :sync_mapping, :to => :default_scope
+
       def new(*args)
         allocate.tap do |instance|
           index = current_scope ? current_scope.index : default_scope.index
@@ -109,6 +110,22 @@ module Elastictastic
       def index
         return @index if defined? @index
         @index = Index.default
+      end
+
+      def save
+        if persisted?
+          Elastictastic.persister.update(self)
+        else
+          Elastictastic.persister.create(self)
+        end
+      end
+      
+      def destroy
+        if persisted?
+          Elastictastic.persister.destroy(self)
+        else
+          raise OperationNotAllowed, "Cannot destroy transient document: #{inspect}"
+        end
       end
 
       def persisted?
