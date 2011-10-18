@@ -10,7 +10,7 @@ module Elastictastic
 
     module ClassMethods
       delegate :find, :destroy_all, :sync_mapping, :inspect, :find_each,
-               :find_in_batches, :first, :count, :empty?, :any?,
+               :find_in_batches, :first, :count, :empty?, :any?, :all,
                :to => :default_scope
 
       def new(*args)

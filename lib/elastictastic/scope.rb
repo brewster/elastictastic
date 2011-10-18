@@ -53,6 +53,10 @@ module Elastictastic
         params.merge('from' => 0, 'size' => 1)).to_a.first
     end
 
+    def all
+      scoped({})
+    end
+
     def all_facets
       return @all_facets if defined? @all_facets
       populate_counts

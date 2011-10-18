@@ -18,9 +18,5 @@ module Elastictastic
         end
       RUBY
     end
-
-    def all
-      scoped({})
-    end
   end
 end
