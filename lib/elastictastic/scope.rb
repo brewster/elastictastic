@@ -67,7 +67,8 @@ module Elastictastic
     end
 
     def scoped(params, index = @index)
-      ::Elastictastic::Scope.new(@index, @clazz, @search.merge(params))
+      ::Elastictastic::Scope.new(
+        @index, @clazz, @search.merge(Search.new(params)))
     end
 
     def destroy_all

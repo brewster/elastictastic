@@ -26,6 +26,14 @@ module Elastictastic
       end
     end
 
+    def ensure_array(object)
+      case object
+      when nil then []
+      when Array then object
+      else [object]
+      end
+    end
+
     def call_or_each(object, &block)
       if Array === object then object.each(&block)
       else
