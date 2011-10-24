@@ -19,14 +19,11 @@ module Elastictastic
       @transient_children = []
     end
 
-    def new(*args)
+    def initialize_instance(instance)
+      super
       parent_collection = self
-      super.tap do |instance|
-        instance.instance_eval do
-          @_parent_collection = parent_collection
-        end
-        @transient_children << instance
-      end
+      instance.instance_eval { @_parent_collection = parent_collection }
+      @transient_children << instance
     end
 
     def first

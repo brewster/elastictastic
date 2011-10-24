@@ -17,11 +17,8 @@ module Elastictastic
 
       def new(*args)
         allocate.tap do |instance|
-          index = current_scope.index
-          instance.instance_eval do
-            @index = index
-            initialize(*args)
-          end
+          current_scope.initialize_instance(instance)
+          instance.instance_eval { initialize(*args) }
         end
       end
 

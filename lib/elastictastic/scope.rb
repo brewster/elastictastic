@@ -9,6 +9,11 @@ module Elastictastic
         index, clazz, search, parent_collection
     end
 
+    def initialize_instance(instance)
+      index = @index
+      instance.instance_eval { @index = index }
+    end
+
     def params
       @search.params
     end

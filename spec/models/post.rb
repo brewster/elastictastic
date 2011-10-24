@@ -22,4 +22,12 @@ class Post
       end
     end
   end
+
+  def self.from_hash(hash)
+    new.tap do |post|
+      hash.each_pair do |field, value|
+        post.__send__("#{field}=", value)
+      end
+    end
+  end
 end

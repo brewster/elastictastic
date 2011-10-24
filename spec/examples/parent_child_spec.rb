@@ -20,6 +20,10 @@ describe 'parent/child relationships' do
       blog.posts.new.blog.should == blog
     end
 
+    it 'should set parent when creating via class method' do
+      blog.posts.from_hash('title' => 'hey').blog.should == blog
+    end
+
     describe 'discrete persistence' do
       it 'should pass parent param on create' do
         stub_elasticsearch_create('default', 'post')
