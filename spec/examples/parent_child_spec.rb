@@ -231,4 +231,28 @@ describe 'parent/child relationships' do
       blog.posts.first.should == post
     end
   end
+
+  describe 'searching children directly' do
+    before do
+      stub_elasticsearch_search(
+        'default', 'post',
+        'hits' => {
+          'hits' => [{ '_id' => '1', '_index' => 'default', '_type' => 'post', 'fields' => { '_parent' => '3' }}]
+        }
+      )
+    end
+
+    let(:post) { Post.first }
+
+    it 'should provide access to parent' do
+      stub_elasticsearch_get('default', 'blog', '3')
+      post.blog.id.should == '3'
+    end
+
+    it 'should save post without dereferencing parent' do
+      stub_elasticsearch_update('default', 'post', post.id)
+      post.save
+      URI.parse(FakeWeb.last_request.path).query.should == 'parent=3'
+    end
+  end
 end

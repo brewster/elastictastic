@@ -45,7 +45,7 @@ module Elastictastic
     def params_for(doc)
       {}.tap do |params|
         params[:refresh] = true if Elastictastic.config.auto_refresh
-        params[:parent] = doc._parent.id if doc._parent
+        params[:parent] = doc._parent_id if doc._parent_id
       end
     end
   end

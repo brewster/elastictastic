@@ -123,7 +123,21 @@ module Elastictastic
       end
 
       def _parent #:nodoc:
-        @_parent_collection.parent if @_parent_collection
+        return @_parent if defined? @_parent
+        @_parent =
+          if @_parent_collection
+            @_parent_collection.parent
+          elsif @_parent_id
+            self.class.parent_association.clazz.find(@_parent_id)
+          end
+      end
+
+      def _parent_id #:nodoc:
+        if @_parent_collection
+          @_parent_collection.parent.id
+        elsif @_parent_id
+          @_parent_id
+        end
       end
 
       def save

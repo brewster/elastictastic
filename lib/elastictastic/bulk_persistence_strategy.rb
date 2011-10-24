@@ -49,7 +49,7 @@ module Elastictastic
     def bulk_identifier(instance)
       identifier = { :_index => instance.index.name, :_type => instance.class.type }
       identifier['_id'] = instance.id if instance.id
-      identifier['parent'] = instance._parent.id if instance._parent
+      identifier['parent'] = instance._parent_id if instance._parent_id
       identifier
     end
 
