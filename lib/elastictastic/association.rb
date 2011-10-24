@@ -13,5 +13,9 @@ module Elastictastic
     def clazz
       @clazz ||= class_name.constantize
     end
+
+    def extract(instance)
+      instance.__send__(name)
+    end
   end
 end

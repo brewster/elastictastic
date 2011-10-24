@@ -8,6 +8,8 @@ module Elastictastic
     end
 
     module ClassMethods
+      attr_reader :parent_association
+
       delegate :find, :destroy_all, :sync_mapping, :inspect, :find_each,
                :find_in_batches, :first, :count, :empty?, :any?, :all,
                :query, :filter, :from, :size, :sort, :highlight, :fields,
@@ -31,17 +33,9 @@ module Elastictastic
         end
       end
 
-      def new_from_elasticsearch_hits(hits)
-        [].tap do |docs|
-          hits.each do |hit|
-            docs << new_from_elasticsearch_hit(hit) unless hit['exists'] == false
-          end
-        end
-      end
-
       def mapping
         { type => { 'properties' => properties }}.tap do |mapping|
-          mapping[type]['_parent'] = { 'type' => @parent.clazz.type } if @parent
+          mapping[type]['_parent'] = { 'type' => @parent_association.clazz.type } if @parent_association
         end
       end
 
@@ -58,17 +52,35 @@ module Elastictastic
       end
 
       def belongs_to(parent_name, options = {})
-        @parent = Association.new(parent_name, options)
+        @parent_association = Association.new(parent_name, options)
 
         module_eval(<<-RUBY, __FILE__, __LINE__+1)
           def #{parent_name}
-            @_parent
-          end
-
-          def #{parent_name}=(parent)
-            @_parent = parent
+            _parent
           end
         RUBY
+      end
+
+      def has_many(children_name, options = {})
+        children_name = children_name.to_s
+        child_associations[children_name] = Association.new(children_name, options)
+
+        module_eval(<<-RUBY, __FILE__, __LINE__ + 1)
+          def #{children_name}
+            @#{children_name} ||= Elastictastic::ChildCollectionProxy.new(
+              self.class.child_association(#{children_name.inspect}),
+              self
+            )
+          end
+        RUBY
+      end
+
+      def child_association(name)
+        child_associations[name.to_s]
+      end
+
+      def child_associations
+        @child_associations ||= {}
       end
 
       private
@@ -80,7 +92,6 @@ module Elastictastic
 
     module InstanceMethods
       attr_reader :id
-      attr_accessor :_parent #:nodoc:
 
       def initialize_from_elasticsearch_hit(response)
         @id = response['_id']
@@ -114,11 +125,20 @@ module Elastictastic
         @index = Index.default
       end
 
+      def _parent #:nodoc:
+        @_parent_collection.parent if @_parent_collection
+      end
+
       def save
         if persisted?
           Elastictastic.persister.update(self)
         else
           Elastictastic.persister.create(self)
+        end
+        self.class.child_associations.each_pair do |name, association|
+          association.extract(self).transient_children.each do |child|
+            child.save
+          end
         end
       end
       
@@ -139,7 +159,11 @@ module Elastictastic
       end
 
       def persisted!
+        was_persisted = @persisted
         @persisted = true
+        if @_parent_collection && !was_persisted
+          @_parent_collection.persisted!(self)
+        end
       end
 
       def transient!

@@ -7,7 +7,7 @@ module Elastictastic
       @handlers = []
     end
 
-    def create(instance)
+    def create(instance, params = {})
       add(
         { 'create' => bulk_identifier(instance) },
         instance.to_elasticsearch_doc
@@ -49,6 +49,7 @@ module Elastictastic
     def bulk_identifier(instance)
       identifier = { :_index => instance.index.name, :_type => instance.class.type }
       identifier['_id'] = instance.id if instance.id
+      identifier['parent'] = instance._parent.id if instance._parent
       identifier
     end
 

@@ -19,7 +19,7 @@ module Elastictastic
 
       FakeWeb.register_uri(
         method,
-        /^#{Regexp.escape(TestHelpers.uri_for_path(path))}/,
+        /^#{Regexp.escape(TestHelpers.uri_for_path(path))}(\?.*)?$/,
         options.reverse_merge(:body => {
           'ok' => 'true',
           '_index' => index,
@@ -33,7 +33,7 @@ module Elastictastic
     def stub_elasticsearch_update(index, type, id)
       FakeWeb.register_uri(
         :put,
-        TestHelpers.uri_for_path("/#{index}/#{type}/#{id}"),
+        /^#{TestHelpers.uri_for_path("/#{index}/#{type}/#{id}")}(\?.*)?$/,
         :body => {
           'ok' => 'true',
           '_index' => index,
@@ -46,7 +46,7 @@ module Elastictastic
     def stub_elasticsearch_get(index, type, id, doc = {})
       FakeWeb.register_uri(
         :get,
-        /^#{Regexp.escape(TestHelpers.uri_for_path("/#{index}/#{type}/#{id}").to_s)}/,
+        /^#{Regexp.escape(TestHelpers.uri_for_path("/#{index}/#{type}/#{id}").to_s)}(\?.*)?$/,
         :body => {
           'ok' => true,
           '_index' => index,
@@ -87,7 +87,7 @@ module Elastictastic
     def stub_elasticsearch_destroy(index, type, id, options = {})
       FakeWeb.register_uri(
         :delete,
-        TestHelpers.uri_for_path("/#{index}/#{type}/#{id}"),
+        /^#{TestHelpers.uri_for_path("/#{index}/#{type}/#{id}")}(\?.*)?$/,
         options.reverse_merge(:body => {
           'ok' => true,
           'found' => true,

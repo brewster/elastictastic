@@ -4,9 +4,9 @@ module Elastictastic
   class Scope < BasicObject
     attr_reader :clazz, :index
 
-    def initialize(index, clazz, search = Search.new)
-      ::Kernel.raise ::ArgumentError, "Wrong type for #{search.inspect}" unless search.is_a? Search
-      @index, @clazz, @search = index, clazz, search
+    def initialize(index, clazz, search = Search.new, parent_collection = nil)
+      @index, @clazz, @search, @parent_collection =
+        index, clazz, search, parent_collection
     end
 
     def params
@@ -21,7 +21,7 @@ module Elastictastic
     alias_method :each, :find_each
 
     def find_in_batches(batch_options = {}, &block)
-      if params.key?('size') || params.key('from')
+      if params.key?('size') || params.key?('from')
         if block then yield search_all
         else ::Enumerator.new([search_all], :each)
         end
@@ -51,9 +51,13 @@ module Elastictastic
     end
 
     def first
-      Scope.new(@index, @clazz, 
-        #XXX when Search has smarter merging, this needn't be so roundabout
-        Search.new(@search.params.merge('from' => 0, 'size' => 1))).to_a.first
+      params = from(0).size(1).params
+      hit = ::Elastictastic.client.search(
+        @index,
+        @clazz.type,
+        params
+      )['hits']['hits'].first
+      materialize_hit(hit) if hit
     end
 
     def all
@@ -68,7 +72,11 @@ module Elastictastic
 
     def scoped(params, index = @index)
       ::Elastictastic::Scope.new(
-        @index, @clazz, @search.merge(Search.new(params)))
+        @index,
+        @clazz,
+        @search.merge(Search.new(params)),
+        @parent_collection
+      )
     end
 
     def destroy_all
@@ -82,7 +90,7 @@ module Elastictastic
     end
 
     def find(*ids)
-      #XXX support combining this with other filters/query
+      #TODO support combining this with other filters/query
       force_array = ::Array === ids.first
       ids = ids.flatten
       if ::Hash === ids.first
@@ -145,7 +153,7 @@ module Elastictastic
     def search_all
       response = search(:search_type => 'query_then_fetch')
       populate_counts(response)
-      @clazz.new_from_elasticsearch_hits(response['hits']['hits'])
+      materialize_hits(response['hits']['hits'])
     end
 
     def search_in_batches(&block)
@@ -155,8 +163,7 @@ module Elastictastic
         scope = scope_with_size.from(from)
         response = scope.search(:search_type => 'query_then_fetch')
         populate_counts(response)
-        yield(@clazz.new_from_elasticsearch_hits(
-          response['hits']['hits']))
+        yield(materialize_hits(response['hits']['hits']))
         from += size
         @count ||= scope.count
       end while from < @count
@@ -181,10 +188,7 @@ module Elastictastic
       begin
         response = ::Elastictastic.client.scroll(scroll_id, scroll_options.slice(:scroll))
         scroll_id = response['_scroll_id']
-        docs = response['hits']['hits'].map do |hit|
-          @clazz.new_from_elasticsearch_hit(hit)
-        end
-        yield(docs)
+        yield(materialize_hits(response['hits']['hits']))
       end until response['hits']['hits'].empty?
     end
 
@@ -197,15 +201,11 @@ module Elastictastic
     end
 
     def find_one(id)
-      params = {}
-      if @search['fields']
-        params[:fields] = ::Kernel.Array(@search['fields']).join(',')
-      end
-      data = ::Elastictastic.client.get(index, type, id, params)
+      data = ::Elastictastic.client.get(index, type, id, params_for_find_one)
       return nil if data['exists'] == false
       case data['status']
       when nil
-        @clazz.new_from_elasticsearch_hit(data)
+        materialize_hit(data)
       when 404
         nil
       end
@@ -213,11 +213,9 @@ module Elastictastic
 
     def find_many(ids)
       docspec = ids.map do |id|
-        { '_id' => id }.tap do |identifier|
-          identifier['fields'] = ::Kernel.Array(@search['fields']) if @search['fields']
-        end
+        { '_id' => id }.merge!(params_for_find_many)
       end
-      @clazz.new_from_elasticsearch_hits(
+      materialize_hits(
         ::Elastictastic.client.mget(docspec, index, type)['docs']
       )
     end
@@ -234,14 +232,45 @@ module Elastictastic
           doc['fields'] = ::Kernel.Array(@search['fields']) if @search['fields']
         end
       end
-      new_from_elasticsearch_hits(
-        ::Elastictastic.client.mget(docs)['docs']
-      )
+      materialize_hits(::Elastictastic.client.mget(docs)['docs'])
     end
 
     def enumerate_each(batch_options = {}, &block)
       find_in_batches(batch_options) do |batch|
         batch.each(&block)
+      end
+    end
+
+    def params_for_find_one
+      params_for_find.tap do |params|
+        params['fields'] &&= params['fields'].join(',')
+      end
+    end
+
+    def params_for_find_many
+      params_for_find
+    end
+
+    def params_for_find
+      {}.tap do |params|
+        params['fields'] = ::Kernel.Array(@search['fields']) if @search['fields']
+      end
+    end
+
+    def materialize_hits(hits)
+      [].tap do |results|
+        hits.each do |hit|
+          results << materialize_hit(hit) unless hit['exists'] == false
+        end
+      end
+    end
+
+    def materialize_hit(hit)
+      @clazz.new_from_elasticsearch_hit(hit).tap do |result|
+        if @parent_collection
+          parent_collection = @parent_collection
+          result.instance_eval { @_parent_collection = parent_collection }
+        end
       end
     end
   end
