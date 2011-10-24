@@ -12,7 +12,7 @@ module Elastictastic
       def each_field
         properties.each_pair do |field, properties|
           if properties['properties']
-            embeds[field].each_field do |embed_field, embed_properties|
+            embeds[field].clazz.each_field do |embed_field, embed_properties|
               yield("#{field}.#{embed_field}", embed_properties)
             end
           elsif properties['fields']
