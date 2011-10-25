@@ -8,6 +8,10 @@ module Elastictastic
     end
 
     def create(instance, params = {})
+      if instance.pending_save?
+        raise Elastictastic::OperationNotAllowed,
+          "Can't re-save transient document with pending save in bulk operation"
+      end
       instance.pending_save!
       add(
         { 'create' => bulk_identifier(instance) },

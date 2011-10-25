@@ -69,6 +69,11 @@ describe Elastictastic::BulkPersistenceStrategy do
     it 'should not set persisted' do
       post.should be_transient
     end
+
+    it 'should not allow you to call save again on transient document' do
+      post.save
+      expect { post.save }.to raise_error(Elastictastic::OperationNotAllowed)
+    end
   end
 
   describe 'creating multiple' do
