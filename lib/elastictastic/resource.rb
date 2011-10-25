@@ -48,10 +48,13 @@ module Elastictastic
       end
 
       def properties
-        embeds.values.inject(field_properties) do |properties, embed|
-          properties.merge(
-            embed.name => { 'properties' => embed.clazz.properties })
+        return @properties if defined? @properties
+        @properties = {}
+        @properties.merge!(field_properties)
+        embeds.each_pair do |name, embed|
+          @properties[name] = { 'properties' => embed.clazz.properties }
         end
+        @properties
       end
 
       def properties_for_field(field_name)
