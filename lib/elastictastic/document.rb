@@ -157,7 +157,7 @@ module Elastictastic
         end
         self.class.child_associations.each_pair do |name, association|
           association.extract(self).transient_children.each do |child|
-            child.save
+            child.save unless child.pending_save?
           end
         end
       end
@@ -178,16 +178,33 @@ module Elastictastic
         !persisted?
       end
 
+      def pending_save?
+        !!@pending_save
+      end
+
+      def pending_destroy?
+        !!@pending_destroy
+      end
+
       def persisted!
         was_persisted = @persisted
         @persisted = true
+        @pending_save = false
         if @_parent_collection && !was_persisted
           @_parent_collection.persisted!(self)
         end
       end
 
       def transient!
-        @persisted = false
+        @persisted = @pending_destroy = false
+      end
+
+      def pending_save!
+        @pending_save = true
+      end
+
+      def pending_destroy!
+        @pending_destroy = true
       end
 
       def ==(other)

@@ -166,6 +166,21 @@ describe 'parent/child relationships' do
       post.should be_persisted
     end
 
+    it 'should not attempt to save transient instances that are pending for save in a bulk block' do
+      stub_elasticsearch_bulk(
+        { 'create' => { '_index' => 'my_index', '_type' => 'post', '_id' => '123', '_version' => 1, 'ok' => true }},
+        { 'index' => { '_index' => 'my_index', '_type' => 'blog', '_id' => blog.id, '_version' => 2, 'ok' => true }}
+      )
+      post = blog.posts.new
+      Elastictastic.bulk do
+        post.save
+        blog.save
+      end
+      request_statements =
+        FakeWeb.last_request.body.each_line.map { |line| JSON.parse(line) }
+      request_statements.length.should == 4
+    end
+
     it 'should not save transient instances again' do
       post = posts.new
       stub_elasticsearch_update('my_index', 'blog', blog.id)

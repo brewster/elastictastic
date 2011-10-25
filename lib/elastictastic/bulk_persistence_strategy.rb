@@ -8,6 +8,7 @@ module Elastictastic
     end
 
     def create(instance, params = {})
+      instance.pending_save!
       add(
         { 'create' => bulk_identifier(instance) },
         instance.to_elasticsearch_doc
@@ -18,6 +19,7 @@ module Elastictastic
     end
 
     def update(instance)
+      instance.pending_save!
       add(
         { 'index' => bulk_identifier(instance) },
         instance.to_elasticsearch_doc
@@ -25,6 +27,7 @@ module Elastictastic
     end
 
     def destroy(instance)
+      instance.pending_destroy!
       add(:delete => bulk_identifier(instance)) do |response|
         instance.transient!
       end
