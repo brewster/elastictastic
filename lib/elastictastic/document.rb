@@ -95,21 +95,18 @@ module Elastictastic
         @index = Index.new(response['_index'])
         persisted!
 
-        doc = response['_source']
-        doc ||=
-          begin
-            fields = response['fields']
-            if fields
-              Util.unflatten_hash(fields.reject { |k, v| v.nil? })
-            end
+        doc = {}
+        doc.merge!(response['_source']) if response['_source']
+        fields = response['fields']
+        if fields
+          unflattened_fields =
+            Util.unflatten_hash(fields.reject { |k, v| v.nil? })
+          if unflattened_fields.has_key?('_source')
+            doc.merge!(unflattened_fields.delete('_source'))
           end
-
-        if doc
-          if doc.has_key?('_source')
-            doc.merge!(doc.delete('_source'))
-          end
-          initialize_from_elasticsearch_doc(doc)
+          doc.merge!(unflattened_fields)
         end
+        initialize_from_elasticsearch_doc(doc)
       end
 
       def id=(id)

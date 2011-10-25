@@ -237,7 +237,13 @@ describe 'parent/child relationships' do
       stub_elasticsearch_search(
         'default', 'post',
         'hits' => {
-          'hits' => [{ '_id' => '1', '_index' => 'default', '_type' => 'post', 'fields' => { '_parent' => '3' }}]
+          'hits' => [
+            {
+              '_id' => '1', '_index' => 'default', '_type' => 'post',
+              '_source' => { 'title' => 'hey' },
+              'fields' => { '_parent' => '3' }
+            }
+          ]
         }
       )
     end
@@ -247,6 +253,10 @@ describe 'parent/child relationships' do
     it 'should provide access to parent' do
       stub_elasticsearch_get('default', 'blog', '3')
       post.blog.id.should == '3'
+    end
+
+    it 'should populate other fields from source' do
+      post.title.should == 'hey'
     end
 
     it 'should save post without dereferencing parent' do
