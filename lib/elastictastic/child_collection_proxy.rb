@@ -21,9 +21,7 @@ module Elastictastic
 
     def initialize_instance(instance)
       super
-      parent_collection = self
-      instance.instance_eval { @_parent_collection = parent_collection }
-      @transient_children << instance
+      self << instance
     end
 
     def first
@@ -32,6 +30,12 @@ module Elastictastic
 
     def persisted!(child)
       @transient_children.delete(child)
+    end
+
+    def <<(child)
+      child._parent_collection = self
+      @transient_children << child
+      self
     end
 
     private

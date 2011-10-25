@@ -137,6 +137,18 @@ module Elastictastic
         end
       end
 
+      def _parent_collection=(parent_collection)
+        if @_parent_collection
+          raise Elastictastic::IllegalModificationError,
+            "Document is already a child of #{_parent}"
+        end
+        if persisted?
+          raise Elastictastic::IllegalModificationError,
+            "Can't change parent of persisted object"
+        end
+        @_parent_collection = parent_collection
+      end
+
       def save
         if persisted?
           Elastictastic.persister.update(self)

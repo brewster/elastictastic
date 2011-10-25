@@ -131,6 +131,16 @@ describe 'parent/child relationships' do
         }
     end
 
+    it 'should retain other parts of scope' do
+      scope = posts.size(10)
+      scope.params['size'].should == 10
+    end
+
+    it 'should search correct index' do
+      stub_elasticsearch_scan('my_index', 'post', 100, { '_id' => '1' })
+      posts.to_a.first.id.should == '1'
+    end
+
     it 'should set routing to parent ID on get' do
       stub_elasticsearch_get('my_index', 'post', 1)
       blog.posts.find(1)
@@ -146,16 +156,6 @@ describe 'parent/child relationships' do
           { '_id' => 2, 'routing' => blog.id }
         ]
       }
-    end
-
-    it 'should retain other parts of scope' do
-      scope = posts.size(10)
-      scope.params['size'].should == 10
-    end
-
-    it 'should search correct index' do
-      stub_elasticsearch_scan('my_index', 'post', 100, { '_id' => '1' })
-      posts.to_a.first.id.should == '1'
     end
 
     it 'should save transient instances when parent is saved' do
@@ -229,6 +229,31 @@ describe 'parent/child relationships' do
         'my_index', 'post', 'hits' => { 'total' => 0, 'hits' => [] })
       post = blog.posts.new
       blog.posts.first.should == post
+    end
+
+    describe '#<<' do
+      let(:post) { Post.new }
+
+      before do
+        blog.posts << post
+      end
+
+      it 'should set parent of child object' do
+        post.blog.should == blog
+      end
+
+      it 'should not allow setting of a different parent' do
+        blog2 = Blog.new
+        expect { blog2.posts << post }.to raise_error(
+          Elastictastic::IllegalModificationError)
+      end
+
+      it 'should not allow setting of parent on already-persisted object' do
+        post = Post.new
+        post.persisted!
+        expect { blog.posts << post }.to raise_error(
+          Elastictastic::IllegalModificationError)
+      end
     end
   end
 
