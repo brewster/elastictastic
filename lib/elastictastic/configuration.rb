@@ -1,6 +1,6 @@
 module Elastictastic
   class Configuration
-    attr_writer :hosts, :adapter, :default_index, :auto_refresh
+    attr_writer :hosts, :adapter, :default_index, :auto_refresh, :default_batch_size
     attr_accessor :logger
 
     def host=(host)
@@ -21,6 +21,10 @@ module Elastictastic
 
     def auto_refresh
       !!@auto_refresh
+    end
+
+    def default_batch_size
+      @default_batch_size ||= 100
     end
   end
 end

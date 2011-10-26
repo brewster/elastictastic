@@ -18,26 +18,28 @@ module Elastictastic
       @search.params
     end
 
+    def each
+      if ::Kernel.block_given?
+        find_each { |result, hit| yield result }
+      else
+        ::Enumerator.new(self, :each)
+      end
+    end
+
     def find_each(batch_options = {}, &block)
       if block then enumerate_each(batch_options, &block)
       else ::Enumerator.new(self, :enumerate_each, batch_options)
       end
     end
-    alias_method :each, :find_each
 
     def find_in_batches(batch_options = {}, &block)
+      return ::Enumerator.new(self, :find_in_batches) unless block
       if params.key?('size') || params.key?('from')
-        if block then yield search_all
-        else ::Enumerator.new([search_all], :each)
-        end
+        yield search_all
       elsif params.key?('sort') || params.key('facets')
-        if block then search_in_batches(&block)
-        else ::Enumerator.new(self, :search_in_batches)
-        end
+        search_in_batches(&block)
       else
-        if block then scan_in_batches(batch_options, &block)
-        else ::Enumerator.new(self, :scan_in_batches, batch_options)
-        end
+        scan_in_batches(batch_options, &block)
       end
     end
 
@@ -126,7 +128,7 @@ module Elastictastic
 
     def method_missing(method, *args, &block)
       if ::Enumerable.method_defined?(method)
-        find_each.__send__(method, *args, &block)
+        each.__send__(method, *args, &block)
       elsif @clazz.respond_to?(method)
         @clazz.with_scope(self) do
           @clazz.__send__(method, *args, &block)
@@ -162,13 +164,13 @@ module Elastictastic
     end
 
     def search_in_batches(&block)
-      from, size = 0, 100
+      from, size = 0, ::Elastictastic.config.default_batch_size
       scope_with_size = self.size(size)
       begin
         scope = scope_with_size.from(from)
         response = scope.search(:search_type => 'query_then_fetch')
         populate_counts(response)
-        yield(materialize_hits(response['hits']['hits']))
+        yield materialize_hits(response['hits']['hits'])
         from += size
         @count ||= scope.count
       end while from < @count
@@ -178,7 +180,7 @@ module Elastictastic
       batch_options = batch_options.symbolize_keys
       scroll_options = {
         :scroll => "#{batch_options[:ttl] || 60}s",
-        :size => batch_options[:batch_size] || 100
+        :size => batch_options[:batch_size] || ::Elastictastic.config.default_batch_size
       }
       scan_response = ::Elastictastic.client.search(
         @index,
@@ -193,7 +195,7 @@ module Elastictastic
       begin
         response = ::Elastictastic.client.scroll(scroll_id, scroll_options.slice(:scroll))
         scroll_id = response['_scroll_id']
-        yield(materialize_hits(response['hits']['hits']))
+        yield materialize_hits(response['hits']['hits'])
       end until response['hits']['hits'].empty?
     end
 
@@ -222,7 +224,7 @@ module Elastictastic
       end
       materialize_hits(
         ::Elastictastic.client.mget(docspec, index, type)['docs']
-      )
+      ).map { |result, hit| result }
     end
 
     def find_many_in_many_indices(ids_by_index)
@@ -237,7 +239,9 @@ module Elastictastic
           doc['fields'] = ::Kernel.Array(@search['fields']) if @search['fields']
         end
       end
-      materialize_hits(::Elastictastic.client.mget(docs)['docs'])
+      materialize_hits(
+        ::Elastictastic.client.mget(docs)['docs']
+      ).map { |result, hit| result }
     end
 
     def enumerate_each(batch_options = {}, &block)
@@ -263,9 +267,12 @@ module Elastictastic
     end
 
     def materialize_hits(hits)
-      [].tap do |results|
-        hits.each do |hit|
-          results << materialize_hit(hit) unless hit['exists'] == false
+      unless ::Kernel.block_given?
+        return ::Enumerator.new(self, :materialize_hits, hits)
+      end
+      hits.each do |hit|
+        unless hit['exists'] == false
+          yield materialize_hit(hit), ::Hashie::Mash.new(hit)
         end
       end
     end

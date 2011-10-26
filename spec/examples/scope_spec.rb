@@ -12,7 +12,7 @@ describe Elastictastic::Scope do
   let(:last_request_params) { last_request.path.split('?', 2)[1].try(:split, '&') }
 
   describe '#each' do
-    let(:noop) { lambda { |arg| } }
+    let(:noop) { proc { |arg| } }
 
     context 'with query only' do
       let(:scope) { Post.all.fields('title') }
@@ -119,11 +119,14 @@ describe Elastictastic::Scope do
       end
 
       before do
+        Elastictastic.config.default_batch_size = 2
         stub_elasticsearch_search(
           'default', 'post',
-          make_hits(101).each_slice(100).map { |batch| { 'hits' => { 'hits' => batch, 'total' => 101 }} }
+          make_hits(3).each_slice(2).map { |batch| { 'hits' => { 'hits' => batch, 'total' => 3 }} }
         )
       end
+
+      after { Elastictastic.config.default_batch_size = nil }
 
       it 'should send two requests' do
         scope.to_a
@@ -140,14 +143,14 @@ describe Elastictastic::Scope do
       it 'should send from' do
         scope.to_a
         request_bodies.each_with_index do |body, i|
-          body['from'].should == i * 100
+          body['from'].should == i * 2
         end
       end
 
       it 'should send size' do
         scope.to_a
         request_bodies.each do |body|
-          body['size'].should == 100
+          body['size'].should == 2
         end
       end
 
@@ -159,7 +162,7 @@ describe Elastictastic::Scope do
       end
 
       it 'should return all results' do
-        scope.map { |post| post.id }.should == (1..101).map(&:to_s)
+        scope.map { |post| post.id }.should == (1..3).map(&:to_s)
       end
 
       it 'should mark documents persisent' do
@@ -167,6 +170,66 @@ describe Elastictastic::Scope do
       end
     end # context 'with sort but no from/size'
   end # describe '#each'
+
+  describe 'hit metadata' do
+    before { Elastictastic.config.default_batch_size = 2 }
+    after { Elastictastic.config.default_batch_size = nil }
+
+    let(:hits) do
+      make_hits(3) do |hit, i|
+        hit.merge('highlight' => { 'title' => ["pizza #{i}"] })
+      end
+    end
+
+    shared_examples_for 'enumerator with hit metadata' do
+      it 'should yield from each batch #find_in_batches' do
+        i = -1
+        scope.find_in_batches do |batch|
+          batch.each do |post, hit|
+            hit.highlight['title'].first.should == "pizza #{i += 1}"
+          end
+        end
+      end
+
+      it 'should yield from #find_each' do
+        i = -1
+        scope.find_each do |post, hit|
+          hit.highlight['title'].first.should == "pizza #{i += 1}"
+        end
+      end
+    end
+
+    context 'in scan search' do
+      let(:scope) { Post }
+
+      before do
+        stub_elasticsearch_scan('default', 'post', 2, *hits)
+      end
+
+      it_should_behave_like 'enumerator with hit metadata'
+    end
+
+    context 'in paginated search' do
+      let(:scope) { Post.sort('title' => 'desc') }
+
+      before do
+        batches = hits.each_slice(2).map { |batch| { 'hits' => { 'hits' => batch, 'total' => 3 }} }
+        stub_elasticsearch_search('default', 'post', batches)
+      end
+
+      it_should_behave_like 'enumerator with hit metadata'
+    end
+
+    context 'in single-page search' do
+      let(:scope) { Post.size(3) }
+
+      before do
+        stub_elasticsearch_search('default', 'post', 'hits' => { 'hits' => hits, 'total' => 3 })
+      end
+
+      it_should_behave_like 'enumerator with hit metadata'
+    end
+  end
 
   describe '#count' do
     context 'with no operations performed yet' do
@@ -416,12 +479,13 @@ describe Elastictastic::Scope do
 
   def make_hits(count)
     Array.new(count) do |i|
-      {
+      hit = {
         '_id' => (i + 1).to_s,
         '_type' => 'post',
         '_index' => 'default',
         '_source' => { 'title' => "Post #{i + 1}" }
       }
+      block_given? ? yield(hit, i) : hit
     end
   end
 end
