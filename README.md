@@ -218,6 +218,17 @@ array:
 Post.find(['123'])
 ```
 
+For child documents, you **must** perform GET requests using the parent's
+association collection:
+
+```ruby
+post = blog.posts.new
+post.save
+
+blog.posts.find(post.id) # this will return the post
+Post.find(post.id)       # but this won't!
+```
+
 ### Specifying the index ###
 
 Elastictastic defines a default index for your documents. If you're using Rails,
