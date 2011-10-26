@@ -236,9 +236,8 @@ the default index is your application's name suffixed with the current
 environment; outside of Rails, the default index is simply "default". You can
 change this using the `default_index` configuration key.
 
-To persist a document to an index other than the default, set the `index`
-attribute on the model; to retrieve a document from a non-default index, use
-the `in_index` method:
+When you want to work with documents in an index other than the default, use
+the `in_index` class method:
 
 ```ruby
 new_post = Post.in_index('my_special_index').new # create in an index
