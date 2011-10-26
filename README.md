@@ -111,6 +111,77 @@ class Author
 end
 ```
 
+### Parent-child relationships ###
+
+You may define
+[parent-child relationships](http://www.elasticsearch.org/blog/2010/12/27/0.14.0-released.html)
+ for your documents using the `has_many` and `belongs_to` macros:
+
+```ruby
+class Blog
+  include Elastictastic::Document
+
+  has_many :posts
+end
+```
+
+```ruby
+class Post
+  include Elastictastic::Document
+
+  belongs_to :blog
+end
+```
+
+Unlike in, say, ActiveRecord, an Elastictastic document can only specify one
+parent (`belongs_to`) relationship. A document can have as many children
+(`has_many`) as you would like.
+
+The parent/child relationship has far-reaching consequences in ElasticSearch,
+and as such you will generally interact with child documents via the parent's
+association collection. For instance, this is the standard way to create a new
+child instance:
+
+```ruby
+post = blog.posts.new
+```
+
+The above will return a new Post object whose parent is the `blog`; the
+`blog.posts` collection will retain a reference to the transient `post`
+instance, and will auto-save it when the `blog` is saved.
+
+You may also create a child instance independently and then add it to a parent's
+child collection; however, you must do so before saving the child instance, as
+ElasticSeach requires types that define parents to have a parent. The following
+code block has the same outcome as the previous one:
+
+```ruby
+post = Post.new
+blog.posts << post
+```
+
+In most other respects, the `blog.posts` collection behaves the same as a
+search scope (more on that below), except that enumeration methods (`#each`,
+`#map`, etc.) will return unsaved child instances along with instances
+persisted in ElasticSearch.
+
+### Syncing your mapping ###
+
+Before you start creating documents with Elastictastic, you need to make
+ElasticSearch aware of your document structure. To do this, use the
+`sync_mapping` method:
+
+```ruby
+Post.sync_mapping
+```
+
+If you have a complex multi-index topology, you may want to consider using
+[ElasticSearch templates](http://www.elasticsearch.org/guide/reference/api/admin-indices-templates.html)
+to manage mappings and other index settings; Elastictastic doesn't provide any
+explicit support for this at the moment, although you can use e.g.
+`Post.mapping` to retrieve the mapping structure which you can then merge into
+your template.
+
 ### Reserved Attributes ###
 
 All `Elastictastic::Document` models have an `id` and an `index` field, which
@@ -134,6 +205,19 @@ To retrieve a document from the data store, use `get`:
 Post.find('123')
 ```
 
+You can look up multiple documents by ID:
+
+```ruby
+Post.find('123', '456')
+```
+
+You can also pass an array of IDs; the following will return a one-element
+array:
+
+```ruby
+Post.find(['123'])
+```
+
 ### Specifying the index ###
 
 Elastictastic defines a default index for your documents. If you're using Rails,
@@ -148,17 +232,6 @@ the `in_index` method:
 ```ruby
 new_post = Post.in_index('my_special_index').new # create in an index
 post = Post.in_index('my_special_index').get('123') # retrieve from an index
-```
-
-### Retrieving multiple documents ###
-
-If you wish to retrieve multiple documents from the same index, pass all
-the IDs into the `get` method:
-
-```ruby
-Post.find('123', '456', '789')
-Post.find(['123', '456', '789']) # this is fine too
-Post.find(['123']) # returns a one-element array
 ```
 
 To retrieve documents from multiple indices at the same time, pass a hash into
@@ -212,6 +285,30 @@ end
 
 You can also call `count` on a scope; this will give the total number of
 documents matching the query.
+
+In some situations, you may wish to access metadata about search results beyond
+simply the result document. To do this, use the `#find_each` method, which
+yields a `Hashie::Mash` containing the raw ElasticSearch hit object in the
+second argument:
+
+```ruby
+Post.highlight { fields(:title => {}) }.find_each do |post, hit|
+  puts "Post #{post.id} matched the query string in the title field: #{hit.highlight['title']}"
+end
+```
+
+Search scope also expose a #find_in_batches method, which also yields the raw
+hit. The following code gives the same result as the previous example:
+
+```ruby
+Post.highlight { fields(:title => {}) }.find_in_batches do |batch|
+  batch.each do |post, hit|
+    puts "Post #{post.id} matched the query string in the title field: #{hit.highlight['title']}"
+  end
+end
+```
+
+Both `find_each` and `find_in_batches` accept a :batch_size option.
 
 ## License ##
 
