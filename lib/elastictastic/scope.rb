@@ -55,8 +55,8 @@ module Elastictastic
       count == 0
     end
 
-    def any?
-      !empty?
+    def any?(&block)
+      block ? each.any?(&block) : !empty?
     end
 
     def first
