@@ -28,6 +28,10 @@ module Elastictastic
       super || @transient_children.first
     end
 
+    def each(&block)
+      super.tap { @transient_children.each(&block) if block }
+    end
+
     def persisted!(child)
       @transient_children.delete(child)
     end
@@ -39,11 +43,6 @@ module Elastictastic
     end
 
     private
-
-    def enumerate_each(batch_options = {}, &block)
-      super
-      @transient_children.each(&block)
-    end
 
     def params_for_find
       super.merge('routing' => @parent.id)

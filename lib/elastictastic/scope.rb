@@ -27,13 +27,15 @@ module Elastictastic
     end
 
     def find_each(batch_options = {}, &block)
-      if block then enumerate_each(batch_options, &block)
-      else ::Enumerator.new(self, :enumerate_each, batch_options)
+      if block
+        find_in_batches(batch_options) { |batch| batch.each(&block) }
+      else
+        ::Enumerator.new(self, :find_each, batch_options)
       end
     end
 
     def find_in_batches(batch_options = {}, &block)
-      return ::Enumerator.new(self, :find_in_batches) unless block
+      return ::Enumerator.new(self, :find_in_batches, batch_options) unless block
       if params.key?('size') || params.key?('from')
         yield search_all
       elsif params.key?('sort') || params.key('facets')
@@ -242,12 +244,6 @@ module Elastictastic
       materialize_hits(
         ::Elastictastic.client.mget(docs)['docs']
       ).map { |result, hit| result }
-    end
-
-    def enumerate_each(batch_options = {}, &block)
-      find_in_batches(batch_options) do |batch|
-        batch.each(&block)
-      end
     end
 
     def params_for_find_one
