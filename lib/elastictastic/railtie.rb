@@ -16,6 +16,8 @@ module Elastictastic
       end
 
       Elastictastic.config.logger = Rails.logger
+
+      require 'elastictastic/new_relic_instrumentation' if defined? NewRelic
     end
   end
 end
