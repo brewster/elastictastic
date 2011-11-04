@@ -15,13 +15,6 @@ module Elastictastic
                :query, :filter, :from, :size, :sort, :highlight, :fields,
                :script_fields, :preference, :facets, :to => :current_scope
 
-      def new(*args)
-        allocate.tap do |instance|
-          current_scope.initialize_instance(instance)
-          instance.instance_eval { initialize(*args) }
-        end
-      end
-
       def new_from_elasticsearch_hit(hit)
         allocate.tap do |instance|
           instance.instance_eval do
@@ -89,6 +82,10 @@ module Elastictastic
 
     module InstanceMethods
       attr_reader :id
+
+      def initialize
+        self.class.current_scope.initialize_instance(self)
+      end
 
       def initialize_from_elasticsearch_hit(response)
         @id = response['_id']
