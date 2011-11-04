@@ -25,7 +25,7 @@ describe Elastictastic::Document do
       end
 
       it 'should send document in the body' do
-        last_request.body.should == post.to_elasticsearch_doc.to_json
+        last_request.body.should == post.elasticsearch_doc.to_json
       end
 
       it 'should populate ID of model object' do
@@ -55,7 +55,7 @@ describe Elastictastic::Document do
         end
 
         it 'should send document in body' do
-          last_request.body.should == post.to_elasticsearch_doc.to_json
+          last_request.body.should == post.elasticsearch_doc.to_json
         end
       end # context 'with unique ID'
 
@@ -113,7 +113,7 @@ describe Elastictastic::Document do
         end
 
         it "should send document's body in request" do
-          last_request.body.should == post.to_elasticsearch_doc.to_json
+          last_request.body.should == post.elasticsearch_doc.to_json
         end
       end # describe '#save'
     end # shared_examples_for 'persisted object'

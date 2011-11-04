@@ -113,13 +113,19 @@ module Elastictastic
         @embeds = {}
       end
 
-      def to_elasticsearch_doc
+      def elasticsearch_doc
         {}.tap do |doc|
-          self.class.properties.each_pair do |field_name, options|
-            value = __send__(field_name)
+          @attributes.each_pair do |field, value|
             next if value.nil?
-            doc[field_name] =
-              Util.call_or_map(value) { |item| serialize_value(field_name, item) }
+            doc[field] = Util.call_or_map(value) do |item|
+              serialize_value(field, item)
+            end
+          end
+          @embeds.each_pair do |field, embedded|
+            next if embedded.nil?
+            doc[field] = Util.call_or_map(embedded) do |item|
+              item.elasticsearch_doc
+            end
           end
         end
       end
@@ -129,7 +135,7 @@ module Elastictastic
       end
 
       def ==(other)
-        to_elasticsearch_doc == other.to_elasticsearch_doc
+        elasticsearch_doc == other.elasticsearch_doc
       end
 
       protected
@@ -180,23 +186,19 @@ module Elastictastic
       private
 
       def serialize_value(field_name, value)
-        if value.respond_to?(:to_elasticsearch_doc)
-          value.to_elasticsearch_doc
+        type = self.class.properties_for_field(field_name)['type'].to_s
+        case type
+        when 'date'
+          time = value.to_time
+          time.to_i * 1000 + time.usec / 1000
+        when 'integer', 'byte', 'short', 'long'
+          value.to_i
+        when 'float', 'double'
+          value.to_f
+        when 'boolean'
+          !!value
         else
-          type = self.class.properties_for_field(field_name)['type'].to_s
-          case type
-          when 'date'
-            time = value.to_time
-            time.to_i * 1000 + time.usec / 1000
-          when 'integer', 'byte', 'short', 'long'
-            value.to_i
-          when 'float', 'double'
-            value.to_f
-          when 'boolean'
-            !!value
-          else
-            value
-          end
+          value
         end
       end
 

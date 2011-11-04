@@ -11,7 +11,7 @@ module Elastictastic
         doc.index,
         doc.class.type,
         doc.id,
-        doc.to_elasticsearch_doc,
+        doc.elasticsearch_doc,
         params_for(doc)
       )
       doc.id = response['_id']
@@ -23,7 +23,7 @@ module Elastictastic
         doc.index,
         doc.class.type,
         doc.id,
-        doc.to_elasticsearch_doc,
+        doc.elasticsearch_doc,
         params_for(doc)
       )
       doc.persisted!

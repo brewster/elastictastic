@@ -15,7 +15,7 @@ module Elastictastic
       instance.pending_save!
       add(
         { 'create' => bulk_identifier(instance) },
-        instance.to_elasticsearch_doc
+        instance.elasticsearch_doc
       ) do |response|
         instance.id = response['create']['_id']
         instance.persisted!
@@ -26,7 +26,7 @@ module Elastictastic
       instance.pending_save!
       add(
         { 'index' => bulk_identifier(instance) },
-        instance.to_elasticsearch_doc
+        instance.elasticsearch_doc
       )
     end
 

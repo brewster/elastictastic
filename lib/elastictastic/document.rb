@@ -86,7 +86,7 @@ module Elastictastic
         end
       end
 
-      def elasticsearch_hit=(hit)
+      def elasticsearch_hit=(hit) #:nodoc:
         @id = hit['_id']
         @index = Index.new(hit['_index'])
         persisted!

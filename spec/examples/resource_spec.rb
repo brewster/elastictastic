@@ -36,9 +36,9 @@ describe Elastictastic::Resource do
     end
   end
 
-  describe '#to_elasticsearch_doc' do
+  describe '#elasticsearch_doc' do
     let(:post) { Post.new }
-    let(:doc) { post.to_elasticsearch_doc }
+    let(:doc) { post.elasticsearch_doc }
 
     it 'should return scalar properties' do
       post.title = 'You know, for search.'

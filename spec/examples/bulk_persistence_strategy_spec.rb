@@ -30,7 +30,7 @@ describe Elastictastic::BulkPersistenceStrategy do
     it 'should send index operation' do
       bulk_requests.should == [
         { 'create' => { '_index' => 'default', '_type' => 'post' }},
-        post.to_elasticsearch_doc
+        post.elasticsearch_doc
       ]
     end
 
@@ -91,7 +91,7 @@ describe Elastictastic::BulkPersistenceStrategy do
       bulk_requests.should == posts.map do |post|
         [
           { 'create' => { '_index' => 'default', '_type' => 'post' }},
-          post.to_elasticsearch_doc
+          post.elasticsearch_doc
         ]
       end.flatten
     end
@@ -119,7 +119,7 @@ describe Elastictastic::BulkPersistenceStrategy do
     it 'should send ID in request to create' do
       bulk_requests.should == [
         { 'create' => { '_index' => 'default', '_type' => 'post', '_id' => '123' }},
-        post.to_elasticsearch_doc
+        post.elasticsearch_doc
       ]
     end
 
@@ -151,7 +151,7 @@ describe Elastictastic::BulkPersistenceStrategy do
 
       bulk_requests.should == [
         { 'index' => { '_index' => 'default', '_type' => 'post', '_id' => '123' }},
-        post.to_elasticsearch_doc
+        post.elasticsearch_doc
       ]
     end
   end
