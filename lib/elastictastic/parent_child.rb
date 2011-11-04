@@ -43,7 +43,7 @@ module Elastictastic
 
     module InstanceMethods
 
-      def initialize
+      def initialize(attributes = {})
         super
         @children = Hash.new do |hash, child_association_name|
           hash[child_association_name] = Elastictastic::ChildCollectionProxy.new(

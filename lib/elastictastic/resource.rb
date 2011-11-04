@@ -4,6 +4,7 @@ module Elastictastic
 
     included do
       include Dirty
+      include MassAssignmentSecurity
     end
 
     module ClassMethods
@@ -115,13 +116,20 @@ module Elastictastic
     end
 
     module InstanceMethods
-      def initialize
+      def initialize(attributes = {})
         @attributes = {}
         @embeds = {}
+        self.attributes = attributes
       end
 
       def attributes
         @attributes.with_indifferent_access
+      end
+
+      def attributes=(attributes)
+        attributes.each_pair do |field, value|
+          __send__(:"#{field}=", value)
+        end
       end
 
       def elasticsearch_doc

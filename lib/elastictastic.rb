@@ -14,6 +14,7 @@ module Elastictastic
   autoload :Document, 'elastictastic/document'
   autoload :Field, 'elastictastic/field'
   autoload :Index, 'elastictastic/index'
+  autoload :MassAssignmentSecurity, 'elastictastic/mass_assignment_security'
   autoload :Middleware, 'elastictastic/middleware'
   autoload :ParentChild, 'elastictastic/parent_child'
   autoload :Persistence, 'elastictastic/persistence'

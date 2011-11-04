@@ -8,6 +8,7 @@ module Elastictastic
       include ParentChild
       include Callbacks
       include Dirty
+      include MassAssignmentSecurity
 
       extend ActiveModel::Naming
       include ActiveModel::Conversion
@@ -50,7 +51,7 @@ module Elastictastic
 
       attr_reader :id
 
-      def initialize
+      def initialize(attributes = {})
         self.class.current_scope.initialize_instance(self)
         super
       end

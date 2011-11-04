@@ -14,6 +14,8 @@ class Post
 
   belongs_to :blog
 
+  attr_accessible :title
+
   def self.search_keywords(keywords)
     query do
       query_string do
