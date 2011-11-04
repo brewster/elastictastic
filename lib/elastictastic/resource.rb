@@ -165,9 +165,7 @@ module Elastictastic
       def elasticsearch_doc=(doc)
         return if doc.nil?
         doc.each_pair do |field_name, value|
-          if field_name == '_parent'
-            @_parent_id = value
-          elsif self.class.properties.has_key?(field_name)
+          if self.class.properties.has_key?(field_name)
             embed = self.class.embeds[field_name]
             deserialized = Util.call_or_map(value) do |item|
               if embed

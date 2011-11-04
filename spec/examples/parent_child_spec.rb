@@ -1,6 +1,6 @@
 require File.expand_path('../spec_helper', __FILE__)
 
-describe 'parent/child relationships' do
+describe Elastictastic::ParentChild do
   include Elastictastic::TestHelpers
 
   describe 'mappings' do

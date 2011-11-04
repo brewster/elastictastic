@@ -12,6 +12,7 @@ module Elastictastic
   autoload :Field, 'elastictastic/field'
   autoload :Index, 'elastictastic/index'
   autoload :Middleware, 'elastictastic/middleware'
+  autoload :ParentChild, 'elastictastic/parent_child'
   autoload :Persistence, 'elastictastic/persistence'
   autoload :Resource, 'elastictastic/resource'
   autoload :Scope, 'elastictastic/scope'

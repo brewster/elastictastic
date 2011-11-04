@@ -38,12 +38,8 @@ module Elastictastic
     end
 
     def persisted!
-      was_persisted = @persisted
       @persisted = true
       @pending_save = false
-      if @_parent_collection && !was_persisted
-        @_parent_collection.persisted!(self)
-      end
     end
 
     def transient!

@@ -37,7 +37,7 @@ module Elastictastic
     end
 
     def <<(child)
-      child._parent_collection = self
+      child.parent_collection = self
       @transient_children << child
       self
     end
