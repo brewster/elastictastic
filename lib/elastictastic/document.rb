@@ -6,6 +6,11 @@ module Elastictastic
       extend Scoped
       include Persistence
       include ParentChild
+      include Callbacks
+
+      extend ActiveModel::Naming
+      include ActiveModel::Conversion
+      include ActiveModel::Validations
     end
 
     module ClassMethods

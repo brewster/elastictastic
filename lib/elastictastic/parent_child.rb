@@ -87,8 +87,13 @@ module Elastictastic
         @parent = parent_collection.parent
       end
 
-      def read_child(field_name)
-        @children[field_name.to_s]
+      def save
+        super
+        self.class.child_associations.each_pair do |name, association|
+          association.extract(self).transient_children.each do |child|
+            child.save unless child.pending_save?
+          end
+        end
       end
 
       def persisted!
@@ -98,6 +103,13 @@ module Elastictastic
           @parent_collection.persisted!(self)
         end
       end
+
+      protected
+
+      def read_child(field_name)
+        @children[field_name.to_s]
+      end
+
     end
   end
 end

@@ -1,16 +1,7 @@
 module Elastictastic
   module Persistence
     def save
-      if persisted?
-        Elastictastic.persister.update(self)
-      else
-        Elastictastic.persister.create(self)
-      end
-      self.class.child_associations.each_pair do |name, association|
-        association.extract(self).transient_children.each do |child|
-          child.save unless child.pending_save?
-        end
-      end
+      persisted? ? update : create
     end
     
     def destroy
@@ -52,6 +43,16 @@ module Elastictastic
 
     def pending_destroy!
       @pending_destroy = true
+    end
+
+    protected
+
+    def create
+      Elastictastic.persister.create(self)
+    end
+
+    def update
+      Elastictastic.persister.update(self)
     end
 
     private

@@ -1,9 +1,11 @@
 require 'active_support/core_ext'
+require 'active_model'
 require 'elastictastic/errors'
 
 module Elastictastic
   autoload :Association, 'elastictastic/association'
   autoload :BulkPersistenceStrategy, 'elastictastic/bulk_persistence_strategy'
+  autoload :Callbacks, 'elastictastic/callbacks'
   autoload :ChildCollectionProxy, 'elastictastic/child_collection_proxy'
   autoload :Client, 'elastictastic/client'
   autoload :Configuration, 'elastictastic/configuration'
