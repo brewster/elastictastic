@@ -3,11 +3,12 @@ module Elastictastic
     extend ActiveSupport::Concern
 
     included do
-      include Elastictastic::Resource
       extend Elastictastic::Scoped
     end
 
     module ClassMethods
+      include Elastictastic::Resource::ClassMethods
+
       attr_reader :parent_association
 
       delegate :find, :destroy_all, :sync_mapping, :inspect, :find_each,
@@ -16,7 +17,7 @@ module Elastictastic
                :script_fields, :preference, :facets, :to => :current_scope
 
       def new_from_elasticsearch_hit(hit)
-        allocate.tap do |instance|
+        new.tap do |instance|
           instance.instance_eval do
             initialize_from_elasticsearch_hit(hit)
           end
@@ -57,10 +58,7 @@ module Elastictastic
 
         module_eval(<<-RUBY, __FILE__, __LINE__ + 1)
           def #{children_name}
-            @#{children_name} ||= Elastictastic::ChildCollectionProxy.new(
-              self.class.child_association(#{children_name.inspect}),
-              self
-            )
+            read_child(#{children_name.inspect})
           end
         RUBY
       end
@@ -81,10 +79,19 @@ module Elastictastic
     end
 
     module InstanceMethods
+      include Elastictastic::Resource::InstanceMethods
+
       attr_reader :id
 
       def initialize
         self.class.current_scope.initialize_instance(self)
+        super
+        @children = Hash.new do |hash, child_association_name|
+          hash[child_association_name] = Elastictastic::ChildCollectionProxy.new(
+            self.class.child_association(child_association_name.to_s),
+            self
+          )
+        end
       end
 
       def initialize_from_elasticsearch_hit(response)
@@ -144,6 +151,10 @@ module Elastictastic
             "Can't change parent of persisted object"
         end
         @_parent_collection = parent_collection
+      end
+
+      def read_child(field_name)
+        @children[field_name.to_s]
       end
 
       def save

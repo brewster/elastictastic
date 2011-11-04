@@ -4,7 +4,7 @@ module Elastictastic
 
     module ClassMethods
       def new_from_elasticsearch_doc(doc)
-        allocate.tap do |instance|
+        new.tap do |instance|
           instance.instance_eval { initialize_from_elasticsearch_doc(doc) }
         end
       end
@@ -69,7 +69,17 @@ module Elastictastic
         options = field_names.extract_options!
 
         field_names.each do |field_name|
-          attr_accessor(field_name)
+          field_name = field_name.to_s
+
+          module_eval(<<-RUBY, __FILE__, __LINE__ + 1)
+            def #{field_name}
+              read_attribute(#{field_name.inspect})
+            end
+
+            def #{field_name}=(value)
+              write_attribute(#{field_name.inspect}, value)
+            end
+          RUBY
 
           field_properties[field_name.to_s] =
             Field.process(field_name, options, &block)
@@ -83,15 +93,18 @@ module Elastictastic
           embed_name = embed_name.to_s
           embed = Association.new(embed_name, options)
 
-          attr_reader(embed_name)
-          module_eval <<-RUBY
+          module_eval <<-RUBY, __FILE__, __LINE__ + 1
+            def #{embed_name}
+              read_embed(#{embed_name.inspect})
+            end
+
             def #{embed_name}=(value)
               Util.call_or_each(value) do |check_value|
                 unless check_value.nil? || check_value.is_a?(#{embed.class_name})
                   raise TypeError, "Expected instance of class #{embed.class_name}; got \#{check_value.inspect}"
                 end
               end
-              @#{embed_name} = value
+              write_embed(#{embed_name.inspect}, value)
             end
           RUBY
 
@@ -101,6 +114,11 @@ module Elastictastic
     end
 
     module InstanceMethods
+      def initialize
+        @attributes = {}
+        @embeds = {}
+      end
+
       def to_elasticsearch_doc
         {}.tap do |doc|
           self.class.properties.each_pair do |field_name, options|
@@ -120,6 +138,28 @@ module Elastictastic
         to_elasticsearch_doc == other.to_elasticsearch_doc
       end
 
+      protected
+
+      def read_attribute(field)
+        @attributes[field.to_s]
+      end
+
+      def write_attribute(field, value)
+        if value.nil?
+          @attributes.delete(field.to_s)
+        else
+          @attributes[field.to_s] = value
+        end
+      end
+
+      def read_embed(field)
+        @embeds[field.to_s]
+      end
+
+      def write_embed(field, value)
+        @embeds[field.to_s] = value
+      end
+
       private
 
       def initialize_from_elasticsearch_doc(doc)
@@ -128,8 +168,17 @@ module Elastictastic
           if field_name == '_parent'
             @_parent_id = value
           elsif self.class.properties.has_key?(field_name)
-            deserialized = Util.call_or_map(value) { |item| deserialize_value(field_name, item) }
-            instance_variable_set(:"@#{field_name}", deserialized)
+            embed = self.class.embeds[field_name]
+            deserialized = Util.call_or_map(value) do |item|
+              if embed
+                embed.clazz.new_from_elasticsearch_doc(item)
+              else
+                deserialize_value(field_name, item)
+              end
+            end
+            if embed then write_embed(field_name, deserialized)
+            else write_attribute(field_name, deserialized)
+            end
           end
         end
       end
@@ -157,10 +206,7 @@ module Elastictastic
 
       def deserialize_value(field_name, value)
         return nil if value.nil?
-        embed = self.class.embeds[field_name]
-        if embed
-          embed.clazz.new_from_elasticsearch_doc(value)
-        elsif self.class.properties_for_field(field_name)['type'].to_s == 'date'
+        if self.class.properties_for_field(field_name)['type'].to_s == 'date'
           if value.is_a? Fixnum
             sec, usec = value / 1000, (value % 1000) * 1000
             Time.at(sec, usec).utc
