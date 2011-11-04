@@ -2,6 +2,10 @@ module Elastictastic
   module Resource
     extend ActiveSupport::Concern
 
+    included do
+      include Dirty
+    end
+
     module ClassMethods
       def each_field
         properties.each_pair do |field, properties|
@@ -61,23 +65,26 @@ module Elastictastic
 
       def field(*field_names, &block)
         options = field_names.extract_options!
-
         field_names.each do |field_name|
-          field_name = field_name.to_s
-
-          module_eval(<<-RUBY, __FILE__, __LINE__ + 1)
-            def #{field_name}
-              read_attribute(#{field_name.inspect})
-            end
-
-            def #{field_name}=(value)
-              write_attribute(#{field_name.inspect}, value)
-            end
-          RUBY
-
-          field_properties[field_name.to_s] =
-            Field.process(field_name, options, &block)
+          define_field(field_name, options, &block)
         end
+      end
+
+      def define_field(field_name, options, &block)
+        field_name = field_name.to_s
+
+        module_eval(<<-RUBY, __FILE__, __LINE__ + 1)
+          def #{field_name}
+            read_attribute(#{field_name.inspect})
+          end
+
+          def #{field_name}=(value)
+            write_attribute(#{field_name.inspect}, value)
+          end
+        RUBY
+
+        field_properties[field_name.to_s] =
+          Field.process(field_name, options, &block)
       end
 
       def embed(*embed_names)
@@ -111,6 +118,10 @@ module Elastictastic
       def initialize
         @attributes = {}
         @embeds = {}
+      end
+
+      def attributes
+        @attributes.with_indifferent_access
       end
 
       def elasticsearch_doc

@@ -9,6 +9,7 @@ module Elastictastic
   autoload :ChildCollectionProxy, 'elastictastic/child_collection_proxy'
   autoload :Client, 'elastictastic/client'
   autoload :Configuration, 'elastictastic/configuration'
+  autoload :Dirty, 'elastictastic/dirty'
   autoload :DiscretePersistenceStrategy, 'elastictastic/discrete_persistence_strategy'
   autoload :Document, 'elastictastic/document'
   autoload :Field, 'elastictastic/field'

@@ -7,6 +7,7 @@ module Elastictastic
       include Persistence
       include ParentChild
       include Callbacks
+      include Dirty
 
       extend ActiveModel::Naming
       include ActiveModel::Conversion

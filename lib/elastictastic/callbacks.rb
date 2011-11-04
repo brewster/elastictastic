@@ -7,9 +7,6 @@ module Elastictastic
       define_model_callbacks :save, :create, :update, :destroy
     end
 
-    module ClassMethods
-    end
-
     module InstanceMethods
       def save
         run_callbacks(:save) { super }
