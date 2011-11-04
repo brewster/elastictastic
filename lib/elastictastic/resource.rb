@@ -3,12 +3,6 @@ module Elastictastic
     extend ActiveSupport::Concern
 
     module ClassMethods
-      def new_from_elasticsearch_doc(doc)
-        new.tap do |instance|
-          instance.instance_eval { initialize_from_elasticsearch_doc(doc) }
-        end
-      end
-
       def each_field
         properties.each_pair do |field, properties|
           if properties['properties']
@@ -160,9 +154,9 @@ module Elastictastic
         @embeds[field.to_s] = value
       end
 
-      private
+      protected
 
-      def initialize_from_elasticsearch_doc(doc)
+      def elasticsearch_doc=(doc)
         return if doc.nil?
         doc.each_pair do |field_name, value|
           if field_name == '_parent'
@@ -171,7 +165,7 @@ module Elastictastic
             embed = self.class.embeds[field_name]
             deserialized = Util.call_or_map(value) do |item|
               if embed
-                embed.clazz.new_from_elasticsearch_doc(item)
+                embed.clazz.new.tap { |embed| embed.elasticsearch_doc = item }
               else
                 deserialize_value(field_name, item)
               end
@@ -182,6 +176,8 @@ module Elastictastic
           end
         end
       end
+
+      private
 
       def serialize_value(field_name, value)
         if value.respond_to?(:to_elasticsearch_doc)

@@ -16,14 +16,6 @@ module Elastictastic
                :query, :filter, :from, :size, :sort, :highlight, :fields,
                :script_fields, :preference, :facets, :to => :current_scope
 
-      def new_from_elasticsearch_hit(hit)
-        new.tap do |instance|
-          instance.instance_eval do
-            initialize_from_elasticsearch_hit(hit)
-          end
-        end
-      end
-
       def mapping
         { type => { 'properties' => properties }}.tap do |mapping|
           mapping[type]['_parent'] = { 'type' => @parent_association.clazz.type } if @parent_association
@@ -94,14 +86,14 @@ module Elastictastic
         end
       end
 
-      def initialize_from_elasticsearch_hit(response)
-        @id = response['_id']
-        @index = Index.new(response['_index'])
+      def elasticsearch_hit=(hit)
+        @id = hit['_id']
+        @index = Index.new(hit['_index'])
         persisted!
 
         doc = {}
-        doc.merge!(response['_source']) if response['_source']
-        fields = response['fields']
+        doc.merge!(hit['_source']) if hit['_source']
+        fields = hit['fields']
         if fields
           unflattened_fields =
             Util.unflatten_hash(fields.reject { |k, v| v.nil? })
@@ -110,7 +102,7 @@ module Elastictastic
           end
           doc.merge!(unflattened_fields)
         end
-        initialize_from_elasticsearch_doc(doc)
+        self.elasticsearch_doc=(doc)
       end
 
       def id=(id)

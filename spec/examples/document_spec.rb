@@ -467,21 +467,23 @@ describe Elastictastic::Document do
   describe '::new_from_elasticsearch_hit' do
     context 'with full _source' do
       let :post do
-        Post.new_from_elasticsearch_hit(
-          '_id' => '1',
-          '_index' => 'my_index',
-          '_source' => {
-            'title' => 'Testy time',
-            'tags' => %w(search lucene),
-            'author' => { 'name' => 'Mat Brown' },
-            'comments' => [
-              { 'body' => 'first comment' },
-              { 'body' => 'lol' }
-            ],
-            'created_at' => '2011-09-12T13:27:16.345Z',
-            'published_at' => 1315848697123
+        Post.new.tap do |post|
+          post.elasticsearch_hit = {
+            '_id' => '1',
+            '_index' => 'my_index',
+            '_source' => {
+              'title' => 'Testy time',
+              'tags' => %w(search lucene),
+              'author' => { 'name' => 'Mat Brown' },
+              'comments' => [
+                { 'body' => 'first comment' },
+                { 'body' => 'lol' }
+              ],
+              'created_at' => '2011-09-12T13:27:16.345Z',
+              'published_at' => 1315848697123
+            }
           }
-        )
+        end
       end
 
       it 'should populate id' do
@@ -524,25 +526,27 @@ describe Elastictastic::Document do
 
     context 'with specified fields' do
       let(:post) do
-        Post.new_from_elasticsearch_hit(
-          '_id' => '1',
-          '_index' => 'my_index',
-          '_type' => 'post',
-          'fields' => {
-            'title' => 'Get efficient',
-            '_source.comments_count' => 2,
-            '_source.author' => {
-              'id' => '1',
-              'name' => 'Pontificator',
-              'email' => 'pontificator@blogosphere.biz'
-            },
-            '_source.comments' => [{
-              'body' => '#1 fun'
-            }, {
-              'body' => 'good fortune'
-            }]
+        Post.new.tap do |post|
+          post.elasticsearch_hit = {
+            '_id' => '1',
+            '_index' => 'my_index',
+            '_type' => 'post',
+            'fields' => {
+              'title' => 'Get efficient',
+              '_source.comments_count' => 2,
+              '_source.author' => {
+                'id' => '1',
+                'name' => 'Pontificator',
+                'email' => 'pontificator@blogosphere.biz'
+              },
+              '_source.comments' => [{
+                'body' => '#1 fun'
+              }, {
+                'body' => 'good fortune'
+              }]
+            }
           }
-        )
+        end
       end
 
       it 'should populate scalar from stored field' do
@@ -567,15 +571,17 @@ describe Elastictastic::Document do
 
     describe 'with missing values for requested fields' do
       let(:post) do
-        Post.new_from_elasticsearch_hit(
-          '_id' => '1',
-          '_index' => 'my_index',
-          'fields' => {
-            'title' => nil,
-            'author.name' => nil,
-            '_source.comments' => nil
+        Post.new.tap do |post|
+          post.elasticsearch_hit = {
+            '_id' => '1',
+            '_index' => 'my_index',
+            'fields' => {
+              'title' => nil,
+              'author.name' => nil,
+              '_source.comments' => nil
+            }
           }
-        )
+        end
       end
 
       it 'should set scalar from stored field to nil' do

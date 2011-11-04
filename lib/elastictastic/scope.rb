@@ -274,7 +274,8 @@ module Elastictastic
     end
 
     def materialize_hit(hit)
-      @clazz.new_from_elasticsearch_hit(hit).tap do |result|
+      @clazz.new.tap do |result|
+        result.elasticsearch_hit = hit
         if @parent_collection
           parent_collection = @parent_collection
           result.instance_eval { @_parent_collection = parent_collection }
