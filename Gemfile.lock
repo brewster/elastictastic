@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    elastictastic (0.4.0)
+    elastictastic (0.4.1)
       activesupport (~> 3.0)
       faraday (~> 0.7)
       hashie
