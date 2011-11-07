@@ -29,7 +29,12 @@ module Elastictastic
     end
 
     def each(&block)
-      super.tap { @transient_children.each(&block) if block }
+      if block
+        super
+        @transient_children.each(&block)
+      else
+        ::Enumerator.new(self, :each)
+      end
     end
 
     def persisted!(child)

@@ -1,5 +1,5 @@
 class Comment
-  include Elastictastic::Resource
+  include Elastictastic::NestedDocument
 
   field :body
 end

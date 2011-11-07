@@ -4,6 +4,7 @@ module Elastictastic
 
     included do
       extend Scoped
+      include Properties
       include Persistence
       include ParentChild
       include Callbacks
@@ -17,8 +18,6 @@ module Elastictastic
     end
 
     module ClassMethods
-      include Resource::ClassMethods
-
       delegate :find, :destroy_all, :sync_mapping, :inspect, :find_each,
                :find_in_batches, :first, :count, :empty?, :any?, :all,
                :query, :filter, :from, :size, :sort, :highlight, :fields,
@@ -48,13 +47,10 @@ module Elastictastic
     end
 
     module InstanceMethods
-      include Resource::InstanceMethods
-
       attr_reader :id
 
       def initialize(attributes = {})
         self.class.current_scope.initialize_instance(self)
-        super
       end
 
       def elasticsearch_hit=(hit) #:nodoc:

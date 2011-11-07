@@ -59,4 +59,42 @@ describe Elastictastic::Dirty do
       post.should_not be_title_changed
     end
   end
+
+  context 'nested attributes' do
+    let(:post) do
+      Post.new.tap do |post|
+        post.elasticsearch_hit = {
+          '_id' => '1',
+          '_type' => 'post',
+          '_index' => 'default',
+          '_source' => { 'author' => { 'name' => 'Mat Brown' }}
+        }
+      end
+    end
+
+    before do
+      post.author.name = 'Barack Obama'
+    end
+
+    it 'should be changed' do
+      pending 'nested dirty support'
+      post.should be_changed
+    end
+
+    it 'should mark association as changed' do
+      pending 'nested dirty support'
+      post.changed.should == %w(author)
+    end
+
+    it 'should return *_changed? for the association' do
+      pending 'nested dirty support'
+      post.should be_author_changed
+    end
+
+    it 'should have change' do
+      pending 'nested dirty support'
+      change = post.changes['author']
+      change.map { |change| change.name }.should == ['Mat Brown', 'Barack Obama']
+    end
+  end
 end
