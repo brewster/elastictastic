@@ -2,9 +2,11 @@ module Elastictastic
   module Callbacks
     extend ActiveSupport::Concern
 
+    HOOKS = [:save, :create, :update, :destroy]
+
     included do
       extend ActiveModel::Callbacks
-      define_model_callbacks :save, :create, :update, :destroy
+      define_model_callbacks(*HOOKS)
     end
 
     module InstanceMethods

@@ -16,6 +16,8 @@ module Elastictastic
   autoload :Index, 'elastictastic/index'
   autoload :MassAssignmentSecurity, 'elastictastic/mass_assignment_security'
   autoload :Middleware, 'elastictastic/middleware'
+  autoload :Observer, 'elastictastic/observer'
+  autoload :Observing, 'elastictastic/observing'
   autoload :ParentChild, 'elastictastic/parent_child'
   autoload :Persistence, 'elastictastic/persistence'
   autoload :Resource, 'elastictastic/resource'

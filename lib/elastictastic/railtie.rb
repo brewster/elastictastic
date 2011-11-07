@@ -1,5 +1,7 @@
 module Elastictastic
   class Railtie < Rails::Railtie
+    config.elastictastic = Elastictastic.config
+
     initializer "elastictastic.configure_rails" do
       config_path = Rails.root.join('config/elastictastic.yml').to_s
       config = Elastictastic.config
@@ -18,6 +20,16 @@ module Elastictastic
       Elastictastic.config.logger = Rails.logger
 
       require 'elastictastic/new_relic_instrumentation' if defined? NewRelic
+    end
+
+    initializer "elastictastic.instantiate_observers" do
+      config.after_initialize do
+        ::Elastictastic.instantiate_observers
+
+        ActionDispatch::Callbacks.to_prepare do
+          ::Elastictastic.instantiate_observers
+        end
+      end
     end
   end
 end

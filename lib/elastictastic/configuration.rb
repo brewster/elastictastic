@@ -1,5 +1,6 @@
 module Elastictastic
   class Configuration
+
     attr_writer :hosts, :adapter, :default_index, :auto_refresh, :default_batch_size
     attr_accessor :logger
 
@@ -25,6 +26,10 @@ module Elastictastic
 
     def default_batch_size
       @default_batch_size ||= 100
+    end
+
+    ActiveModel::Observing::ClassMethods.public_instance_methods(false).each do |method|
+      delegate method, :to => :"::Elastictastic::Observing"
     end
   end
 end
