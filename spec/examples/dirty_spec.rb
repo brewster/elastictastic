@@ -77,24 +77,20 @@ describe Elastictastic::Dirty do
     end
 
     it 'should be changed' do
-      pending 'nested dirty support'
       post.should be_changed
     end
 
     it 'should mark association as changed' do
-      pending 'nested dirty support'
       post.changed.should == %w(author)
     end
 
     it 'should return *_changed? for the association' do
-      pending 'nested dirty support'
       post.should be_author_changed
     end
 
     it 'should have change' do
-      pending 'nested dirty support'
       change = post.changes['author']
-      change.map { |change| change.name }.should == ['Mat Brown', 'Barack Obama']
+      change.map { |author| author.name }.should == ['Mat Brown', 'Barack Obama']
     end
   end
 end

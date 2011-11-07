@@ -87,26 +87,30 @@ module Elastictastic
         options = embed_names.extract_options!
 
         embed_names.each do |embed_name|
-          embed_name = embed_name.to_s
-          embed = Association.new(embed_name, options)
-
-          module_eval <<-RUBY, __FILE__, __LINE__ + 1
-            def #{embed_name}
-              read_embed(#{embed_name.inspect})
-            end
-
-            def #{embed_name}=(value)
-              Util.call_or_each(value) do |check_value|
-                unless check_value.nil? || check_value.is_a?(#{embed.class_name})
-                  raise TypeError, "Expected instance of class #{embed.class_name}; got \#{check_value.inspect}"
-                end
-              end
-              write_embed(#{embed_name.inspect}, value)
-            end
-          RUBY
-
-          embeds[embed_name] = embed
+          define_embed(embed_name, options)
         end
+      end
+
+      def define_embed(embed_name, options)
+        embed_name = embed_name.to_s
+        embed = Association.new(embed_name, options)
+
+        module_eval <<-RUBY, __FILE__, __LINE__ + 1
+          def #{embed_name}
+            read_embed(#{embed_name.inspect})
+          end
+
+          def #{embed_name}=(value)
+            Util.call_or_each(value) do |check_value|
+              unless check_value.nil? || check_value.is_a?(#{embed.class_name})
+                raise TypeError, "Expected instance of class #{embed.class_name}; got \#{check_value.inspect}"
+              end
+            end
+            write_embed(#{embed_name.inspect}, value)
+          end
+        RUBY
+
+        embeds[embed_name] = embed
       end
     end
 
@@ -156,6 +160,8 @@ module Elastictastic
               else
                 embedded = embed.clazz.new
                 embedded.elasticsearch_doc = value
+                embedded.nesting_document = self
+                embedded.nesting_association = embed
               end
               write_embed(field_name, embedded)
             else
@@ -180,6 +186,14 @@ module Elastictastic
         else
           @attributes[field.to_s] = value
         end
+      end
+
+      def read_attributes
+        @attributes
+      end
+
+      def write_attributes(attributes)
+        @attributes = attributes
       end
 
       def read_embed(field)
