@@ -145,6 +145,29 @@ module Elastictastic
         end
       end
 
+      def elasticsearch_doc=(doc)
+        return if doc.nil?
+        doc.each_pair do |field_name, value|
+          if self.class.properties.has_key?(field_name)
+            embed = self.class.embeds[field_name]
+            if embed
+              if Array === value
+                embedded = NestedCollectionProxy.new(self, embed, value)
+              else
+                embedded = embed.clazz.new
+                embedded.elasticsearch_doc = value
+              end
+              write_embed(field_name, embedded)
+            else
+              deserialized = Util.call_or_map(value) do |item|
+                deserialize_value(field_name, item)
+              end
+              write_attribute(field_name, deserialized)
+            end
+          end
+        end
+      end
+
       protected
 
       def read_attribute(field)
@@ -165,27 +188,6 @@ module Elastictastic
 
       def write_embed(field, value)
         @embeds[field.to_s] = value
-      end
-
-      protected
-
-      def elasticsearch_doc=(doc)
-        return if doc.nil?
-        doc.each_pair do |field_name, value|
-          if self.class.properties.has_key?(field_name)
-            embed = self.class.embeds[field_name]
-            deserialized = Util.call_or_map(value) do |item|
-              if embed
-                embed.clazz.new.tap { |embed| embed.elasticsearch_doc = item }
-              else
-                deserialize_value(field_name, item)
-              end
-            end
-            if embed then write_embed(field_name, deserialized)
-            else write_attribute(field_name, deserialized)
-            end
-          end
-        end
       end
 
       private
