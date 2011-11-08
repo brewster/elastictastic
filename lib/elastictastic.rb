@@ -31,6 +31,7 @@ module Elastictastic
   autoload :ServerError, 'elastictastic/server_error'
   autoload :TestHelpers, 'elastictastic/test_helpers'
   autoload :Util, 'elastictastic/util'
+  autoload :Validations, 'elastictastic/validations'
 
   class <<self
     attr_writer :config

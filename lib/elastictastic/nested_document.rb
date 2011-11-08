@@ -7,6 +7,7 @@ module Elastictastic
       include Dirty
       include Dirty::NestedDocumentMethods
       include MassAssignmentSecurity
+      include Validations
     end
 
     module InstanceMethods

@@ -11,10 +11,10 @@ module Elastictastic
       include Observing
       include Dirty
       include MassAssignmentSecurity
+      include Validations
 
       extend ActiveModel::Naming
       include ActiveModel::Conversion
-      include ActiveModel::Validations
     end
 
     module ClassMethods

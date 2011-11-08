@@ -16,6 +16,8 @@ class Post
 
   attr_accessible :title
 
+  validates :title, :exclusion => %w(INVALID)
+
   def observers_that_ran
     @observers_that_ran ||= Set[]
   end
