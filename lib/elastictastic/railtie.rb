@@ -27,7 +27,7 @@ module Elastictastic
         ::Elastictastic::Observing.instantiate_observers
 
         ActionDispatch::Callbacks.to_prepare do
-          ::Elastictastic.instantiate_observers
+          ::Elastictastic::Observing.instantiate_observers
         end
       end
     end
