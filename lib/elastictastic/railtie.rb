@@ -24,7 +24,7 @@ module Elastictastic
 
     initializer "elastictastic.instantiate_observers" do
       config.after_initialize do
-        ::Elastictastic.instantiate_observers
+        ::Elastictastic::Observing.instantiate_observers
 
         ActionDispatch::Callbacks.to_prepare do
           ::Elastictastic.instantiate_observers
