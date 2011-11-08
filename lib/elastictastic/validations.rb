@@ -9,6 +9,7 @@ module Elastictastic
     module ClassMethods
       def embed(*embed_names)
         super
+        embed_names.extract_options!
         args = embed_names + [{ :nested => true }]
         validates(*args)
       end
