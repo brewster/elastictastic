@@ -85,6 +85,14 @@ module Elastictastic
       def ==(other)
         index == other.index && id == other.id
       end
+
+      def inspect
+        inspected = "#<#{self.class.name} id: #{id}, index: #{index.name}"
+        attributes.each_pair do |attr, value|
+          inspected << ", #{attr}: #{value.inspect}"
+        end
+        inspected << ">"
+      end
     end
   end
 end
