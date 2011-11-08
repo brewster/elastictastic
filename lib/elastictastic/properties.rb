@@ -155,13 +155,8 @@ module Elastictastic
           if self.class.properties.has_key?(field_name)
             embed = self.class.embeds[field_name]
             if embed
-              if Array === value
-                embedded = NestedCollectionProxy.new(self, embed, value)
-              else
-                embedded = embed.clazz.new
-                embedded.elasticsearch_doc = value
-                embedded.nesting_document = self
-                embedded.nesting_association = embed
+              embedded = Util.call_or_map(value) do |item|
+                embed.clazz.new.tap { |e| e.elasticsearch_doc = item }
               end
               write_embed(field_name, embedded)
             else

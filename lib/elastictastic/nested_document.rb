@@ -10,8 +10,6 @@ module Elastictastic
     end
 
     module InstanceMethods
-      attr_writer :nesting_document, :nesting_association
-
       def initialize_copy(original)
         self.write_attributes(original.read_attributes.dup)
       end
