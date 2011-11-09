@@ -123,13 +123,23 @@ module Elastictastic
       end
 
       def attributes
-        @attributes.with_indifferent_access
+        super.merge(@attributes).with_indifferent_access
       end
 
       def attributes=(attributes)
         attributes.each_pair do |field, value|
           __send__(:"#{field}=", value)
         end
+      end
+
+      def inspect
+        inspected = "#<#{self.class.name}"
+        if attributes.any?
+          inspected << ' ' << attributes.each_pair.map do |attr, value|
+            "#{attr}: #{value.inspect}"
+          end.join(', ')
+        end
+        inspected << '>'
       end
 
       def elasticsearch_doc

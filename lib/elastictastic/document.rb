@@ -15,6 +15,10 @@ module Elastictastic
 
       extend ActiveModel::Naming
       include ActiveModel::Conversion
+      include ActiveModel::Serializers::JSON
+      include ActiveModel::Serializers::Xml
+
+      self.include_root_in_json = false
     end
 
     module ClassMethods
@@ -84,6 +88,10 @@ module Elastictastic
 
       def ==(other)
         index == other.index && id == other.id
+      end
+
+      def attributes
+        { :id => id, :index => index.name }
       end
 
       def inspect

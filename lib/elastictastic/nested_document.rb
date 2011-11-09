@@ -8,6 +8,11 @@ module Elastictastic
       include Dirty::NestedDocumentMethods
       include MassAssignmentSecurity
       include Validations
+
+      include ActiveModel::Serializers::JSON
+      include ActiveModel::Serializers::Xml
+
+      self.include_root_in_json = false
     end
 
     module InstanceMethods
@@ -15,14 +20,8 @@ module Elastictastic
         self.write_attributes(original.read_attributes.dup)
       end
 
-      def inspect
-        inspected = "#<#{self.class.name}"
-        if attributes.any?
-          inspected << ' ' << attributes.each_pair.map do |attr, value|
-            "#{attr}: #{value.inspect}"
-          end.join(', ')
-        end
-        inspected << '>'
+      def attributes
+        {}
       end
     end
   end
