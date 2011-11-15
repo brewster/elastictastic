@@ -71,6 +71,26 @@ describe Elastictastic::Dirty do
         post.should_not be_title_changed
       end
     end
+
+    context 'changing it to the same thing' do
+      before do
+        post.title = 'hey guy'
+        post.save
+        post.title = post.title
+      end
+
+      it 'should not be changed' do
+        post.should_not be_changed
+      end
+
+      it 'should not have any changes' do
+        post.changes.should be_empty
+      end
+
+      it 'should not have the title attribute changed' do
+        post.should_not be_title_changed
+      end
+    end
   end
 
   context 'single nested document' do
@@ -111,6 +131,12 @@ describe Elastictastic::Dirty do
 
       it 'should not have changed nested document after save' do
         post.save
+        post.author.should_not be_changed
+      end
+
+      it 'should not be changed when setting it to the same thing' do
+        post.save
+        post.author.name = post.author.name
         post.author.should_not be_changed
       end
     end
@@ -167,6 +193,12 @@ describe Elastictastic::Dirty do
       it 'should not have changed nested document after save' do
         post.save
         post.comments.first.should_not be_changed
+      end
+
+      it 'should not be changed when setting it to the same thing' do
+        post.save
+        post.comments.first.body = post.comments.first.body
+        post.should_not be_changed
       end
     end
 

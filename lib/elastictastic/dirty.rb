@@ -52,7 +52,9 @@ module Elastictastic
 
     module InstanceMethods
       def write_attribute(field, value)
-        attribute_will_change!(field)
+        unless attributes[field] == value
+          attribute_will_change!(field)
+        end
         super
       end
 
