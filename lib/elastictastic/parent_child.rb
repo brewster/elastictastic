@@ -62,7 +62,7 @@ module Elastictastic
         return @parent if defined? @parent
         @parent =
           if @parent_id
-            self.class.parent_association.clazz.find(@parent_id)
+            self.class.parent_association.clazz.in_index(index).find(@parent_id)
           end
       end
 

@@ -24,6 +24,40 @@ describe Elastictastic::ParentChild do
       blog.posts.from_hash('title' => 'hey').blog.should == blog
     end
 
+    describe 'when retrieved directly' do
+      let(:post) { Post.in_index('my_index').fields('_source', '_parent').first }
+
+      before do
+        stub_elasticsearch_search(
+          'my_index', 'post',
+          'hits' => {
+            'total' => 1,
+            'hits' => [{
+              '_id' => '2',
+              '_type' => 'post',
+              '_index' => 'my_index',
+              '_source' => {},
+              'fields' => { '_parent' => '1' }
+            }]
+          }
+        )
+
+        stub_elasticsearch_get(
+          'my_index', 'blog', '1',
+          { 'name' => 'Awesome Blog' }
+        )
+      end
+
+      it 'should retrieve parent via GET' do
+        post.blog.name.should == 'Awesome Blog'
+      end
+
+      it 'should lookup in correct index' do
+        post.blog
+        FakeWeb.last_request.path.split('?').first.should == '/my_index/blog/1'
+      end
+    end
+
     describe 'discrete persistence' do
       it 'should pass parent param on create' do
         stub_elasticsearch_create('default', 'post')
