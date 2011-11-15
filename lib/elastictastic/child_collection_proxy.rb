@@ -30,7 +30,7 @@ module Elastictastic
 
     def each(&block)
       if block
-        super
+        super if @parent.persisted?
         @transient_children.each(&block)
       else
         ::Enumerator.new(self, :each)

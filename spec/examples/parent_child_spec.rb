@@ -273,6 +273,12 @@ describe Elastictastic::ParentChild do
       posts[1].should == post
     end
 
+    it 'should iterate over only transient instances if parent is transient' do
+      blog = Blog.new
+      post = blog.posts.new
+      blog.posts.to_a.should == [post]
+    end
+
     it 'should return transient instance as #first if no persisted results' do
       stub_elasticsearch_search(
         'my_index', 'post', 'hits' => { 'total' => 0, 'hits' => [] })
