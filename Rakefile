@@ -1,5 +1,6 @@
 require File.expand_path('../lib/elastictastic/version', __FILE__)
 
+task :default => :release
 task :release => [:build, :tag, :push, :cleanup]
 
 task :build do
