@@ -197,8 +197,16 @@ module Elastictastic
         @attributes
       end
 
+      def read_embeds
+        @embeds
+      end
+
       def write_attributes(attributes)
         @attributes = attributes
+      end
+
+      def write_embeds(embeds)
+        @embeds = embeds
       end
 
       def read_embed(field)

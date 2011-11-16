@@ -74,9 +74,7 @@ describe Elastictastic::Dirty do
 
     context 'changing it to the same thing' do
       before do
-        post.title = 'hey guy'
-        post.save
-        post.title = post.title
+        post.title = 'first title'
       end
 
       it 'should not be changed' do
@@ -89,6 +87,28 @@ describe Elastictastic::Dirty do
 
       it 'should not have the title attribute changed' do
         post.should_not be_title_changed
+      end
+    end
+
+    context 'changing it twice' do
+      before do
+        post.title = 'second title'
+        post.title = 'third title'
+      end
+
+      it 'should keep track of original value' do
+        post.title_change.should == ['first title', 'third title']
+      end
+    end
+
+    context 'changing it to something else and then back' do
+      before do
+        post.title = 'second title'
+        post.title = 'first title'
+      end
+
+      it 'should not be changed' do
+        post.should_not be_changed
       end
     end
   end
@@ -155,6 +175,16 @@ describe Elastictastic::Dirty do
           ['Mat Brown', 'Barack Obama']
       end
     end
+
+    context 'with nested document replaced by itself' do
+      before do
+        post.author = Author.new(:name => 'Mat Brown')
+      end
+
+      it 'should not be changed' do
+        post.should_not be_changed
+      end
+    end
   end
 
   context 'nested document collection' do
@@ -198,6 +228,27 @@ describe Elastictastic::Dirty do
       it 'should not be changed when setting it to the same thing' do
         post.save
         post.comments.first.body = post.comments.first.body
+        post.should_not be_changed
+      end
+    end
+
+    context 'when nested document value set to same value' do
+      before do
+        post.comments.first.body = 'I like pizza'
+      end
+
+      it 'should not be changed' do
+        post.should_not be_changed
+      end
+    end
+
+    context 'when nested document value set to a different value and then back' do
+      before do
+        post.comments.first.body = 'I like lasagne'
+        post.comments.first.body = 'I like pizza'
+      end
+
+      it 'should not be changed' do
         post.should_not be_changed
       end
     end
@@ -248,6 +299,17 @@ describe Elastictastic::Dirty do
       end
     end
 
+    context 'with document removed and then identical document added' do
+      before do
+        post.comments.delete(post.comments.first)
+        post.comments << Comment.new(:body => 'I like pizza')
+      end
+
+      it 'should not be changed' do
+        post.should_not be_changed
+      end
+    end
+
     context 'with collection replaced' do
       before do
         post.comments = [Comment.new(:body => 'I like lasagne')]
@@ -263,6 +325,38 @@ describe Elastictastic::Dirty do
 
       it 'should not be changed after save' do
         post.save
+        post.should_not be_changed
+      end
+    end
+
+    context 'with collection replaced with identical collection' do
+      before do
+        post.comments = [Comment.new(:body => 'I like pizza')]
+      end
+
+      it 'should not be changed' do
+        post.should_not be_changed
+      end
+    end
+
+    context 'with collection replaced by a different collection and then back to the original' do
+      before do
+        post.comments = [Comment.new(:body => 'I am the walrus')]
+        post.comments = [Comment.new(:body => 'I like pizza')]
+      end
+
+      it 'should not be changed' do
+        post.should_not be_changed
+      end
+    end
+
+    context 'with collection replaced and then populated with identical members' do
+      before do
+        post.comments = []
+        post.comments << Comment.new(:body => 'I like pizza')
+      end
+
+      it 'should not be changed' do
         post.should_not be_changed
       end
     end

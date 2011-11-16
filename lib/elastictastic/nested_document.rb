@@ -23,6 +23,14 @@ module Elastictastic
       def attributes
         {}
       end
+
+      def ==(other)
+        @attributes == other.read_attributes && @embeds == other.read_embeds
+      end
+
+      def eql?(other)
+        self.class == other.class && self == other
+      end
     end
   end
 end

@@ -52,24 +52,22 @@ module Elastictastic
 
     module InstanceMethods
       def write_attribute(field, value)
-        unless attributes[field] == value
-          attribute_will_change!(field)
-        end
-        super
+        attribute_may_change!(field) { super }
       end
 
       def write_embed(field, value)
-        attribute_will_change!(field)
-        if Array === value
-          value.each do |el|
-            el.nesting_document = self
-            el.nesting_association = field
+        attribute_may_change!(field) do
+          if Array === value
+            value.each do |el|
+              el.nesting_document = self
+              el.nesting_association = field
+            end
+            super(field, NestedCollectionProxy.new(self, field, value))
+          else
+            value.nesting_document = self
+            value.nesting_association = field
+            super
           end
-          super(field, NestedCollectionProxy.new(self, field, value))
-        else
-          value.nesting_document = self
-          value.nesting_association = field
-          super
         end
       end
 
@@ -91,15 +89,29 @@ module Elastictastic
           Util.call_or_map(embedded) { |doc| doc.clean_attributes! }
         end
       end
+
+      def attribute_may_change!(field)
+        attribute_will_change!(field) unless changed_attributes.key?(field)
+        old_value = changed_attributes[field]
+        yield
+        attribute_not_changed!(field) if old_value == __send__(field)
+      end
+
+      def attribute_not_changed!(field)
+        changed_attributes.delete(field)
+      end
     end
 
     module NestedDocumentMethods
       attr_writer :nesting_document, :nesting_association
 
-      def attribute_will_change!(field)
-        super
+      def attribute_may_change!(field)
         if @nesting_document
-          @nesting_document.__send__("attribute_will_change!", @nesting_association)
+          @nesting_document.attribute_may_change!(@nesting_association) do
+            super
+          end
+        else
+          super
         end
       end
     end
@@ -118,8 +130,9 @@ module Elastictastic
       ].each do |destructive_method|
         module_eval <<-RUBY, __FILE__, __LINE__+1
           def #{destructive_method}(*args)
-            @owner.__send__("\#{@embed_name}_will_change!")
-            super
+            @owner.__send__(:attribute_may_change!, @embed_name) do
+              super
+            end
           end
         RUBY
       end
