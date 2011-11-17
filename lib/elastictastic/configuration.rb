@@ -1,7 +1,7 @@
 module Elastictastic
   class Configuration
 
-    attr_writer :hosts, :adapter, :default_index, :auto_refresh, :default_batch_size
+    attr_writer :hosts, :default_index, :auto_refresh, :default_batch_size
     attr_accessor :logger
 
     def host=(host)
@@ -10,6 +10,16 @@ module Elastictastic
 
     def hosts
       @hosts ||= ['http://localhost:9200']
+    end
+
+    def adapter=(adapter)
+      @adapter =
+        case adapter
+        when 'thrift' then Elastictastic::ThriftAdapter
+        when Class, /^[A-Z][A-Za-z0-9]+$/ then adapter
+        when /^[a-z_]+/ then adapter.to_sym
+        else raise ArgumentError, "Unrecognized adapter name #{adapter}"
+        end
     end
 
     def adapter

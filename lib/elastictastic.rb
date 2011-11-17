@@ -30,6 +30,7 @@ module Elastictastic
   autoload :Search, 'elastictastic/search'
   autoload :ServerError, 'elastictastic/server_error'
   autoload :TestHelpers, 'elastictastic/test_helpers'
+  autoload :ThriftAdapter, 'elastictastic/thrift_adapter'
   autoload :Util, 'elastictastic/util'
   autoload :Validations, 'elastictastic/validations'
 
