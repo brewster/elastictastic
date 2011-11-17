@@ -87,7 +87,7 @@ module Elastictastic
         begin
           @head = @head.next
           response = @head.call(env)
-          raise Faraday::Error::ConnectionFailed if response.body.blank?
+          raise Faraday::Error::ConnectionFailed, "Got empty response from ElasticSearch" if response.body.blank?
           response
         rescue Faraday::Error::ConnectionFailed => e
           raise NoServerAvailable if @head == last
