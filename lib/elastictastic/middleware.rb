@@ -86,7 +86,9 @@ module Elastictastic
         last = @head
         begin
           @head = @head.next
-          @head.call(env)
+          response = @head.call(env)
+          raise Faraday::Error::ConnectionFailed if response.body.blank?
+          response
         rescue Faraday::Error::ConnectionFailed => e
           raise NoServerAvailable if @head == last
           retry
