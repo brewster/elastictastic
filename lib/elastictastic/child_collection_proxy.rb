@@ -12,10 +12,10 @@ module Elastictastic
               'filter' => { 'term' => { '_parent' => parent.id }}
             }
           }
-        )
+        ),
+        self
       )
       @parent = parent
-      @parent_collection = self
       @transient_children = []
     end
 
