@@ -18,6 +18,7 @@ module Elastictastic
         instance.elasticsearch_doc
       ) do |response|
         instance.id = response['create']['_id']
+        instance.version = response['create']['_version']
         instance.persisted!
       end
     end
@@ -27,13 +28,16 @@ module Elastictastic
       add(
         { 'index' => bulk_identifier(instance) },
         instance.elasticsearch_doc
-      )
+      ) do |response|
+        instance.version = response['index']['_version']
+      end
     end
 
     def destroy(instance)
       instance.pending_destroy!
       add(:delete => bulk_identifier(instance)) do |response|
         instance.transient!
+        instance.version = response['delete']['_version']
       end
     end
 
@@ -56,6 +60,7 @@ module Elastictastic
     def bulk_identifier(instance)
       identifier = { :_index => instance.index.name, :_type => instance.class.type }
       identifier['_id'] = instance.id if instance.id
+      identifier['_version'] = instance.version if instance.version
       identifier['parent'] = instance._parent_id if instance._parent_id
       identifier
     end

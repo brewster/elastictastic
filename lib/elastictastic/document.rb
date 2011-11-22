@@ -52,6 +52,7 @@ module Elastictastic
 
     module InstanceMethods
       attr_reader :id
+      attr_accessor :version
 
       def initialize(attributes = {})
         self.class.current_scope.initialize_instance(self)
@@ -60,6 +61,7 @@ module Elastictastic
       def elasticsearch_hit=(hit) #:nodoc:
         @id = hit['_id']
         @index = Index.new(hit['_index'])
+        @version = hit['_version']
         persisted!
 
         doc = {}

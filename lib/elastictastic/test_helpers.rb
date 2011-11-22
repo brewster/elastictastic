@@ -24,13 +24,14 @@ module Elastictastic
           'ok' => 'true',
           '_index' => index,
           '_type' => type,
-          '_id' => id
+          '_id' => id,
+          '_version' => 1
         }.to_json)
       )
       id
     end
 
-    def stub_elasticsearch_update(index, type, id)
+    def stub_elasticsearch_update(index, type, id, version = 2)
       FakeWeb.register_uri(
         :put,
         /^#{TestHelpers.uri_for_path("/#{index}/#{type}/#{id}")}(\?.*)?$/,
@@ -38,12 +39,13 @@ module Elastictastic
           'ok' => 'true',
           '_index' => index,
           '_type' => type,
-          '_id' => id
+          '_id' => id,
+          '_version' => version
         }.to_json
       )
     end
 
-    def stub_elasticsearch_get(index, type, id, doc = {})
+    def stub_elasticsearch_get(index, type, id, doc = {}, version = 1)
       FakeWeb.register_uri(
         :get,
         /^#{Regexp.escape(TestHelpers.uri_for_path("/#{index}/#{type}/#{id}").to_s)}(\?.*)?$/,
@@ -52,6 +54,7 @@ module Elastictastic
           '_index' => index,
           '_type' => type,
           '_id' => id,
+          '_version' => version,
           '_source' => doc,
           'exists' => !doc.nil?
         }.to_json

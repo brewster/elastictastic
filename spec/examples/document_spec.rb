@@ -32,6 +32,10 @@ describe Elastictastic::Document do
         post.id.should == id
       end
 
+      it 'should populate version' do
+        post.version.should == 1
+      end
+
       it 'should mark object as persisted' do
         post.should be_persisted
       end
@@ -44,6 +48,10 @@ describe Elastictastic::Document do
         before do
           stub_elasticsearch_create('default', 'post', post.id)
           post.save
+        end
+
+        it 'should populate version' do
+          post.version.should == 1
         end
 
         it 'should send PUT request' do
@@ -108,12 +116,16 @@ describe Elastictastic::Document do
           last_request.method.should == 'PUT'
         end
 
-        it "should send to document's resource path" do
-          last_request.path.should == "/default/post/#{post.id}"
+        it "should send to document's resource path with version" do
+          last_request.path.should == "/default/post/#{post.id}?version=1"
         end
 
         it "should send document's body in request" do
           last_request.body.should == post.elasticsearch_doc.to_json
+        end
+
+        it 'should populate new version' do
+          post.version.should == 2
         end
       end # describe '#save'
     end # shared_examples_for 'persisted object'
@@ -131,6 +143,7 @@ describe Elastictastic::Document do
       let(:post) do
         Post.new.tap do |post|
           post.id = '123'
+          post.version = 1
           post.persisted!
         end
       end
@@ -285,6 +298,10 @@ describe Elastictastic::Document do
 
         it 'should return post instance' do
           post.should be_a(Post)
+        end
+
+        it 'should populate version' do
+          post.version.should == 1
         end
 
         it 'should request specified fields if specified' do
@@ -464,13 +481,14 @@ describe Elastictastic::Document do
     end # context 'with specified index'
   end # describe '::find'
 
-  describe '::new_from_elasticsearch_hit' do
+  describe '#elasticsearch_hit=' do
     context 'with full _source' do
       let :post do
         Post.new.tap do |post|
           post.elasticsearch_hit = {
             '_id' => '1',
             '_index' => 'my_index',
+            '_version' => 2,
             '_source' => {
               'title' => 'Testy time',
               'tags' => %w(search lucene),
@@ -492,6 +510,10 @@ describe Elastictastic::Document do
 
       it 'should populate index' do
         post.index.name.should == 'my_index'
+      end
+
+      it 'should populate version' do
+        post.version.should == 2
       end
 
       it 'should mark document perisistent' do

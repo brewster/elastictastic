@@ -70,7 +70,7 @@ describe Elastictastic::ParentChild do
         post.save
         stub_elasticsearch_update('default', 'post', post.id)
         post.save
-        URI.parse(FakeWeb.last_request.path).query.should == "parent=#{blog.id}"
+        URI.parse(FakeWeb.last_request.path).query.split('&').should include("parent=#{blog.id}")
       end
 
       it 'should pass parent on delete' do
@@ -79,7 +79,7 @@ describe Elastictastic::ParentChild do
         post.save
         stub_elasticsearch_destroy('default', 'post', post.id)
         post.destroy
-        URI.parse(FakeWeb.last_request.path).query.should == "parent=#{blog.id}"
+        URI.parse(FakeWeb.last_request.path).query.split('&').should include("parent=#{blog.id}")
       end
     end
 
