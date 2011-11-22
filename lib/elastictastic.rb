@@ -20,6 +20,7 @@ module Elastictastic
   autoload :NestedDocument, 'elastictastic/nested_document'
   autoload :Observer, 'elastictastic/observer'
   autoload :Observing, 'elastictastic/observing'
+  autoload :OptimisticLocking, 'elastictastic/optimistic_locking'
   autoload :ParentChild, 'elastictastic/parent_child'
   autoload :Persistence, 'elastictastic/persistence'
   autoload :Properties, 'elastictastic/properties'

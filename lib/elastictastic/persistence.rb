@@ -1,12 +1,12 @@
 module Elastictastic
   module Persistence
-    def save
-      persisted? ? update : create
+    def save(&block)
+      persisted? ? update(&block) : create(&block)
     end
     
-    def destroy
+    def destroy(&block)
       if persisted?
-        Elastictastic.persister.destroy(self)
+        Elastictastic.persister.destroy(self, &block)
       else
         raise OperationNotAllowed, "Cannot destroy transient document: #{inspect}"
       end
@@ -47,12 +47,12 @@ module Elastictastic
 
     protected
 
-    def create
-      Elastictastic.persister.create(self)
+    def create(&block)
+      Elastictastic.persister.create(self, &block)
     end
 
-    def update
-      Elastictastic.persister.update(self)
+    def update(&block)
+      Elastictastic.persister.update(self, &block)
     end
 
     private

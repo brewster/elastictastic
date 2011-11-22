@@ -2,12 +2,15 @@ require 'stringio'
 
 module Elastictastic
   class BulkPersistenceStrategy
+    DEFAULT_HANDLER = proc { |e| raise(e) if e }
+
     def initialize
       @buffer = StringIO.new
       @handlers = []
     end
 
-    def create(instance, params = {})
+    def create(instance, params = {}, &block)
+      block ||= DEFAULT_HANDLER
       if instance.pending_save?
         raise Elastictastic::OperationNotAllowed,
           "Can't re-save transient document with pending save in bulk operation"
@@ -17,27 +20,44 @@ module Elastictastic
         { 'create' => bulk_identifier(instance) },
         instance.elasticsearch_doc
       ) do |response|
-        instance.id = response['create']['_id']
-        instance.version = response['create']['_version']
-        instance.persisted!
+        if response['create']['error']
+          block.call(ServerError[response['error']])
+        else
+          instance.id = response['create']['_id']
+          instance.version = response['create']['_version']
+          instance.persisted!
+          block.call
+        end
       end
     end
 
-    def update(instance)
+    def update(instance, &block)
+      block ||= DEFAULT_HANDLER
       instance.pending_save!
       add(
         { 'index' => bulk_identifier(instance) },
         instance.elasticsearch_doc
       ) do |response|
-        instance.version = response['index']['_version']
+        if response['index']['error']
+          block.call(ServerError[response['index']['error']])
+        else
+          instance.version = response['index']['_version']
+          block.call
+        end
       end
     end
 
-    def destroy(instance)
+    def destroy(instance, &block)
+      block ||= DEFAULT_HANDLER
       instance.pending_destroy!
       add(:delete => bulk_identifier(instance)) do |response|
-        instance.transient!
-        instance.version = response['delete']['_version']
+        if response['delete']['error']
+          block.call(ServerError[response['index']['error']])
+        else
+          instance.transient!
+          instance.version = response['delete']['_version']
+          block.call
+        end
       end
     end
 
