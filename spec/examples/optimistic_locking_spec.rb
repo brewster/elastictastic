@@ -29,9 +29,9 @@ describe Elastictastic::OptimisticLocking do
       end
 
       it 'should yield VersionConflict when called with block' do
-        post.save do |e|
-          e.should be_a(Elastictastic::ServerError::VersionConflictEngineException)
-        end
+        ex = nil
+        post.save { |e| ex = e }
+        ex.should be_a(Elastictastic::ServerError::VersionConflictEngineException)
       end
     end # describe '#save'
 
@@ -58,11 +58,9 @@ describe Elastictastic::OptimisticLocking do
     end
 
     it 'should yield an error when called with block' do
-      Elastictastic.bulk do
-        post.save do |e|
-          e.should be_a(Elastictastic::ServerError::VersionConflictEngineException)
-        end
-      end
+      ex = nil
+      Elastictastic.bulk { post.save { |e| ex = e }}
+      ex.should be_a(Elastictastic::ServerError::VersionConflictEngineException)
     end
   end
 end
