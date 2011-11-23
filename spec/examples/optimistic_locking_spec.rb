@@ -14,13 +14,11 @@ describe Elastictastic::OptimisticLocking do
   context 'when version conflict raised from discrete persistence' do
     describe '#save' do
       before do
-        FakeWeb.register_uri(
+        stub_request_json(
           :put,
-          Elastictastic::TestHelpers.uri_for_path('/default/post/123abc?version=1'),
-          :body => {
-            'error' => 'VersionConflictEngineException: [[default][3] [post][abc123]: version conflict, current[2], required[1]]',
-            'status' => 409
-          }.to_json
+          match_es_resource('default', 'post', '123abc'),
+          'error' => 'VersionConflictEngineException: [[default][3] [post][abc123]: version conflict, current[2], required[1]]',
+          'status' => 409
         )
       end
 
@@ -37,15 +35,15 @@ describe Elastictastic::OptimisticLocking do
 
     describe '::update' do
       before do
-        stub_elasticsearch_get('default', 'post', '123abc')
-        stub_elasticsearch_update('default', 'post', '123abc', 2)
+        stub_es_get('default', 'post', '123abc')
+        stub_es_update('default', 'post', '123abc', 2)
       end
     end # describe '::update'
   end # context 'when version conflict raised from discrete persistence'
 
   context 'when version conflict raised from bulk persistence' do
     before do
-      stub_elasticsearch_bulk(
+      stub_es_bulk(
         'index' => {
           '_index' => 'default', '_type' => 'post', '_id' => '123abc',
           'error' => 'VersionConflictEngineException: [[default][3] [post][abc123]: version conflict, current[2], required[1]]'

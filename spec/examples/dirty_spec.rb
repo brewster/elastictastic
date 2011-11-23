@@ -15,7 +15,7 @@ describe Elastictastic::Dirty do
   end
 
   before do
-    stub_elasticsearch_update('default', 'post', '1')
+    stub_es_update('default', 'post', '1')
   end
 
   context 'top-level attribute' do

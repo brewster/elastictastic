@@ -14,7 +14,7 @@ describe Elastictastic::BulkPersistenceStrategy do
     let(:post) { Post.new }
 
     before do
-      stub_elasticsearch_bulk(
+      stub_es_bulk(
         'create' => { '_index' => 'default', '_type' => 'post', '_id' => '123', '_version' => 1, 'ok' => true }
       )
       Elastictastic.bulk do
@@ -59,7 +59,7 @@ describe Elastictastic::BulkPersistenceStrategy do
         example.run
         # have to do this here because the before/after hooks run inside the
         # around hook
-        stub_elasticsearch_bulk(
+        stub_es_bulk(
           'create' => { '_index' => 'default', '_type' => 'post', '_id' => '123', '_version' => 1, 'ok' => true }
         )
       end
@@ -84,7 +84,7 @@ describe Elastictastic::BulkPersistenceStrategy do
     let(:posts) { Array.new(2) { Post.new }}
 
     before do
-      stub_elasticsearch_bulk(
+      stub_es_bulk(
         { 'create' => { '_index' => 'default', '_type' => 'post', '_id' => '123', '_version' => 1, 'ok' => true }},
         { 'create' => { '_index' => 'default', '_type' => 'post', '_id' => '124', '_version' => 1, 'ok' => true }}
       )
@@ -118,7 +118,7 @@ describe Elastictastic::BulkPersistenceStrategy do
     end
 
     before do
-      stub_elasticsearch_bulk(
+      stub_es_bulk(
         'create' => { '_index' => 'default', '_type' => 'post', '_id' => '123', '_version' => 1, 'ok' => true }
       )
       Elastictastic.bulk { post.save }
@@ -154,7 +154,7 @@ describe Elastictastic::BulkPersistenceStrategy do
     end
 
     before do
-      stub_elasticsearch_bulk(
+      stub_es_bulk(
         'index' => { '_index' => 'default', '_type' => 'post', '_id' => '123', '_version' => 2, 'ok' => true }
       )
       Elastictastic.bulk { post.save }
@@ -183,7 +183,7 @@ describe Elastictastic::BulkPersistenceStrategy do
     end
 
     before do
-      stub_elasticsearch_bulk(
+      stub_es_bulk(
         'delete' => { '_index' => 'default', '_type' => 'post', '_id' => '123', '_version' => 2, 'ok' => true }
       )
       Elastictastic.bulk { post.destroy }
@@ -208,7 +208,7 @@ describe Elastictastic::BulkPersistenceStrategy do
 
     it 'should return to individual persistence strategy' do
       error_proc.call rescue nil
-      stub_elasticsearch_create('default', 'post')
+      stub_es_create('default', 'post')
       Post.new.save
       last_request.path.should == '/default/post'
     end

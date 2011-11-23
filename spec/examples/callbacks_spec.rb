@@ -45,9 +45,9 @@ describe Elastictastic::Callbacks do
   end
 
   before do
-    stub_elasticsearch_create('default', 'my_model')
-    stub_elasticsearch_update('default', 'my_model', id)
-    stub_elasticsearch_destroy('default', 'my_model', id)
+    stub_es_create('default', 'my_model')
+    stub_es_update('default', 'my_model', id)
+    stub_es_destroy('default', 'my_model', id)
   end
 
   describe '#before_save' do

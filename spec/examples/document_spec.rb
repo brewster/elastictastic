@@ -8,7 +8,7 @@ describe Elastictastic::Document do
 
   describe '#save' do
     context 'new object' do
-      let!(:id) { stub_elasticsearch_create('default', 'post') }
+      let!(:id) { stub_es_create('default', 'post') }
       let(:post) { Post.new }
 
       before do
@@ -46,7 +46,7 @@ describe Elastictastic::Document do
 
       context 'with unique id' do
         before do
-          stub_elasticsearch_create('default', 'post', post.id)
+          stub_es_create('default', 'post', post.id)
           post.save
         end
 
@@ -69,7 +69,7 @@ describe Elastictastic::Document do
 
       context 'with duplicate ID' do
         before do
-          stub_elasticsearch_create(
+          stub_es_create(
             'default', 'post', '123',
             :body => {
               'error' => 'DocumentAlreadyExistsEngineException[[post][2] [post][1]]: document already exists',
@@ -107,7 +107,7 @@ describe Elastictastic::Document do
 
       describe '#save' do
         before do
-          stub_elasticsearch_update('default', 'post', post.id)
+          stub_es_update('default', 'post', post.id)
           post.title = 'Fun Factories for Fickle Ferrets'
           post.save
         end
@@ -132,7 +132,7 @@ describe Elastictastic::Document do
 
     context 'object after save' do
       let(:post) do
-        stub_elasticsearch_create('default', 'post')
+        stub_es_create('default', 'post')
         Post.new.tap { |post| post.save }
       end
 
@@ -162,7 +162,7 @@ describe Elastictastic::Document do
       end
 
       before do
-        stub_elasticsearch_destroy('default', 'post', '123')
+        stub_es_destroy('default', 'post', '123')
         @result = post.destroy
       end
 
@@ -200,7 +200,7 @@ describe Elastictastic::Document do
       end
 
       before do
-        stub_elasticsearch_destroy(
+        stub_es_destroy(
           'default', 'post', '123',
           :body => {
             'ok' => true,
@@ -223,7 +223,7 @@ describe Elastictastic::Document do
   describe '::destroy_all' do
     describe 'with default index' do
       before do
-        stub_elasticsearch_destroy_all('default', 'post')
+        stub_es_destroy_all('default', 'post')
         Post.destroy_all
       end
 
@@ -238,7 +238,7 @@ describe Elastictastic::Document do
 
     describe 'with specified index' do
       before do
-        stub_elasticsearch_destroy_all('my_index', 'post')
+        stub_es_destroy_all('my_index', 'post')
         Post.in_index('my_index').destroy_all
       end
 
@@ -261,7 +261,7 @@ describe Elastictastic::Document do
 
     context 'with default index' do
       before do
-        stub_elasticsearch_put_mapping('default', 'post')
+        stub_es_put_mapping('default', 'post')
         Post.sync_mapping
       end
 
@@ -274,7 +274,7 @@ describe Elastictastic::Document do
 
     context 'with specified index' do
       before do
-        stub_elasticsearch_put_mapping('my_cool_index', 'post')
+        stub_es_put_mapping('my_cool_index', 'post')
         Post.in_index('my_cool_index').sync_mapping
       end
 
@@ -291,7 +291,7 @@ describe Elastictastic::Document do
     shared_examples_for 'single document lookup' do
       context 'when document is found' do
         before do
-          stub_elasticsearch_get(
+          stub_es_get(
             index, 'post', '1',
           )
         end
@@ -318,7 +318,7 @@ describe Elastictastic::Document do
 
       context 'when document is not found' do
         before do
-          stub_elasticsearch_get(index, 'post', '1', nil)
+          stub_es_get(index, 'post', '1', nil)
         end
 
         it 'should return nil' do
@@ -330,7 +330,7 @@ describe Elastictastic::Document do
     shared_examples_for 'multi document single index lookup' do
 
       before do
-        stub_elasticsearch_mget(index, 'post', '1', '2')
+        stub_es_mget(index, 'post', '1', '2')
         posts
       end
 
@@ -389,7 +389,7 @@ describe Elastictastic::Document do
 
       describe 'multi-index multi-get' do
         before do
-          stub_elasticsearch_mget(
+          stub_es_mget(
             nil,
             nil,
             ['1', 'default'], ['2', 'my_index'], ['3', 'my_index']
@@ -462,7 +462,7 @@ describe Elastictastic::Document do
         let(:posts) { Post.find('1', '2') }
 
         before do
-          stub_elasticsearch_mget('default', 'post', '1' => {}, '2' => nil)
+          stub_es_mget('default', 'post', '1' => {}, '2' => nil)
         end
 
         it 'should only return docs that exist' do
