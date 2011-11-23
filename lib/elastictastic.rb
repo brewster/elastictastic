@@ -57,14 +57,15 @@ module Elastictastic
     def bulk
       original_persister = self.persister
       begin
-        self.persister = Elastictastic::BulkPersistenceStrategy.new
+        bulk_persister = self.persister =
+          Elastictastic::BulkPersistenceStrategy.new
         yield
-        self.persister.flush
       rescue Elastictastic::CancelBulkOperation
-        # Nothing to see here...
+        return
       ensure
         self.persister = original_persister
       end
+      bulk_persister.flush
     end
 
     def Index(name_or_index)

@@ -82,7 +82,7 @@ field :title,
   }
 ```
 
-### Embedded Objects ###
+### Embedded objects ###
 
 ElasticSearch supports deep nesting of properties by way of
 [object fields](http://www.elasticsearch.org/guide/reference/mapping/object-type.html).
@@ -182,7 +182,7 @@ explicit support for this at the moment, although you can use e.g.
 `Post.mapping` to retrieve the mapping structure which you can then merge into
 your template.
 
-### Reserved Attributes ###
+### Reserved attributes ###
 
 All `Elastictastic::Document` models have an `id` and an `index` field, which
 combine to define the full resource locator for the document in ElasticSearch.
@@ -251,6 +251,83 @@ retrieve from that index:
 ```ruby
 Post.get('default' => ['123', '456'], 'my_special_index' => '789')
 ```
+
+### Bulk operations ###
+
+If you are writing a large amount of data to ElasticSearch in a single process,
+use of the [bulk API](#TK) is encouraged. To perform bulk operations using
+Elastictastic, simply wrap your operations in a `bulk` block:
+
+```ruby
+Elastictastic.bulk do
+  params[:posts].each do |post_params|
+    post = Post.new(post_params)
+    post.save
+  end
+end
+```
+
+All create, update, and destroy operations inside the block will be executed in
+a single bulk request when the block completes. If you wish to cancel a bulk
+operation at any point, you may raise the `Elastictastic::CancelBulkOperation`
+exception, which will prevent the bulk operation from writing to ElasticSearch
+but which will not be raised outside the bulk block.
+
+Note that the nature of bulk writes means that any operation inside a bulk block
+is essentially asynchronous: instances are not created, updated, or destroyed
+immediately upon calling `save` or `destroy`, but rather when the bulk block
+exits. You may pass a block to `save` and `destroy` to provide a callback for
+when the instance is actually persisted and its local state updated. Let's say,
+for instance, we wish to expand the example above to pass the IDs of the newly
+created posts to our view layer:
+
+```ruby
+@ids = []
+Elastictastic.bulk do
+  params[:posts].each do |post_params|
+    post = Post.new(post_params)
+    post.save do |e|
+      @ids << post.id
+    end
+  end
+end
+```
+
+If the save was not successful (due to a duplicate ID or a version mismatch,
+for instance), the `e` argument to the block will be passed an exception object;
+if the save was successful, the argument will be nil.
+
+### Optimistic locking ###
+
+Elastictastic provides optimistic locking via ElasticSearch's built-in
+[document versioning](#TK). When a document is retrieved from persistence, it
+carries a version, which is a number that increments from 1 on each update. When
+Elastictastic models are updated, the document version that it carried when it
+was loaded is passed into the update operation; if this version does not match
+ElasticSearch's current version for that document, it indicates that another
+process has modified the document concurrently, and an
+Elastictastic::ServerError::VersionConflictEngineException is raised. This
+prevents data loss through concurrent conflicting updates.
+
+The easiest way to guard against concurrent modification is to use the
+`::update` class method to make changes to existing documents. Consider the
+following example:
+
+```ruby
+Post.update('12345') do |post|
+  post.title = 'New Title'
+end
+```
+
+In the above, the Post with ID '12345' is loaded from ElasticSearch and yielded
+to the block. When the block completes, the instance is saved back to
+ElasticSearch. If this save results in a version conflict, a new instance is
+loaded from ElasticSearch and the block is run again. The process repeats until
+a successful update.
+
+This method will work inside a bulk operation, but note that if the first update
+generates a version conflict, additional updates will occur in discrete
+requests, not as part of any bulk operation.
 
 ## Search ##
 

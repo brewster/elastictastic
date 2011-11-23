@@ -69,12 +69,11 @@ describe Elastictastic::Document do
 
       context 'with duplicate ID' do
         before do
-          stub_es_create(
-            'default', 'post', '123',
-            :body => {
-              'error' => 'DocumentAlreadyExistsEngineException[[post][2] [post][1]]: document already exists',
-              'status' => 409
-            }.to_json
+          stub_request_json(
+            :put,
+            match_es_resource('default', 'post', '123', '_create'),
+            'error' => 'DocumentAlreadyExistsEngineException[[post][2] [post][1]]: document already exists',
+            'status' => 409
           )
         end
 
@@ -202,14 +201,7 @@ describe Elastictastic::Document do
       before do
         stub_es_destroy(
           'default', 'post', '123',
-          :body => {
-            'ok' => true,
-            'found' => false,
-            '_index' => 'default',
-            '_type' => 'post',
-            '_id' => '123',
-            '_version' => 0
-          }.to_json
+          'found' => false
         )
         @result = post.destroy
       end

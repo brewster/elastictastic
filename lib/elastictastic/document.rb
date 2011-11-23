@@ -6,7 +6,7 @@ module Elastictastic
       extend Scoped
       include Properties
       include Persistence
-      include OptimisticLocking
+      extend OptimisticLocking
       include ParentChild
       include Callbacks
       include Observing

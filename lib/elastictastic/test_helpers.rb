@@ -8,9 +8,7 @@ module Elastictastic
   module TestHelpers
     ALPHANUM = ('0'..'9').to_a + ('A'..'Z').to_a + ('a'..'z').to_a
 
-    def stub_es_create(index, type, *args)
-      options = args.extract_options!
-      id = args.pop
+    def stub_es_create(index, type, id = nil)
       if id.nil?
         id = generate_es_id
         components = [index, type]
@@ -23,8 +21,7 @@ module Elastictastic
       stub_request_json(
         method,
         match_es_resource(components),
-        generate_es_hit(type, :id => id, :index => index).merge('ok' => 'true'),
-        options
+        generate_es_hit(type, :id => id, :index => index).merge('ok' => 'true')
       )
       id
     end
@@ -77,8 +74,7 @@ module Elastictastic
         match_es_resource(index, type, id),
         generate_es_hit(
           type, :index => index, :id => id
-        ).merge('ok' => true, 'found' => true),
-        options
+        ).merge('ok' => true, 'found' => true).merge(options)
       )
     end
 
@@ -155,12 +151,10 @@ module Elastictastic
       TestHelpers.match_es_resource(*components)
     end
 
-    def a_request_to_es(*components)
-      a_request(:any, match_es_resource(*components))
-    end
-
-    def stub_request_json(method, uri, body, options = {})
-      stub_request(method, uri, options.reverse_merge(:body => body.to_json))
+    def stub_request_json(method, uri, *responses)
+      json_responses = responses.map { |response| { :body => response.to_json }}
+      json_responses = json_responses.first if json_responses.length == 1
+      stub_request(method, uri, json_responses)
     end
 
     def stub_request(method, url, options = {})
@@ -173,6 +167,10 @@ module Elastictastic
 
     def last_request_json
       JSON.parse(last_request.body)
+    end
+
+    def last_request_uri
+      URI.parse(last_request.path)
     end
 
     def generate_es_id
