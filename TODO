@@ -1,17 +1,8 @@
-* Multiget
-* first/last/all
-* Find in batches
 * Percolation
-* Versioning
 * Identity map
 * Copy to new index
 * Index-level operations
-* ES load balancing
-* Validations
-* Lifecycle hooks
-* Observers
 
-* More transports
 * More JSON libraries
 
 * Support multiple-index / multiple-type search
