@@ -25,7 +25,7 @@ describe Elastictastic::Middleware::LogRequests do
   end
 
   it 'should log body of POST requests to logger' do
-    stub_elasticsearch_create('default', 'post')
+    stub_es_create('default', 'post')
     client.create('default', 'post', nil, {})
     io.string.should == "ElasticSearch POST (3ms) /default/post {}\n"
   end

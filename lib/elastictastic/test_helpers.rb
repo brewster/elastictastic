@@ -1,64 +1,54 @@
-require 'fakeweb'
+begin
+  require 'fakeweb'
+rescue LoadError => e
+  raise LoadError, "Elastictastic::TestHelpers requires the 'fakeweb' gem."
+end
 
 module Elastictastic
   module TestHelpers
     ALPHANUM = ('0'..'9').to_a + ('A'..'Z').to_a + ('a'..'z').to_a
 
-    def stub_elasticsearch_create(index, type, *args)
-      options = args.extract_options!
-      id = args.pop
+    def stub_es_create(index, type, id = nil)
       if id.nil?
-        id = ''
-        22.times { id << ALPHANUM[rand(ALPHANUM.length)] }
-        path = "/#{index}/#{type}"
+        id = generate_es_id
+        components = [index, type]
         method = :post
       else
-        path = "/#{index}/#{type}/#{id}/_create"
+        components = [index, type, id, '_create']
         method = :put
       end
 
-      FakeWeb.register_uri(
+      stub_request_json(
         method,
-        /^#{Regexp.escape(TestHelpers.uri_for_path(path))}(\?.*)?$/,
-        options.reverse_merge(:body => {
-          'ok' => 'true',
-          '_index' => index,
-          '_type' => type,
-          '_id' => id
-        }.to_json)
+        match_es_resource(components),
+        generate_es_hit(type, :id => id, :index => index).merge('ok' => 'true')
       )
       id
     end
 
-    def stub_elasticsearch_update(index, type, id)
-      FakeWeb.register_uri(
+    def stub_es_update(index, type, id, version = 2)
+      stub_request_json(
         :put,
-        /^#{TestHelpers.uri_for_path("/#{index}/#{type}/#{id}")}(\?.*)?$/,
-        :body => {
-          'ok' => 'true',
-          '_index' => index,
-          '_type' => type,
-          '_id' => id
-        }.to_json
+        match_es_resource(index, type, id),
+        generate_es_hit(type, :index => index, :id => id, :version => version)
       )
     end
 
-    def stub_elasticsearch_get(index, type, id, doc = {})
-      FakeWeb.register_uri(
+    def stub_es_get(index, type, id, doc = {}, version = 1)
+      stub_request_json(
         :get,
-        /^#{Regexp.escape(TestHelpers.uri_for_path("/#{index}/#{type}/#{id}").to_s)}(\?.*)?$/,
-        :body => {
-          'ok' => true,
-          '_index' => index,
-          '_type' => type,
-          '_id' => id,
-          '_source' => doc,
-          'exists' => !doc.nil?
-        }.to_json
+        match_es_resource(index, type, id),
+        generate_es_hit(
+          type,
+          :index => index,
+          :id => id,
+          :version => version,
+          :source => doc
+        ).merge('exists' => !doc.nil?)
       )
     end
 
-    def stub_elasticsearch_mget(index, type, *ids)
+    def stub_es_mget(index, type, *ids)
       given_ids_with_docs = ids.extract_options!
       ids_with_docs = {}
       ids.each { |id| ids_with_docs[id] = {} }
@@ -66,64 +56,53 @@ module Elastictastic
       path = index ? "/#{index}/#{type}/_mget" : "/_mget"
       docs = ids_with_docs.each_pair.map do |id, doc|
         id, index = *id if Array === id
-        {
-          '_index' => index,
-          '_type' => type,
-          '_id' => id,
-          'exists' => !!doc,
-          '_source' => doc
-        }
+        generate_es_hit(
+          type, :index => index, :id => id, :source => doc
+        ).merge('exists' => !!doc)
       end
 
-      FakeWeb.register_uri(
+      stub_request_json(
         :post,
-        TestHelpers.uri_for_path(path).to_s,
-        :body => {
-          'docs' => docs
-        }.to_json
+        match_es_path(path),
+        'docs' => docs
       )
     end
 
-    def stub_elasticsearch_destroy(index, type, id, options = {})
-      FakeWeb.register_uri(
+    def stub_es_destroy(index, type, id, options = {})
+      stub_request_json(
         :delete,
-        /^#{TestHelpers.uri_for_path("/#{index}/#{type}/#{id}")}(\?.*)?$/,
-        options.reverse_merge(:body => {
-          'ok' => true,
-          'found' => true,
-          '_index' => 'test',
-          '_type' => 'test',
-          '_id' => id,
-          '_version' => 1
-        }.to_json)
+        match_es_resource(index, type, id),
+        generate_es_hit(
+          type, :index => index, :id => id
+        ).merge('ok' => true, 'found' => true).merge(options)
       )
     end
 
-    def stub_elasticsearch_destroy_all(index, type)
-      FakeWeb.register_uri(
+    def stub_es_destroy_all(index, type)
+      stub_request_json(
         :delete,
-        TestHelpers.uri_for_path("/#{index}/#{type}"),
-        :body => { 'ok' => true }.to_json
+        match_es_resource(index, type),
+        'ok' => true
       )
     end
 
-    def stub_elasticsearch_bulk(*responses)
-      FakeWeb.register_uri(
+    def stub_es_bulk(*responses)
+      stub_request_json(
         :post,
-        TestHelpers.uri_for_path("/_bulk"),
-        :body => { 'took' => 1, 'items' => responses }.to_json
+        match_es_path('/_bulk'),
+        'took' => 1, 'items' => responses
       )
     end
 
-    def stub_elasticsearch_put_mapping(index, type)
-      FakeWeb.register_uri(
+    def stub_es_put_mapping(index, type)
+      stub_request_json(
         :put,
-        TestHelpers.uri_for_path("/#{index}/#{type}/_mapping"),
-        :body => { 'ok' => true, 'acknowledged' =>  true }.to_json
+        match_es_resource(index, type, '_mapping'),
+        'ok' => true, 'acknowledged' => true
       )
     end
 
-    def stub_elasticsearch_search(index, type, data)
+    def stub_es_search(index, type, data)
       if Array === data
         response = data.map do |datum|
           { :body => datum.to_json }
@@ -132,41 +111,82 @@ module Elastictastic
         response = { :body =>  data.to_json }
       end
 
-      uri = TestHelpers.uri_for_path("/#{index}/#{type}/_search").to_s
-      FakeWeb.register_uri(
+      stub_request(
         :post,
-        /^#{Regexp.escape(uri)}/,
+        match_es_resource(index, type, '_search'),
         response
       )
     end
 
-    def stub_elasticsearch_scan(index, type, batch_size, *hits)
-      scan_uri = Regexp.escape(TestHelpers.uri_for_path("/#{index}/#{type}/_search").to_s)
+    def stub_es_scan(index, type, batch_size, *hits)
       scroll_ids = Array.new(batch_size + 1) { rand(10**100).to_s(36) }
-      FakeWeb.register_uri(
+      stub_request_json(
         :post,
-        /^#{scan_uri}\?.*search_type=scan/,
-        :body => {
-          '_scroll_id' => scroll_ids.first,
-          'hits' => { 'total' => hits.length, 'hits' => [] }
-        }.to_json
+        match_es_resource(index, type, '_search'),
+        '_scroll_id' => scroll_ids.first,
+        'hits' => { 'total' => hits.length, 'hits' => [] }
       )
 
       batches = hits.each_slice(batch_size).each_with_index.map do |hit_batch, i|
         { :body => { '_scroll_id' => scroll_ids[i+1], 'hits' => { 'hits' => hit_batch }}.to_json }
       end
       batches << { :body => { 'hits' => { 'hits' => [] }}.to_json }
-      scroll_uri = Regexp.escape(TestHelpers.uri_for_path("/_search/scroll").to_s)
-      FakeWeb.register_uri(
-        :post,
-        /^#{scroll_uri}/,
-        batches
-      )
+      stub_request(:post, match_es_path('/_search/scroll'), batches)
       scroll_ids
     end
 
-    def self.uri_for_path(path)
-      "#{Elastictastic.config.hosts.first}#{path}"
+    def self.match_es_path(path)
+      /^#{Regexp.escape(Elastictastic.config.hosts.first)}#{Regexp.escape(path)}(\?.*)?$/
+    end
+
+    def self.match_es_resource(*components)
+      match_es_path("/#{components.flatten.join('/')}")
+    end
+
+    def match_es_path(path)
+      TestHelpers.match_es_path(path)
+    end
+
+    def match_es_resource(*components)
+      TestHelpers.match_es_resource(*components)
+    end
+
+    def stub_request_json(method, uri, *responses)
+      json_responses = responses.map { |response| { :body => response.to_json }}
+      json_responses = json_responses.first if json_responses.length == 1
+      stub_request(method, uri, json_responses)
+    end
+
+    def stub_request(method, url, options = {})
+      FakeWeb.register_uri(method, url, options)
+    end
+
+    def last_request
+      FakeWeb.last_request
+    end
+
+    def last_request_json
+      JSON.parse(last_request.body)
+    end
+
+    def last_request_uri
+      URI.parse(last_request.path)
+    end
+
+    def generate_es_id
+      ''.tap do |id|
+        22.times { id << ALPHANUM[rand(ALPHANUM.length)] }
+      end
+    end
+
+    def generate_es_hit(type, options = {})
+      {
+        '_id' => options[:id] || generate_es_id,
+        '_type' => type,
+        '_index' => options[:index] || Elastictastic.config.default_index,
+        '_version' => options[:version] || 1,
+        '_source' => options.key?(:source) ? options[:source] : {}
+      }
     end
   end
 end

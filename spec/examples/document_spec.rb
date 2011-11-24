@@ -8,7 +8,7 @@ describe Elastictastic::Document do
 
   describe '#save' do
     context 'new object' do
-      let!(:id) { stub_elasticsearch_create('default', 'post') }
+      let!(:id) { stub_es_create('default', 'post') }
       let(:post) { Post.new }
 
       before do
@@ -32,6 +32,10 @@ describe Elastictastic::Document do
         post.id.should == id
       end
 
+      it 'should populate version' do
+        post.version.should == 1
+      end
+
       it 'should mark object as persisted' do
         post.should be_persisted
       end
@@ -42,8 +46,12 @@ describe Elastictastic::Document do
 
       context 'with unique id' do
         before do
-          stub_elasticsearch_create('default', 'post', post.id)
+          stub_es_create('default', 'post', post.id)
           post.save
+        end
+
+        it 'should populate version' do
+          post.version.should == 1
         end
 
         it 'should send PUT request' do
@@ -61,12 +69,11 @@ describe Elastictastic::Document do
 
       context 'with duplicate ID' do
         before do
-          stub_elasticsearch_create(
-            'default', 'post', '123',
-            :body => {
-              'error' => 'DocumentAlreadyExistsEngineException[[post][2] [post][1]]: document already exists',
-              'status' => 409
-            }.to_json
+          stub_request_json(
+            :put,
+            match_es_resource('default', 'post', '123', '_create'),
+            'error' => 'DocumentAlreadyExistsEngineException[[post][2] [post][1]]: document already exists',
+            'status' => 409
           )
         end
 
@@ -99,7 +106,7 @@ describe Elastictastic::Document do
 
       describe '#save' do
         before do
-          stub_elasticsearch_update('default', 'post', post.id)
+          stub_es_update('default', 'post', post.id)
           post.title = 'Fun Factories for Fickle Ferrets'
           post.save
         end
@@ -108,19 +115,23 @@ describe Elastictastic::Document do
           last_request.method.should == 'PUT'
         end
 
-        it "should send to document's resource path" do
-          last_request.path.should == "/default/post/#{post.id}"
+        it "should send to document's resource path with version" do
+          last_request.path.should == "/default/post/#{post.id}?version=1"
         end
 
         it "should send document's body in request" do
           last_request.body.should == post.elasticsearch_doc.to_json
+        end
+
+        it 'should populate new version' do
+          post.version.should == 2
         end
       end # describe '#save'
     end # shared_examples_for 'persisted object'
 
     context 'object after save' do
       let(:post) do
-        stub_elasticsearch_create('default', 'post')
+        stub_es_create('default', 'post')
         Post.new.tap { |post| post.save }
       end
 
@@ -131,6 +142,7 @@ describe Elastictastic::Document do
       let(:post) do
         Post.new.tap do |post|
           post.id = '123'
+          post.version = 1
           post.persisted!
         end
       end
@@ -149,7 +161,7 @@ describe Elastictastic::Document do
       end
 
       before do
-        stub_elasticsearch_destroy('default', 'post', '123')
+        stub_es_destroy('default', 'post', '123')
         @result = post.destroy
       end
 
@@ -187,16 +199,9 @@ describe Elastictastic::Document do
       end
 
       before do
-        stub_elasticsearch_destroy(
+        stub_es_destroy(
           'default', 'post', '123',
-          :body => {
-            'ok' => true,
-            'found' => false,
-            '_index' => 'default',
-            '_type' => 'post',
-            '_id' => '123',
-            '_version' => 0
-          }.to_json
+          'found' => false
         )
         @result = post.destroy
       end
@@ -210,7 +215,7 @@ describe Elastictastic::Document do
   describe '::destroy_all' do
     describe 'with default index' do
       before do
-        stub_elasticsearch_destroy_all('default', 'post')
+        stub_es_destroy_all('default', 'post')
         Post.destroy_all
       end
 
@@ -225,7 +230,7 @@ describe Elastictastic::Document do
 
     describe 'with specified index' do
       before do
-        stub_elasticsearch_destroy_all('my_index', 'post')
+        stub_es_destroy_all('my_index', 'post')
         Post.in_index('my_index').destroy_all
       end
 
@@ -248,7 +253,7 @@ describe Elastictastic::Document do
 
     context 'with default index' do
       before do
-        stub_elasticsearch_put_mapping('default', 'post')
+        stub_es_put_mapping('default', 'post')
         Post.sync_mapping
       end
 
@@ -261,7 +266,7 @@ describe Elastictastic::Document do
 
     context 'with specified index' do
       before do
-        stub_elasticsearch_put_mapping('my_cool_index', 'post')
+        stub_es_put_mapping('my_cool_index', 'post')
         Post.in_index('my_cool_index').sync_mapping
       end
 
@@ -278,13 +283,17 @@ describe Elastictastic::Document do
     shared_examples_for 'single document lookup' do
       context 'when document is found' do
         before do
-          stub_elasticsearch_get(
+          stub_es_get(
             index, 'post', '1',
           )
         end
 
         it 'should return post instance' do
           post.should be_a(Post)
+        end
+
+        it 'should populate version' do
+          post.version.should == 1
         end
 
         it 'should request specified fields if specified' do
@@ -301,7 +310,7 @@ describe Elastictastic::Document do
 
       context 'when document is not found' do
         before do
-          stub_elasticsearch_get(index, 'post', '1', nil)
+          stub_es_get(index, 'post', '1', nil)
         end
 
         it 'should return nil' do
@@ -313,7 +322,7 @@ describe Elastictastic::Document do
     shared_examples_for 'multi document single index lookup' do
 
       before do
-        stub_elasticsearch_mget(index, 'post', '1', '2')
+        stub_es_mget(index, 'post', '1', '2')
         posts
       end
 
@@ -372,7 +381,7 @@ describe Elastictastic::Document do
 
       describe 'multi-index multi-get' do
         before do
-          stub_elasticsearch_mget(
+          stub_es_mget(
             nil,
             nil,
             ['1', 'default'], ['2', 'my_index'], ['3', 'my_index']
@@ -445,7 +454,7 @@ describe Elastictastic::Document do
         let(:posts) { Post.find('1', '2') }
 
         before do
-          stub_elasticsearch_mget('default', 'post', '1' => {}, '2' => nil)
+          stub_es_mget('default', 'post', '1' => {}, '2' => nil)
         end
 
         it 'should only return docs that exist' do
@@ -464,13 +473,14 @@ describe Elastictastic::Document do
     end # context 'with specified index'
   end # describe '::find'
 
-  describe '::new_from_elasticsearch_hit' do
+  describe '#elasticsearch_hit=' do
     context 'with full _source' do
       let :post do
         Post.new.tap do |post|
           post.elasticsearch_hit = {
             '_id' => '1',
             '_index' => 'my_index',
+            '_version' => 2,
             '_source' => {
               'title' => 'Testy time',
               'tags' => %w(search lucene),
@@ -492,6 +502,10 @@ describe Elastictastic::Document do
 
       it 'should populate index' do
         post.index.name.should == 'my_index'
+      end
+
+      it 'should populate version' do
+        post.version.should == 2
       end
 
       it 'should mark document perisistent' do

@@ -14,7 +14,7 @@ describe Elastictastic::BulkPersistenceStrategy do
     let(:post) { Post.new }
 
     before do
-      stub_elasticsearch_bulk(
+      stub_es_bulk(
         'create' => { '_index' => 'default', '_type' => 'post', '_id' => '123', '_version' => 1, 'ok' => true }
       )
       Elastictastic.bulk do
@@ -38,6 +38,10 @@ describe Elastictastic::BulkPersistenceStrategy do
       post.id.should == '123'
     end
 
+    it 'should set version' do
+      post.version.should == 1
+    end
+
     it 'should set persisted' do
       post.should be_persisted
     end
@@ -55,7 +59,7 @@ describe Elastictastic::BulkPersistenceStrategy do
         example.run
         # have to do this here because the before/after hooks run inside the
         # around hook
-        stub_elasticsearch_bulk(
+        stub_es_bulk(
           'create' => { '_index' => 'default', '_type' => 'post', '_id' => '123', '_version' => 1, 'ok' => true }
         )
       end
@@ -80,7 +84,7 @@ describe Elastictastic::BulkPersistenceStrategy do
     let(:posts) { Array.new(2) { Post.new }}
 
     before do
-      stub_elasticsearch_bulk(
+      stub_es_bulk(
         { 'create' => { '_index' => 'default', '_type' => 'post', '_id' => '123', '_version' => 1, 'ok' => true }},
         { 'create' => { '_index' => 'default', '_type' => 'post', '_id' => '124', '_version' => 1, 'ok' => true }}
       )
@@ -99,6 +103,10 @@ describe Elastictastic::BulkPersistenceStrategy do
     it 'should set IDs' do
       posts.map { |post| post.id }.should == %w(123 124)
     end
+
+    it 'should set versions' do
+      posts.each { |post| post.version.should == 1 }
+    end
   end
 
   describe 'create with ID set' do
@@ -110,7 +118,7 @@ describe Elastictastic::BulkPersistenceStrategy do
     end
 
     before do
-      stub_elasticsearch_bulk(
+      stub_es_bulk(
         'create' => { '_index' => 'default', '_type' => 'post', '_id' => '123', '_version' => 1, 'ok' => true }
       )
       Elastictastic.bulk { post.save }
@@ -130,29 +138,37 @@ describe Elastictastic::BulkPersistenceStrategy do
     it 'should retain ID' do
       post.id.should == '123'
     end
+
+    it 'should set version' do
+      post.version.should == 1
+    end
   end
 
   describe '#update' do
     let(:post) do
       Post.new.tap do |post|
         post.id = '123'
+        post.version = 1
         post.persisted!
       end
     end
 
     before do
-      stub_elasticsearch_bulk(
-        'index' => { '_index' => 'default', '_type' => 'post', '_id' => '123', '_version' => 1, 'ok' => true }
+      stub_es_bulk(
+        'index' => { '_index' => 'default', '_type' => 'post', '_id' => '123', '_version' => 2, 'ok' => true }
       )
+      Elastictastic.bulk { post.save }
     end
 
     it 'should send update' do
-      Elastictastic.bulk { post.save }
-
       bulk_requests.should == [
-        { 'index' => { '_index' => 'default', '_type' => 'post', '_id' => '123' }},
+        { 'index' => { '_index' => 'default', '_type' => 'post', '_id' => '123', '_version' => 1 }},
         post.elasticsearch_doc
       ]
+    end
+
+    it 'should set version' do
+      post.version.should == 2
     end
   end
 
@@ -161,20 +177,21 @@ describe Elastictastic::BulkPersistenceStrategy do
       Post.new.tap do |post|
         post.id = '123'
         post.title = 'bulky'
+        post.version = 1
         post.persisted!
       end
     end
 
     before do
-      stub_elasticsearch_bulk(
-        'destroy' => { '_index' => 'default', '_type' => 'post', '_id' => '123', '_version' => 1, 'ok' => true }
+      stub_es_bulk(
+        'delete' => { '_index' => 'default', '_type' => 'post', '_id' => '123', '_version' => 2, 'ok' => true }
       )
       Elastictastic.bulk { post.destroy }
     end
 
     it 'should send destroy' do
       bulk_requests.should == [
-        { 'delete' => { '_index' => 'default', '_type' => 'post', '_id' => '123' }}
+        { 'delete' => { '_index' => 'default', '_type' => 'post', '_id' => '123', '_version' => 1 }}
       ]
     end
 
@@ -191,7 +208,7 @@ describe Elastictastic::BulkPersistenceStrategy do
 
     it 'should return to individual persistence strategy' do
       error_proc.call rescue nil
-      stub_elasticsearch_create('default', 'post')
+      stub_es_create('default', 'post')
       Post.new.save
       last_request.path.should == '/default/post'
     end

@@ -2,12 +2,15 @@ require 'stringio'
 
 module Elastictastic
   class BulkPersistenceStrategy
+    DEFAULT_HANDLER = proc { |e| raise(e) if e }
+
     def initialize
       @buffer = StringIO.new
       @handlers = []
     end
 
-    def create(instance, params = {})
+    def create(instance, params = {}, &block)
+      block ||= DEFAULT_HANDLER
       if instance.pending_save?
         raise Elastictastic::OperationNotAllowed,
           "Can't re-save transient document with pending save in bulk operation"
@@ -17,23 +20,44 @@ module Elastictastic
         { 'create' => bulk_identifier(instance) },
         instance.elasticsearch_doc
       ) do |response|
-        instance.id = response['create']['_id']
-        instance.persisted!
+        if response['create']['error']
+          block.call(ServerError[response['error']])
+        else
+          instance.id = response['create']['_id']
+          instance.version = response['create']['_version']
+          instance.persisted!
+          block.call
+        end
       end
     end
 
-    def update(instance)
+    def update(instance, &block)
+      block ||= DEFAULT_HANDLER
       instance.pending_save!
       add(
         { 'index' => bulk_identifier(instance) },
         instance.elasticsearch_doc
-      )
+      ) do |response|
+        if response['index']['error']
+          block.call(ServerError[response['index']['error']])
+        else
+          instance.version = response['index']['_version']
+          block.call
+        end
+      end
     end
 
-    def destroy(instance)
+    def destroy(instance, &block)
+      block ||= DEFAULT_HANDLER
       instance.pending_destroy!
       add(:delete => bulk_identifier(instance)) do |response|
-        instance.transient!
+        if response['delete']['error']
+          block.call(ServerError[response['index']['error']])
+        else
+          instance.transient!
+          instance.version = response['delete']['_version']
+          block.call
+        end
       end
     end
 
@@ -56,6 +80,7 @@ module Elastictastic
     def bulk_identifier(instance)
       identifier = { :_index => instance.index.name, :_type => instance.class.type }
       identifier['_id'] = instance.id if instance.id
+      identifier['_version'] = instance.version if instance.version
       identifier['parent'] = instance._parent_id if instance._parent_id
       identifier
     end

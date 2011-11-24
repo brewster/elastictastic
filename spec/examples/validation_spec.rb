@@ -26,7 +26,7 @@ describe Elastictastic::Validations do
   describe 'with valid data' do
     let(:post) { Post.new }
 
-    before { stub_elasticsearch_create('default', 'post') }
+    before { stub_es_create('default', 'post') }
 
     it 'should be valid' do
       post.should be_valid

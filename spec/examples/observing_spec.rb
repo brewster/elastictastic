@@ -12,9 +12,9 @@ describe Elastictastic::Observing do
   end
 
   before do
-    stub_elasticsearch_create('default', 'post')
-    stub_elasticsearch_update('default', 'post', id)
-    stub_elasticsearch_destroy('default', 'post', id)
+    stub_es_create('default', 'post')
+    stub_es_update('default', 'post', id)
+    stub_es_destroy('default', 'post', id)
     Elastictastic.config.observers = [:post_observer]
     Elastictastic.config.instantiate_observers
   end

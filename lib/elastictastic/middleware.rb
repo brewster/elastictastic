@@ -22,8 +22,6 @@ module Elastictastic
     end
 
     class RaiseServerErrors < Faraday::Middleware
-      ERROR_PATTERN = /^([A-Z][A-Za-z]*)(?::\s*)?(.*)$/
-
       def call(env)
         @app.call(env).on_complete do
           body = env[:body]
@@ -39,15 +37,7 @@ module Elastictastic
       private
 
       def raise_error(server_message, status)
-        match = ERROR_PATTERN.match(server_message)
-        if match
-          clazz = Elastictastic::ServerError.const_get(match[1])
-          error = clazz.new(match[2])
-          error.status = status
-          Kernel.raise error
-        else
-          Kernel.raise Elastictastic::ServerError::ServerError, server_message
-        end
+        ::Kernel.raise(Elastictastic::ServerError[server_message, status])
       end
     end
 
@@ -86,7 +76,9 @@ module Elastictastic
         last = @head
         begin
           @head = @head.next
-          @head.call(env)
+          response = @head.call(env)
+          raise Faraday::Error::ConnectionFailed, "Got empty response from ElasticSearch" if response.body.blank?
+          response
         rescue Faraday::Error::ConnectionFailed => e
           raise NoServerAvailable if @head == last
           retry

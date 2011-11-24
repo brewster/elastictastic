@@ -12,7 +12,7 @@ describe Elastictastic::ParentChild do
   describe 'child instance' do
     let(:post) { blog.posts.new }
     let(:blog) do
-      stub_elasticsearch_create('default', 'blog')
+      stub_es_create('default', 'blog')
       Blog.new.tap { |blog| blog.save }
     end
 
@@ -28,7 +28,7 @@ describe Elastictastic::ParentChild do
       let(:post) { Post.in_index('my_index').fields('_source', '_parent').first }
 
       before do
-        stub_elasticsearch_search(
+        stub_es_search(
           'my_index', 'post',
           'hits' => {
             'total' => 1,
@@ -42,7 +42,7 @@ describe Elastictastic::ParentChild do
           }
         )
 
-        stub_elasticsearch_get(
+        stub_es_get(
           'my_index', 'blog', '1',
           { 'name' => 'Awesome Blog' }
         )
@@ -60,26 +60,26 @@ describe Elastictastic::ParentChild do
 
     describe 'discrete persistence' do
       it 'should pass parent param on create' do
-        stub_elasticsearch_create('default', 'post')
+        stub_es_create('default', 'post')
         post.save
         URI.parse(FakeWeb.last_request.path).query.should == "parent=#{blog.id}"
       end
 
       it 'should pass parent param on update' do
-        stub_elasticsearch_create('default', 'post')
+        stub_es_create('default', 'post')
         post.save
-        stub_elasticsearch_update('default', 'post', post.id)
+        stub_es_update('default', 'post', post.id)
         post.save
-        URI.parse(FakeWeb.last_request.path).query.should == "parent=#{blog.id}"
+        URI.parse(FakeWeb.last_request.path).query.split('&').should include("parent=#{blog.id}")
       end
 
       it 'should pass parent on delete' do
-        stub_elasticsearch_create('default', 'post')
+        stub_es_create('default', 'post')
         post = blog.posts.new
         post.save
-        stub_elasticsearch_destroy('default', 'post', post.id)
+        stub_es_destroy('default', 'post', post.id)
         post.destroy
-        URI.parse(FakeWeb.last_request.path).query.should == "parent=#{blog.id}"
+        URI.parse(FakeWeb.last_request.path).query.split('&').should include("parent=#{blog.id}")
       end
     end
 
@@ -91,7 +91,7 @@ describe Elastictastic::ParentChild do
       end
 
       before do
-        stub_elasticsearch_bulk
+        stub_es_bulk
       end
 
       it 'should pass parent param on create' do
@@ -136,7 +136,7 @@ describe Elastictastic::ParentChild do
     end
 
     it 'should set index' do
-      stub_elasticsearch_create('my_index', 'blog')
+      stub_es_create('my_index', 'blog')
       blog = Blog.in_index('my_index').new
       blog.save
       post = blog.posts.new
@@ -146,7 +146,7 @@ describe Elastictastic::ParentChild do
 
   describe 'collection proxies' do
     let(:blog) do
-      stub_elasticsearch_create('my_index', 'blog')
+      stub_es_create('my_index', 'blog')
       Blog.in_index('my_index').new.tap { |blog| blog.save }
     end
     let(:posts) { blog.posts }
@@ -171,18 +171,18 @@ describe Elastictastic::ParentChild do
     end
 
     it 'should search correct index' do
-      stub_elasticsearch_scan('my_index', 'post', 100, { '_id' => '1' })
+      stub_es_scan('my_index', 'post', 100, { '_id' => '1' })
       posts.to_a.first.id.should == '1'
     end
 
     it 'should set routing to parent ID on get' do
-      stub_elasticsearch_get('my_index', 'post', 1)
+      stub_es_get('my_index', 'post', 1)
       blog.posts.find(1)
       URI.parse(FakeWeb.last_request.path).query.should == "routing=#{blog.id}"
     end
 
     it 'should set routing to parent ID on multiget' do
-      stub_elasticsearch_mget('my_index', 'post')
+      stub_es_mget('my_index', 'post')
       blog.posts.find(1, 2)
       JSON.parse(FakeWeb.last_request.body).should == {
         'docs' => [
@@ -194,14 +194,14 @@ describe Elastictastic::ParentChild do
 
     it 'should save transient instances when parent is saved' do
       post = posts.new
-      stub_elasticsearch_update('my_index', 'blog', blog.id)
-      stub_elasticsearch_create('my_index', 'post')
+      stub_es_update('my_index', 'blog', blog.id)
+      stub_es_create('my_index', 'post')
       blog.save
       post.should be_persisted
     end
 
     it 'should not attempt to save transient instances that are pending for save in a bulk block' do
-      stub_elasticsearch_bulk(
+      stub_es_bulk(
         { 'create' => { '_index' => 'my_index', '_type' => 'post', '_id' => '123', '_version' => 1, 'ok' => true }},
         { 'index' => { '_index' => 'my_index', '_type' => 'blog', '_id' => blog.id, '_version' => 2, 'ok' => true }}
       )
@@ -217,28 +217,28 @@ describe Elastictastic::ParentChild do
 
     it 'should not save transient instances again' do
       post = posts.new
-      stub_elasticsearch_update('my_index', 'blog', blog.id)
-      stub_elasticsearch_create('my_index', 'post')
+      stub_es_update('my_index', 'blog', blog.id)
+      stub_es_create('my_index', 'post')
       blog.save
       FakeWeb.clean_registry
-      stub_elasticsearch_update('my_index', 'blog', blog.id)
+      stub_es_update('my_index', 'blog', blog.id)
       expect { blog.save }.to_not raise_error
     end
 
     it 'should populate parent when finding one' do
-      stub_elasticsearch_get('my_index', 'post', '1')
+      stub_es_get('my_index', 'post', '1')
       blog.posts.find('1').blog.should == blog
     end
 
     it 'should populate parent when finding many' do
-      stub_elasticsearch_mget('my_index', 'post', '1', '2')
+      stub_es_mget('my_index', 'post', '1', '2')
       blog.posts.find('1', '2').each do |post|
         post.blog.should == blog
       end
     end
 
     it 'should populate parent when retrieving first' do
-      stub_elasticsearch_search(
+      stub_es_search(
         'my_index', 'post',
         'total' => 1,
         'hits' => { 'hits' => [{ '_id' => '2', 'index' => 'my_index', '_type' => 'post' }]}
@@ -247,7 +247,7 @@ describe Elastictastic::ParentChild do
     end
 
     it 'should populate parent when iterating over cursor' do
-      stub_elasticsearch_scan(
+      stub_es_scan(
         'my_index', 'post', 100,
         '_id' => '1'
       )
@@ -255,7 +255,7 @@ describe Elastictastic::ParentChild do
     end
 
     it 'should populate parent when paginating' do
-      stub_elasticsearch_search(
+      stub_es_search(
         'my_index', 'post',
         'hits' => {
           'total' => 1,
@@ -266,7 +266,7 @@ describe Elastictastic::ParentChild do
     end
 
     it 'should iterate over transient instances along with retrieved results' do
-      stub_elasticsearch_scan('my_index', 'post', 100, '_id' => '1')
+      stub_es_scan('my_index', 'post', 100, '_id' => '1')
       post = blog.posts.new
       posts = blog.posts.to_a
       posts[0].id.should == '1'
@@ -280,7 +280,7 @@ describe Elastictastic::ParentChild do
     end
 
     it 'should return transient instance as #first if no persisted results' do
-      stub_elasticsearch_search(
+      stub_es_search(
         'my_index', 'post', 'hits' => { 'total' => 0, 'hits' => [] })
       post = blog.posts.new
       blog.posts.first.should == post
@@ -314,7 +314,7 @@ describe Elastictastic::ParentChild do
 
   describe 'searching children directly' do
     before do
-      stub_elasticsearch_search(
+      stub_es_search(
         'default', 'post',
         'hits' => {
           'hits' => [
@@ -331,7 +331,7 @@ describe Elastictastic::ParentChild do
     let(:post) { Post.first }
 
     it 'should provide access to parent' do
-      stub_elasticsearch_get('default', 'blog', '3')
+      stub_es_get('default', 'blog', '3')
       post.blog.id.should == '3'
     end
 
@@ -340,7 +340,7 @@ describe Elastictastic::ParentChild do
     end
 
     it 'should save post without dereferencing parent' do
-      stub_elasticsearch_update('default', 'post', post.id)
+      stub_es_update('default', 'post', post.id)
       post.save
       URI.parse(FakeWeb.last_request.path).query.should == 'parent=3'
     end

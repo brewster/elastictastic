@@ -20,7 +20,7 @@ describe Elastictastic::Scope do
       let(:scroll_requests) { FakeWeb.requests[1..-1] }
 
       before do
-        @scroll_ids = stub_elasticsearch_scan(
+        @scroll_ids = stub_es_scan(
           'default', 'post', 2, *make_hits(3)
         )
       end
@@ -81,7 +81,7 @@ describe Elastictastic::Scope do
       let(:scope) { Post.from(10).size(10) }
 
       before do
-        stub_elasticsearch_search(
+        stub_es_search(
           'default', 'post', 'hits' => {
             'total' => 2,
             'hits' => make_hits(2)
@@ -120,7 +120,7 @@ describe Elastictastic::Scope do
 
       before do
         Elastictastic.config.default_batch_size = 2
-        stub_elasticsearch_search(
+        stub_es_search(
           'default', 'post',
           make_hits(3).each_slice(2).map { |batch| { 'hits' => { 'hits' => batch, 'total' => 3 }} }
         )
@@ -203,7 +203,7 @@ describe Elastictastic::Scope do
       let(:scope) { Post }
 
       before do
-        stub_elasticsearch_scan('default', 'post', 2, *hits)
+        stub_es_scan('default', 'post', 2, *hits)
       end
 
       it_should_behave_like 'enumerator with hit metadata'
@@ -214,7 +214,7 @@ describe Elastictastic::Scope do
 
       before do
         batches = hits.each_slice(2).map { |batch| { 'hits' => { 'hits' => batch, 'total' => 3 }} }
-        stub_elasticsearch_search('default', 'post', batches)
+        stub_es_search('default', 'post', batches)
       end
 
       it_should_behave_like 'enumerator with hit metadata'
@@ -224,7 +224,7 @@ describe Elastictastic::Scope do
       let(:scope) { Post.size(3) }
 
       before do
-        stub_elasticsearch_search('default', 'post', 'hits' => { 'hits' => hits, 'total' => 3 })
+        stub_es_search('default', 'post', 'hits' => { 'hits' => hits, 'total' => 3 })
       end
 
       it_should_behave_like 'enumerator with hit metadata'
@@ -234,7 +234,7 @@ describe Elastictastic::Scope do
   describe '#count' do
     context 'with no operations performed yet' do
       let!(:count) do
-        stub_elasticsearch_search('default', 'post', 'hits' => { 'total' => 3 })
+        stub_es_search('default', 'post', 'hits' => { 'total' => 3 })
         Post.all.count
       end
 
@@ -249,7 +249,7 @@ describe Elastictastic::Scope do
 
     context 'with scan search performed' do
       let!(:count) do
-        stub_elasticsearch_scan(
+        stub_es_scan(
           'default', 'post', 2, *make_hits(3)
         )
         scope = Post.all
@@ -268,7 +268,7 @@ describe Elastictastic::Scope do
 
     context 'with paginated search performed' do
       let!(:count) do
-        stub_elasticsearch_search(
+        stub_es_search(
           'default', 'post', 'hits' => {
             'hits' => make_hits(3),
             'total' => 3
@@ -290,7 +290,7 @@ describe Elastictastic::Scope do
 
     context 'with paginated scan performed' do
       let!(:count) do
-        stub_elasticsearch_search(
+        stub_es_search(
           'default', 'post', 'hits' => {
             'hits' => make_hits(2),
             'total' => 2
@@ -327,7 +327,7 @@ describe Elastictastic::Scope do
 
     context 'with no requests performed' do
       let!(:facets) do
-        stub_elasticsearch_search(
+        stub_es_search(
           'default', 'post',
           'hits' => { 'hits' => [], 'total' => 2 },
           'facets' => facet_response
@@ -346,7 +346,7 @@ describe Elastictastic::Scope do
 
     context 'with count request performed' do
       let!(:facets) do
-        stub_elasticsearch_search(
+        stub_es_search(
           'default', 'post',
           'hits' => { 'hits' => [], 'total' => 2 },
           'facets' => facet_response
@@ -366,7 +366,7 @@ describe Elastictastic::Scope do
 
     context 'with single-page search performed' do
       let!(:facets) do
-        stub_elasticsearch_search(
+        stub_es_search(
           'default', 'post',
           'hits' => { 'hits' => make_hits(2), 'total' => 2 },
           'facets' => facet_response
@@ -387,7 +387,7 @@ describe Elastictastic::Scope do
 
     context 'with multi-page search performed' do
       let!(:facets) do
-        stub_elasticsearch_search(
+        stub_es_search(
           'default', 'post',
           'hits' => { 'hits' => make_hits(2), 'total' => 2 },
           'facets' => facet_response
@@ -410,7 +410,7 @@ describe Elastictastic::Scope do
   describe '#first' do
     shared_examples_for 'first method' do
       before do
-        stub_elasticsearch_search(
+        stub_es_search(
           index, 'post', 'hits' => {
             'total' => 12,
             'hits' => make_hits(1)

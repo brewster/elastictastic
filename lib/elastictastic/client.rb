@@ -38,7 +38,7 @@ module Elastictastic
     end
 
     def update(index, type, id, doc, params = {})
-      @connection.put(path_with_query("/#{index}/#{type}/#{id}", params), doc)
+      @connection.put(path_with_query("/#{index}/#{type}/#{id}", params), doc).body
     end
 
     def bulk(commands, params = {})
