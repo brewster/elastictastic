@@ -9,8 +9,9 @@ require 'elastictastic/thrift/rest'
 
 module Elastictastic
   class ThriftAdapter < Faraday::Adapter
-    def initialize(options = {})
-      @options = {}
+    def initialize(app, options = {})
+      super(app)
+      @options = options
     end
 
     def call(env)
