@@ -268,10 +268,18 @@ end
 ```
 
 All create, update, and destroy operations inside the block will be executed in
-a single bulk request when the block completes. If you wish to cancel a bulk
-operation at any point, you may raise the `Elastictastic::CancelBulkOperation`
-exception, which will prevent the bulk operation from writing to ElasticSearch
-but which will not be raised outside the bulk block.
+a single bulk request when the block completes. If you are performing an
+indefinite number of operations in a bulk block, you can pass an `:auto_flush`
+option to flush the bulk buffer after the specified number of operations:
+
+```ruby
+Elastictastic.bulk(:auto_flush => 100) do
+	150.times { Post.new.save! }
+end
+```
+
+The above will perform two bulk requests: the first after the first 100
+operations, and the second when the block completes.
 
 Note that the nature of bulk writes means that any operation inside a bulk block
 is essentially asynchronous: instances are not created, updated, or destroyed

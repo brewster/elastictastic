@@ -4,9 +4,11 @@ module Elastictastic
   class BulkPersistenceStrategy
     DEFAULT_HANDLER = proc { |e| raise(e) if e }
 
-    def initialize
+    def initialize(options)
       @buffer = StringIO.new
+      @buffered_operations = 0
       @handlers = []
+      @auto_flush = options.delete(:auto_flush)
     end
 
     def create(instance, params = {}, &block)
@@ -72,6 +74,9 @@ module Elastictastic
         handler = @handlers[i]
         handler.call(op_response) if handler
       end
+      @buffer.reopen
+      @handlers.clear
+      @buffered_operations = 0
       response
     end
 
@@ -86,10 +91,10 @@ module Elastictastic
     end
 
     def add(*requests, &block)
-      requests.each do |request|
-        @buffer.puts(request.to_json)
-      end
+      requests.each { |request| @buffer.puts(request.to_json) }
+      @buffered_operations += 1
       @handlers << block
+      flush if @auto_flush && @buffered_operations >= @auto_flush
     end
   end
 end

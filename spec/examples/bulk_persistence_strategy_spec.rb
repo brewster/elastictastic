@@ -231,20 +231,26 @@ describe Elastictastic::BulkPersistenceStrategy do
     it_should_behave_like 'block with error'
   end
 
-  describe 'raising CancelBulkOperation' do
-    let :error_proc do
-      lambda do
-        Elastictastic.bulk do
-          Post.new.save
-          raise Elastictastic::CancelBulkOperation
-        end
-      end
+  describe 'with :auto_flush specified' do
+    before do
+      responses = Array.new(3) do
+        { 'create' => generate_es_hit('post').except('_source').merge('ok' => true) }
+      end.each_slice(2).map { |slice| { 'items' => slice } }
+      stub_request_json(
+        :post,
+        match_es_path('/_bulk'),
+        *responses
+      )
+      Elastictastic.bulk(:auto_flush => 2) { 3.times { Post.new.save }}
     end
 
-    it 'should not propagate error' do
-      expect(&error_proc).not_to raise_error
+    it 'should perform multiple requests when auto-flush triggered' do
+      FakeWeb.should have(2).requests
     end
 
-    it_should_behave_like 'block with error'
+    it 'should flush after specified number of operations' do
+      FakeWeb.requests.first.body.split("\n").should have(4).items
+      FakeWeb.requests.last.body.split("\n").should have(2).items
+    end
   end
 end

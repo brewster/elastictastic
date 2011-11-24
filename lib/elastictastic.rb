@@ -55,14 +55,12 @@ module Elastictastic
         Elastictastic::DiscretePersistenceStrategy.instance
     end
 
-    def bulk
+    def bulk(options = {})
       original_persister = self.persister
+      bulk_persister = self.persister =
+        Elastictastic::BulkPersistenceStrategy.new(options)
       begin
-        bulk_persister = self.persister =
-          Elastictastic::BulkPersistenceStrategy.new
         yield
-      rescue Elastictastic::CancelBulkOperation
-        return
       ensure
         self.persister = original_persister
       end
