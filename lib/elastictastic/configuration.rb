@@ -15,9 +15,9 @@ module Elastictastic
     def adapter=(adapter)
       @adapter =
         case adapter
-        when 'thrift' then Elastictastic::ThriftAdapter
+        when 'Thrift', 'thrift' then Elastictastic::ThriftAdapter
         when Class, /^[A-Z][A-Za-z0-9]+$/ then adapter
-        when /^[a-z_]+/ then adapter.to_sym
+        when /^[a-z_]+/ then adapter.camelize
         else raise ArgumentError, "Unrecognized adapter name #{adapter}"
         end
     end
