@@ -212,6 +212,28 @@ describe Elastictastic::Document do
     end # describe 'non-existent persisted object'
   end # describe '#destroy'
 
+  describe '#reload' do
+    context 'with persisted object' do
+      let :post do
+        Post.new.tap do |post|
+          post.id = '1'
+          post.title = 'Title'
+          post.persisted!
+        end
+      end
+
+      before do
+        stub_es_get('default', 'post', '1', 'title' => 'Title')
+        post.title = 'Something'
+        post.reload
+      end
+
+      it 'should reset changed attributes' do
+        post.title.should == 'Title'
+      end
+    end
+  end
+
   describe '::destroy_all' do
     describe 'with default index' do
       before do

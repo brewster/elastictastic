@@ -59,6 +59,13 @@ module Elastictastic
         self.class.current_scope.initialize_instance(self)
       end
 
+      def reload
+        params = {}
+        params['routing'] = @parent_id if @parent_id
+        self.elasticsearch_hit =
+          Elastictastic.client.get(index, self.class.type, id, params)
+      end
+
       def elasticsearch_hit=(hit) #:nodoc:
         @id = hit['_id']
         @index = Index.new(hit['_index'])

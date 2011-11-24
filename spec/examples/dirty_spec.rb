@@ -72,6 +72,18 @@ describe Elastictastic::Dirty do
       end
     end
 
+    context 'after change and reload' do
+      before do
+        post.title = 'hey guy'
+        stub_es_get('default', 'post', '1', 'title' => 'second title')
+        post.reload
+      end
+
+      it 'should not be changed' do
+        post.should_not be_changed
+      end
+    end
+
     context 'changing it to the same thing' do
       before do
         post.title = 'first title'
