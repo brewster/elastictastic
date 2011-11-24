@@ -329,6 +329,15 @@ This method will work inside a bulk operation, but note that if the first update
 generates a version conflict, additional updates will occur in discrete
 requests, not as part of any bulk operation.
 
+If you wish to safely update documents retrieved from a search scope
+(see below), use the `update_each` method:
+
+```ruby
+Post.query { constant_score { filter { term(:blog_id => 1) }}}.update_each do |post|
+	post.title = post.title.upcase
+end
+```
+
 ## Search ##
 
 ElasticSearch is, above all, a search tool. Accordingly, aside from direct

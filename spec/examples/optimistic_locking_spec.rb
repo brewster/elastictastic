@@ -12,14 +12,20 @@ describe Elastictastic::OptimisticLocking do
       end
     end
 
+    let :version_conflict do
+      {
+        'error' => "VersionConflictEngineException: [[#{index}][3] [post][abc123]: version conflict, current[2], required[1]]",
+        'status' => 409
+      }
+    end
+
     context 'when version conflict raised from discrete persistence' do
       describe '#save' do
         before do
           stub_request_json(
             :put,
             match_es_resource(index, 'post', '123abc'),
-            'error' => "VersionConflictEngineException: [[#{index}][3] [post][abc123]: version conflict, current[2], required[1]]",
-            'status' => 409
+            version_conflict
           )
         end
 
@@ -45,10 +51,7 @@ describe Elastictastic::OptimisticLocking do
           stub_request_json(
             :put,
             match_es_resource(index, 'post', '123abc'),
-            {
-              'error' => "VersionConflictEngineException: [[#{index}][3] [post][abc123]: version conflict, current[2], required[1]]",
-              'status' => 409
-            },
+            version_conflict,
             generate_es_hit('post', :id => '123abc', :version => 3, :index => index)
           )
           scope.update('123abc') do |post|
@@ -76,6 +79,51 @@ describe Elastictastic::OptimisticLocking do
           last_request_uri.path.split('/')[1].should == index
         end
       end # describe '::update'
+
+      describe '::update_each' do
+        let(:last_update_request) do
+          FakeWeb.requests.reverse.find { |req| req.method == 'PUT' }
+        end
+
+        before do
+          stub_es_scan(
+            index, 'post', 100,
+            generate_es_hit('post', :index => index, :id => '1'),
+            generate_es_hit('post', :index => index, :id => '2')
+          )
+          stub_es_get(index, 'post', '2', { :title => 'Hey' }, 2)
+          stub_es_update(index, 'post', '1')
+          stub_request_json(
+            :put,
+            match_es_resource(index, 'post', '2'),
+            version_conflict,
+            generate_es_hit('post', :id => '2', :index => index, :version => 3)
+          )
+          scope.update_each do |post|
+            post.comments_count = 2
+          end
+        end
+
+        it 'should retry unsuccessful updates' do
+          FakeWeb.should have(7).requests # initiate scan, 2 cursors, update '1', update '2' (fail), get '2', update '2'
+        end
+
+        it 'should re-perform update on failed document' do
+          URI.parse(last_update_request.path).path.should == "/#{index}/post/2"
+        end
+
+        it 'should send data from latest version in persistence' do
+          JSON.parse(last_update_request.body)['title'].should == 'Hey'
+        end
+
+        it 'should send data from update block' do
+          JSON.parse(last_update_request.body)['comments_count'].should == 2
+        end
+
+        it 'should update with latest version' do
+          URI.parse(last_update_request.path).query.split('&').should include('version=2')
+        end
+      end # describe '::update_each'
     end # context 'when version conflict raised from discrete persistence'
 
     context 'when version conflict raised from bulk persistence' do
@@ -84,7 +132,7 @@ describe Elastictastic::OptimisticLocking do
           stub_es_bulk(
             'index' => {
               '_index' => index, '_type' => 'post', '_id' => '123abc',
-              'error' => "VersionConflictEngineException: [[#{index}][3] [post][abc123]: version conflict, current[2], required[1]]"
+              'error' => version_conflict['error']
             }
           )
         end
@@ -111,7 +159,7 @@ describe Elastictastic::OptimisticLocking do
           stub_es_bulk(
             'index' => {
               '_index' => index, '_type' => 'post', '_id' => '123abc',
-              'error' => "VersionConflictEngineException: [[#{index}][3] [post][abc123]: version conflict, current[2], required[1]]"
+              'error' => version_conflict['error']
             }
           )
           stub_es_update(index, 'post', 'abc123')
@@ -142,9 +190,52 @@ describe Elastictastic::OptimisticLocking do
         it 'should send last request to correct index' do
           last_request_uri.path.split('/')[1].should == index
         end
+      end # describe '::update'
+
+      describe '::update_each' do
+        before do
+          stub_es_scan(
+            index, 'post', 100,
+            generate_es_hit('post', :index => index, :id => '1'),
+            generate_es_hit('post', :index => index, :id => '2')
+          )
+          stub_request_json(
+            :post,
+            match_es_path('/_bulk'),
+            'items' => [
+              { 'index' => generate_es_hit('post', :index => index, :id => '1').except('_source').merge('ok' => true) },
+              { 'index' => generate_es_hit('post', :index => index, :id => '2').except('_source').merge(version_conflict.slice('error')) }
+            ]
+          )
+          stub_es_get(index, 'post', '2', { 'title' => 'Hey' }, 2)
+          stub_es_update(index, 'post', '2', 3)
+          Elastictastic.bulk do 
+            scope.update_each { |post| post.comments_count = 2 }
+          end
+        end
+
+        it 'should retry failed update' do
+          FakeWeb.should have(6).requests # start scan, 2 cursor reads, bulk update, reload '2', update '2'
+        end
+
+        it 'should update failed document' do
+          last_request_uri.path.should == "/#{index}/post/2"
+        end
+
+        it 'should update conflicted document with reloaded data' do
+          last_request_json['title'].should == 'Hey'
+        end
+
+        it 'should update conflicted document with data from block' do
+          last_request_json['comments_count'].should == 2
+        end
+
+        it 'should update conflicted document with proper version' do
+          last_request_uri.query.split('&').should include('version=2')
+        end
       end
-    end
-  end
+    end # context 'when version conflict raised from bulk persistence'
+  end # shared_examples_for 'updatable scope'
 
   describe 'default scope' do
     let(:scope) { Post }

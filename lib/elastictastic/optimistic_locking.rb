@@ -1,16 +1,28 @@
 module Elastictastic
   module OptimisticLocking
-    def update(id, &block)
-      scope = current_scope
-      instance = find(id)
-      yield instance
-      instance.save do |e|
-        case e
-        when nil # chill
-        when Elastictastic::ServerError::VersionConflictEngineException
-          scope.update(id, &block)
-        else
-          raise e
+    extend ActiveSupport::Concern
+
+    module ClassMethods
+      def update(id, &block)
+        find(id).try_update(current_scope, &block)
+      end
+
+      def update_each(&block)
+        all.each { |instance| instance.try_update(current_scope, &block) }
+      end
+    end
+
+    module InstanceMethods
+      def try_update(scope, &block) #:nodoc:
+        yield self
+        update do |e|
+          case e
+          when nil # chill
+          when Elastictastic::ServerError::VersionConflictEngineException
+            scope.update(id, &block)
+          else
+            raise e
+          end
         end
       end
     end
