@@ -29,7 +29,9 @@ module Elastictastic
                :script_fields, :preference, :facets, :to => :current_scope
 
       def mapping
-        { type => { 'properties' => properties }}
+        mapping_for_type = { 'properties' => properties }
+        mapping_for_type['_boost'] = @boost if @boost
+        { type => mapping_for_type }
       end
 
       def type

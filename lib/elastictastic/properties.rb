@@ -66,6 +66,10 @@ module Elastictastic
         end
       end
 
+      def boost(field, options = {})
+        @boost = { 'name' => field.to_s, 'null_value' => 1.0 }.merge(options.stringify_keys)
+      end
+
       def define_field(field_name, options, &block)
         field_name = field_name.to_s
 

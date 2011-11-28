@@ -84,6 +84,26 @@ field :title,
   }
 ```
 
+### Document Boost ###
+
+Defining a
+[document boost](http://www.elasticsearch.org/guide/reference/mapping/boost-field.html)
+will increase or decrease a document's score in search results based on the
+value of a field in the document. A boost of 1.0 is neutral. To define a boost
+field, use the `boost` class macro:
+
+```ruby
+class Post
+	include Elastictastic::Document
+
+	field :score, :type => 'integer'
+	boost :score
+end
+```
+
+By default, if the boost field is empty, a score of 1.0 will be applied. You can
+override this by passing a `'null_value'` option into the boost method.
+
 ### Embedded objects ###
 
 ElasticSearch supports deep nesting of properties by way of

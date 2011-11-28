@@ -3,11 +3,14 @@ class Post
 
   field :title
   field :comments_count, :type => 'integer'
+  field :score, :type => 'integer'
   field :tags, :index => 'analyzed' do
     field :non_analyzed, :index => 'not_analyzed'
   end
   field :created_at, :type => 'date'
   field :published_at, :type => 'date'
+
+  boost :score
 
   embed :author
   embed :comments

@@ -34,6 +34,10 @@ describe Elastictastic::Properties do
     it 'should map embedded object fields' do
       properties['author']['properties']['id']['type'].should == 'integer'
     end
+
+    it 'should set boost field' do
+      mapping['post']['_boost'].should == { 'name' => 'score', 'null_value' => 1.0 }
+    end
   end
 
   describe '#elasticsearch_doc' do
