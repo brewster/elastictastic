@@ -35,6 +35,8 @@ the `field` class macro:
 
 ```ruby
 class Post
+	include Elastictastic::Document
+
   field :title
 end
 ```
@@ -98,13 +100,13 @@ class Post
 end
 ```
 
-The class that's embedded should include the `Elastictastic::Resource` mixin,
+The class that's embedded should include the `Elastictastic::NestedDocument` mixin,
 which exposes the same configuration DSL as `Elastictastic::Document` but does
 not give the class the functionality of a top-level persistent object:
 
 ```ruby
 class Author
-  include Elastictastic::Resource
+  include Elastictastic::NestedDocument
 
   field :name
   field :email, :index => 'not_analyzed'
