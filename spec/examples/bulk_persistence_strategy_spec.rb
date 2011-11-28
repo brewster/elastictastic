@@ -253,4 +253,52 @@ describe Elastictastic::BulkPersistenceStrategy do
       FakeWeb.requests.last.body.split("\n").should have(2).items
     end
   end
+
+  describe 'multiple operations on the same document' do
+    let(:post) do
+      Post.new.tap do |post|
+        post.id = '1'
+        post.version = 1
+        post.persisted!
+      end
+    end
+
+    before do
+      stub_es_bulk(
+        'delete' => generate_es_hit('post', :version => 2, :id => '1').merge('ok' => true)
+      )
+      Elastictastic.bulk do
+        post.save
+        post.destroy
+      end
+    end
+
+    it 'should only send one operation per document' do
+      bulk_requests.length.should == 1
+    end
+
+    it 'should send last operation for each document' do
+      bulk_requests.last.should ==  { 'delete' => generate_es_hit('post', :id => '1').except('_source') }
+    end
+  end
+
+  describe 'multiple creates' do
+    before do
+      stub_es_bulk(
+        { 'create' => generate_es_hit('post', :id => '1').merge('ok' => true) },
+        { 'create' => generate_es_hit('post', :id => '2').merge('ok' => true) }
+      )
+      Elastictastic.bulk { 2.times { |i| Post.new(:title => "post #{i}").save }}
+    end
+
+    it 'should create all documents' do
+      bulk_requests.length.should == 4
+    end
+
+    it 'should send correct info for each document' do
+      bulk_requests.each_slice(2).map do |commands|
+        commands.last['title']
+      end.should == ['post 0', 'post 1']
+    end
+  end
 end

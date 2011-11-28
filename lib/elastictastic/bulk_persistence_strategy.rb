@@ -3,11 +3,11 @@ require 'stringio'
 module Elastictastic
   class BulkPersistenceStrategy
     DEFAULT_HANDLER = proc { |e| raise(e) if e }
+    Operation = Struct.new(:id, :commands, :handler, :skip)
 
     def initialize(options)
-      @buffer = StringIO.new
-      @buffered_operations = 0
-      @handlers = []
+      @operations = []
+      @operations_by_id = {}
       @auto_flush = options.delete(:auto_flush)
     end
 
@@ -19,6 +19,7 @@ module Elastictastic
       end
       instance.pending_save!
       add(
+        instance.id,
         { 'create' => bulk_identifier(instance) },
         instance.elasticsearch_doc
       ) do |response|
@@ -37,6 +38,7 @@ module Elastictastic
       block ||= DEFAULT_HANDLER
       instance.pending_save!
       add(
+        instance.id,
         { 'index' => bulk_identifier(instance) },
         instance.elasticsearch_doc
       ) do |response|
@@ -52,9 +54,9 @@ module Elastictastic
     def destroy(instance, &block)
       block ||= DEFAULT_HANDLER
       instance.pending_destroy!
-      add(:delete => bulk_identifier(instance)) do |response|
+      add(instance.id, :delete => bulk_identifier(instance)) do |response|
         if response['delete']['error']
-          block.call(ServerError[response['index']['error']])
+          block.call(ServerError[response['delete']['error']])
         else
           instance.transient!
           instance.version = response['delete']['_version']
@@ -64,19 +66,22 @@ module Elastictastic
     end
 
     def flush
-      return if @buffer.length.zero?
+      return if @operations.empty?
 
       params = {}
       params[:refresh] = true if Elastictastic.config.auto_refresh
-      response = Elastictastic.client.bulk(@buffer.string, params)
+      io = StringIO.new
+      operations = @operations.reject { |operation| operation.skip }
+      operations.each do |operation|
+        operation.commands.each { |command| io.puts command.to_json }
+      end
+      response = Elastictastic.client.bulk(io.string, params)
 
       response['items'].each_with_index do |op_response, i|
-        handler = @handlers[i]
-        handler.call(op_response) if handler
+        operation = operations[i]
+        operation.handler.call(op_response) if operation.handler
       end
-      @buffer.reopen
-      @handlers.clear
-      @buffered_operations = 0
+      @operations.clear
       response
     end
 
@@ -90,11 +95,13 @@ module Elastictastic
       identifier
     end
 
-    def add(*requests, &block)
-      requests.each { |request| @buffer.puts(request.to_json) }
-      @buffered_operations += 1
-      @handlers << block
-      flush if @auto_flush && @buffered_operations >= @auto_flush
+    def add(id, *commands, &block)
+      if id && @operations_by_id.key?(id)
+        @operations_by_id[id].skip = true
+      end
+      @operations << operation = Operation.new(id, commands, block)
+      @operations_by_id[id] = operation
+      flush if @auto_flush && @operations.length >= @auto_flush
     end
   end
 end
