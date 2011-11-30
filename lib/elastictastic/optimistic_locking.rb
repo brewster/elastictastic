@@ -4,7 +4,8 @@ module Elastictastic
 
     module ClassMethods
       def update(id, &block)
-        find(id).try_update(current_scope, &block)
+        instance = find(id)
+        instance.try_update(current_scope, &block) if instance
       end
 
       def update_each(&block)

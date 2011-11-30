@@ -248,4 +248,14 @@ describe Elastictastic::OptimisticLocking do
     let(:index) { 'my_index' }
     it_should_behave_like 'updatable scope'
   end
+
+  context 'when called on nonexistent document' do
+    before do
+      stub_es_get('default', 'post', '1', nil)
+    end
+
+    it 'should not do anything' do
+      expect { Post.update('1') { |post| post.title = 'bogus' }}.to_not raise_error
+    end
+  end
 end
