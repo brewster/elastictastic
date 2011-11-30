@@ -301,4 +301,27 @@ describe Elastictastic::BulkPersistenceStrategy do
       end.should == ['post 0', 'post 1']
     end
   end
+
+  describe 'updating documents with same ID but different index' do
+    let(:posts) do
+      %w(default my_index).map do |index|
+        Post.in_index(index).new.tap do |post|
+          post.id = '1'
+          post.persisted!
+        end
+      end
+    end
+
+    before do
+      stub_es_bulk(
+        { 'index' => generate_es_hit('post', :id => '1').merge('ok' => true) },
+        { 'index' => generate_es_hit('post', :index => 'my_index', :id => '1').merge('ok' => true) }
+      )
+      Elastictastic.bulk { posts.map { |post| post.save }}
+    end
+
+    it 'should send updates for both documents' do
+      bulk_requests.length.should == 4
+    end
+  end
 end

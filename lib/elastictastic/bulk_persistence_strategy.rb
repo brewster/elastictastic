@@ -19,6 +19,7 @@ module Elastictastic
       end
       instance.pending_save!
       add(
+        instance.index,
         instance.id,
         { 'create' => bulk_identifier(instance) },
         instance.elasticsearch_doc
@@ -38,6 +39,7 @@ module Elastictastic
       block ||= DEFAULT_HANDLER
       instance.pending_save!
       add(
+        instance.index,
         instance.id,
         { 'index' => bulk_identifier(instance) },
         instance.elasticsearch_doc
@@ -54,7 +56,7 @@ module Elastictastic
     def destroy(instance, &block)
       block ||= DEFAULT_HANDLER
       instance.pending_destroy!
-      add(instance.id, :delete => bulk_identifier(instance)) do |response|
+      add(instance.index, instance.id, :delete => bulk_identifier(instance)) do |response|
         if response['delete']['error']
           block.call(ServerError[response['delete']['error']])
         else
@@ -95,12 +97,13 @@ module Elastictastic
       identifier
     end
 
-    def add(id, *commands, &block)
-      if id && @operations_by_id.key?(id)
-        @operations_by_id[id].skip = true
+    def add(index, id, *commands, &block)
+      document_id = [index.name, id]
+      if id && @operations_by_id.key?(document_id)
+        @operations_by_id[document_id].skip = true
       end
       @operations << operation = Operation.new(id, commands, block)
-      @operations_by_id[id] = operation
+      @operations_by_id[document_id] = operation
       flush if @auto_flush && @operations.length >= @auto_flush
     end
   end
