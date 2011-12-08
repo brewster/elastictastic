@@ -203,6 +203,10 @@ describe Elastictastic::Dirty do
         post.changes['author'][0].name.should == 'Barack Obama'
         post.changes['author'][1].should == nil
       end
+
+      it 'should save properly' do
+        post.save!
+      end
     end
 
     context 'with nested document replaced by itself' do
