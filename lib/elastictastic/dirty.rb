@@ -63,9 +63,11 @@ module Elastictastic
               el.nesting_association = field
             end
             super(field, NestedCollectionProxy.new(self, field, value))
-          else
+          elsif value
             value.nesting_document = self
             value.nesting_association = field
+            super
+          else
             super
           end
         end
