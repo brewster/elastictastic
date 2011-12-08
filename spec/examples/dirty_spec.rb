@@ -188,6 +188,23 @@ describe Elastictastic::Dirty do
       end
     end
 
+    context 'with nested document replaced by nil' do
+      before do
+        post.author = Author.new(:name => 'Barack Obama')
+        post.save
+        post.author = nil
+      end
+
+      it 'should be changed' do
+        post.should be_changed
+      end
+
+      it 'should expose changes' do
+        post.changes['author'][0].name.should == 'Barack Obama'
+        post.changes['author'][1].should == nil
+      end
+    end
+
     context 'with nested document replaced by itself' do
       before do
         post.author = Author.new(:name => 'Mat Brown')
