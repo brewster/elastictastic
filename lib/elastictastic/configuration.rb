@@ -2,7 +2,7 @@ module Elastictastic
   class Configuration
 
     attr_writer :hosts, :default_index, :auto_refresh, :default_batch_size
-    attr_accessor :logger
+    attr_accessor :logger, :request_timeout
 
     def host=(host)
       @hosts = [host]

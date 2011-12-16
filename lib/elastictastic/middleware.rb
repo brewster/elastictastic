@@ -2,6 +2,17 @@ require 'faraday'
 
 module Elastictastic
   module Middleware
+    class AddGlobalTimeout < Faraday::Middleware
+      def call(env)
+        timeout = Elastictastic.config.request_timeout
+        if timeout
+          env[:request] ||= {}
+          env[:request][:timeout] = timeout
+        end
+        @app.call(env)
+      end
+    end
+
     class JsonEncodeBody < Faraday::Middleware
       def call(env)
         case env[:body]
