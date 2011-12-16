@@ -15,6 +15,7 @@ module Elastictastic
         end
       end
       if config.hosts.length == 1
+        builder.use Middleware::RaiseOnStatusZero
         if Class === config.adapter then builder.use(config.adapter) 
         else builder.adapter config.adapter
         end
@@ -22,6 +23,7 @@ module Elastictastic
           Faraday.new(:url => config.hosts.first, :builder => builder)
       else
         builder.use Middleware::Rotor, *config.hosts
+        builder.use Middleware::RaiseOnStatusZero
         if Class === config.adapter then builder.use(config.adapter) 
         else builder.adapter config.adapter
         end

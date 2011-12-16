@@ -27,7 +27,12 @@ module Elastictastic
     class JsonDecodeResponse < Faraday::Middleware
       def call(env)
         @app.call(env).on_complete do
-          env[:body] &&= JSON.parse(env[:body])
+          begin
+            env[:body] &&= JSON.parse(env[:body])
+          rescue => e
+            debugger
+            raise(e)
+          end
         end
       end
     end
@@ -87,9 +92,7 @@ module Elastictastic
         last = @head
         begin
           @head = @head.next
-          response = @head.call(env)
-          raise Faraday::Error::ConnectionFailed, "Got empty response from ElasticSearch" if response.body.blank?
-          response
+          @head.call(env)
         rescue Faraday::Error::ConnectionFailed => e
           raise NoServerAvailable if @head == last
           retry
@@ -114,6 +117,17 @@ module Elastictastic
             @app.call(env)
           ensure
             env[:url] = original_url
+          end
+        end
+      end
+    end
+
+    class RaiseOnStatusZero < Faraday::Middleware
+      def call(env)
+
+        @app.call(env).on_complete do
+          if env[:status] == 0
+            raise Faraday::Error::ConnectionFailed, "Got status 0 from response"
           end
         end
       end
