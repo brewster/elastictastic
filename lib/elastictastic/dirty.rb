@@ -63,9 +63,11 @@ module Elastictastic
               el.nesting_association = field
             end
             super(field, NestedCollectionProxy.new(self, field, value))
-          else
+          elsif value
             value.nesting_document = self
             value.nesting_association = field
+            super
+          else
             super
           end
         end
@@ -86,7 +88,7 @@ module Elastictastic
       def clean_attributes!
         changed_attributes.clear
         @embeds.each_pair do |name, embedded|
-          Util.call_or_map(embedded) { |doc| doc.clean_attributes! }
+          Util.call_or_map(embedded) { |doc| doc && doc.clean_attributes! }
         end
       end
 

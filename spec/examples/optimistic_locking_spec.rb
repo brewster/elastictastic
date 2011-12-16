@@ -1,4 +1,5 @@
 require File.expand_path('../spec_helper', __FILE__)
+require 'ruby-debug'
 
 describe Elastictastic::OptimisticLocking do
   include Elastictastic::TestHelpers
@@ -10,13 +11,6 @@ describe Elastictastic::OptimisticLocking do
         post.version = 1
         post.persisted!
       end
-    end
-
-    let :version_conflict do
-      {
-        'error' => "VersionConflictEngineException: [[#{index}][3] [post][abc123]: version conflict, current[2], required[1]]",
-        'status' => 409
-      }
     end
 
     context 'when version conflict raised from discrete persistence' do
@@ -240,12 +234,48 @@ describe Elastictastic::OptimisticLocking do
   describe 'default scope' do
     let(:scope) { Post }
     let(:index) { 'default' }
+    let :version_conflict do
+      {
+        'error' => "VersionConflictEngineException: [[#{index}][3] [post][abc123]: version conflict, current[2], required[1]]",
+        'status' => 409
+      }
+    end
     it_should_behave_like 'updatable scope'
   end
 
   describe 'scoped in index' do
     let(:scope) { Post.in_index('my_index') }
     let(:index) { 'my_index' }
+    let :version_conflict do
+      {
+        'error' => "VersionConflictEngineException: [[#{index}][3] [post][abc123]: version conflict, current[2], required[1]]",
+        'status' => 409
+      }
+    end
+    it_should_behave_like 'updatable scope'
+  end
+
+  describe 'default scope with nested exception' do
+    let(:scope) { Post }
+    let(:index) { 'default' }
+    let(:version_conflict) do
+      {
+        'error' => "RemoteTransportException: [[server][inet[/ip]][/index]]; nested: VersionConflictEngineException[[#{index}][0] [[post][abc123]: version conflict, current [2], required [1]]",
+        'status' => 409
+      }
+    end
+    it_should_behave_like 'updatable scope'
+  end
+
+  describe 'scoped in index with nested exception' do
+    let(:scope) { Post.in_index('my_index') }
+    let(:index) { 'my_index' }
+    let(:version_conflict) do
+      {
+        'error' => "RemoteTransportException: [[server][inet[/ip]][/index]]; nested: VersionConflictEngineException[[#{index}][0] [[post][abc123]: version conflict, current [2], required [1]]",
+        'status' => 409
+      }
+    end
     it_should_behave_like 'updatable scope'
   end
 

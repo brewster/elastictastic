@@ -35,7 +35,7 @@ the `field` class macro:
 
 ```ruby
 class Post
-	include Elastictastic::Document
+  include Elastictastic::Document
 
   field :title
 end
@@ -94,10 +94,10 @@ field, use the `boost` class macro:
 
 ```ruby
 class Post
-	include Elastictastic::Document
+  include Elastictastic::Document
 
-	field :score, :type => 'integer'
-	boost :score
+  field :score, :type => 'integer'
+  boost :score
 end
 ```
 
@@ -296,7 +296,7 @@ option to flush the bulk buffer after the specified number of operations:
 
 ```ruby
 Elastictastic.bulk(:auto_flush => 100) do
-	150.times { Post.new.save! }
+  150.times { Post.new.save! }
 end
 ```
 
@@ -364,7 +364,7 @@ If you wish to safely update documents retrieved from a search scope
 
 ```ruby
 Post.query { constant_score { filter { term(:blog_id => 1) }}}.update_each do |post|
-	post.title = post.title.upcase
+  post.title = post.title.upcase
 end
 ```
 
