@@ -27,12 +27,7 @@ module Elastictastic
     class JsonDecodeResponse < Faraday::Middleware
       def call(env)
         @app.call(env).on_complete do
-          begin
-            env[:body] &&= JSON.parse(env[:body])
-          rescue => e
-            debugger
-            raise(e)
-          end
+          env[:body] &&= JSON.parse(env[:body])
         end
       end
     end
