@@ -120,7 +120,7 @@ module Elastictastic
 
     module InstanceMethods
       def initialize(attributes = {})
-        super
+        super()
         @attributes = {}
         @embeds = {}
         self.attributes = attributes
