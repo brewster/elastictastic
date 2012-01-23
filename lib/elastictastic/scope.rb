@@ -4,9 +4,8 @@ module Elastictastic
   class Scope < BasicObject
     attr_reader :clazz, :index
 
-    def initialize(index, clazz, search = Search.new, parent_collection = nil)
-      @index, @clazz, @search, @parent_collection =
-        index, clazz, search, parent_collection
+    def initialize(index, clazz, search = Search.new, parent = nil)
+      @index, @clazz, @search, @parent = index, clazz, search, parent
     end
 
     def initialize_instance(instance)
@@ -84,7 +83,7 @@ module Elastictastic
         @index,
         @clazz,
         @search.merge(Search.new(params)),
-        @parent_collection
+        @parent
       )
     end
 
@@ -275,7 +274,7 @@ module Elastictastic
 
     def materialize_hit(hit)
       @clazz.new.tap do |result|
-        result.parent_collection = @parent_collection if @parent_collection
+        result.parent = @parent if @parent
         result.elasticsearch_hit = hit
       end
     end

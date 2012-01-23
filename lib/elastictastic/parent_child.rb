@@ -67,15 +67,15 @@ module Elastictastic
       end
 
       def _parent_id #:nodoc:
-        if @parent
-          @parent_id = @parent.id
-        elsif @parent_id
+        if @parent_id
           @parent_id
+        elsif @parent
+          @parent_id = @parent.id
         end
       end
 
-      def parent_collection=(parent_collection)
-        if @parent_collection
+      def parent=(parent)
+        if @parent
           raise Elastictastic::IllegalModificationError,
             "Document is already a child of #{_parent}"
         end
@@ -83,8 +83,7 @@ module Elastictastic
           raise Elastictastic::IllegalModificationError,
             "Can't change parent of persisted object"
         end
-        @parent_collection = parent_collection
-        @parent = parent_collection.parent
+        @parent = parent
       end
 
       def save
@@ -93,14 +92,6 @@ module Elastictastic
           association.extract(self).transient_children.each do |child|
             child.save unless child.pending_save?
           end
-        end
-      end
-
-      def persisted!
-        was_persisted = @persisted
-        super
-        if @parent_collection && !was_persisted
-          @parent_collection.persisted!(self)
         end
       end
 

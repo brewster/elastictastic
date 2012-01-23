@@ -1,6 +1,6 @@
 module Elastictastic
   class ChildCollectionProxy < Scope
-    attr_reader :parent, :transient_children
+    attr_reader :parent
 
     def initialize(association, parent)
       super(
@@ -25,26 +25,30 @@ module Elastictastic
     end
 
     def first
-      super || @transient_children.first
+      super || transient_children.first
     end
 
     def each(&block)
       if block
         super if @parent.persisted?
-        @transient_children.each(&block)
+        transient_children.each(&block)
       else
         ::Enumerator.new(self, :each)
       end
     end
 
-    def persisted!(child)
-      @transient_children.delete(child)
-    end
-
     def <<(child)
-      child.parent_collection = self
+      child.parent = @parent
       @transient_children << child
       self
+    end
+
+    def transient_children
+      @transient_children.tap do |children|
+        children.reject! do |child|
+          !child.transient?
+        end
+      end
     end
 
     private
