@@ -15,22 +15,20 @@ module Elastictastic
       end
     end
 
-    module InstanceMethods
-      def save
-        if valid?
-          super
-          true
-        else
-          false
-        end
+    def save
+      if valid?
+        super
+        true
+      else
+        false
       end
+    end
 
-      def save!
-        if !save
-          raise Elastictastic::RecordInvalid, errors.full_messages.to_sentence
-        end
-        self
+    def save!
+      if !save
+        raise Elastictastic::RecordInvalid, errors.full_messages.to_sentence
       end
+      self
     end
 
     class NestedValidator < ActiveModel::EachValidator

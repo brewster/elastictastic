@@ -118,140 +118,138 @@ module Elastictastic
       end
     end
 
-    module InstanceMethods
-      def initialize(attributes = {})
-        super()
-        @attributes = {}
-        @embeds = {}
-        self.attributes = attributes
-      end
+    def initialize(attributes = {})
+      super()
+      @attributes = {}
+      @embeds = {}
+      self.attributes = attributes
+    end
 
-      def attributes
-        super.merge(@attributes).with_indifferent_access
-      end
+    def attributes
+      super.merge(@attributes).with_indifferent_access
+    end
 
-      def attributes=(attributes)
-        attributes.each_pair do |field, value|
-          __send__(:"#{field}=", value)
-        end
+    def attributes=(attributes)
+      attributes.each_pair do |field, value|
+        __send__(:"#{field}=", value)
       end
+    end
 
-      def inspect
-        inspected = "#<#{self.class.name}"
-        if attributes.any?
-          inspected << ' ' << attributes.each_pair.map do |attr, value|
-            "#{attr}: #{value.inspect}"
-          end.join(', ')
-        end
-        inspected << '>'
+    def inspect
+      inspected = "#<#{self.class.name}"
+      if attributes.any?
+        inspected << ' ' << attributes.each_pair.map do |attr, value|
+          "#{attr}: #{value.inspect}"
+        end.join(', ')
       end
+      inspected << '>'
+    end
 
-      def elasticsearch_doc
-        {}.tap do |doc|
-          @attributes.each_pair do |field, value|
-            next if value.nil?
-            doc[field] = Util.call_or_map(value) do |item|
-              serialize_value(field, item)
-            end
+    def elasticsearch_doc
+      {}.tap do |doc|
+        @attributes.each_pair do |field, value|
+          next if value.nil?
+          doc[field] = Util.call_or_map(value) do |item|
+            serialize_value(field, item)
           end
-          @embeds.each_pair do |field, embedded|
-            next if embedded.nil?
-            doc[field] = Util.call_or_map(embedded) do |item|
-              item.elasticsearch_doc
-            end
+        end
+        @embeds.each_pair do |field, embedded|
+          next if embedded.nil?
+          doc[field] = Util.call_or_map(embedded) do |item|
+            item.elasticsearch_doc
           end
         end
       end
+    end
 
-      def elasticsearch_doc=(doc)
-        return if doc.nil?
-        doc.each_pair do |field_name, value|
-          if self.class.properties.has_key?(field_name)
-            embed = self.class.embeds[field_name]
-            if embed
-              embedded = Util.call_or_map(value) do |item|
-                embed.clazz.new.tap { |e| e.elasticsearch_doc = item }
-              end
-              write_embed(field_name, embedded)
-            else
-              deserialized = Util.call_or_map(value) do |item|
-                deserialize_value(field_name, item)
-              end
-              write_attribute(field_name, deserialized)
+    def elasticsearch_doc=(doc)
+      return if doc.nil?
+      doc.each_pair do |field_name, value|
+        if self.class.properties.has_key?(field_name)
+          embed = self.class.embeds[field_name]
+          if embed
+            embedded = Util.call_or_map(value) do |item|
+              embed.clazz.new.tap { |e| e.elasticsearch_doc = item }
             end
-          end
-        end
-      end
-
-      protected
-
-      def read_attribute(field)
-        @attributes[field.to_s]
-      end
-
-      def write_attribute(field, value)
-        if value.nil?
-          @attributes.delete(field.to_s)
-        else
-          @attributes[field.to_s] = value
-        end
-      end
-
-      def read_attributes
-        @attributes
-      end
-
-      def read_embeds
-        @embeds
-      end
-
-      def write_attributes(attributes)
-        @attributes = attributes
-      end
-
-      def write_embeds(embeds)
-        @embeds = embeds
-      end
-
-      def read_embed(field)
-        @embeds[field.to_s]
-      end
-
-      def write_embed(field, value)
-        @embeds[field.to_s] = value
-      end
-
-      private
-
-      def serialize_value(field_name, value)
-        type = self.class.properties_for_field(field_name)['type'].to_s
-        case type
-        when 'date'
-          time = value.to_time
-          time.to_i * 1000 + time.usec / 1000
-        when 'integer', 'byte', 'short', 'long'
-          value.to_i
-        when 'float', 'double'
-          value.to_f
-        when 'boolean'
-          !!value
-        else
-          value
-        end
-      end
-
-      def deserialize_value(field_name, value)
-        return nil if value.nil?
-        if self.class.properties_for_field(field_name)['type'].to_s == 'date'
-          if value.is_a? Fixnum
-            sec, usec = value / 1000, (value % 1000) * 1000
-            Time.at(sec, usec).utc
+            write_embed(field_name, embedded)
           else
-            Time.parse(value)
+            deserialized = Util.call_or_map(value) do |item|
+              deserialize_value(field_name, item)
+            end
+            write_attribute(field_name, deserialized)
           end
-        else
-          value
         end
+      end
+    end
+
+    protected
+
+    def read_attribute(field)
+      @attributes[field.to_s]
+    end
+
+    def write_attribute(field, value)
+      if value.nil?
+        @attributes.delete(field.to_s)
+      else
+        @attributes[field.to_s] = value
+      end
+    end
+
+    def read_attributes
+      @attributes
+    end
+
+    def read_embeds
+      @embeds
+    end
+
+    def write_attributes(attributes)
+      @attributes = attributes
+    end
+
+    def write_embeds(embeds)
+      @embeds = embeds
+    end
+
+    def read_embed(field)
+      @embeds[field.to_s]
+    end
+
+    def write_embed(field, value)
+      @embeds[field.to_s] = value
+    end
+
+    private
+
+    def serialize_value(field_name, value)
+      type = self.class.properties_for_field(field_name)['type'].to_s
+      case type
+      when 'date'
+        time = value.to_time
+        time.to_i * 1000 + time.usec / 1000
+      when 'integer', 'byte', 'short', 'long'
+        value.to_i
+      when 'float', 'double'
+        value.to_f
+      when 'boolean'
+        !!value
+      else
+        value
+      end
+    end
+
+    def deserialize_value(field_name, value)
+      return nil if value.nil?
+      if self.class.properties_for_field(field_name)['type'].to_s == 'date'
+        if value.is_a? Fixnum
+          sec, usec = value / 1000, (value % 1000) * 1000
+          Time.at(sec, usec).utc
+        else
+          Time.parse(value)
+        end
+      else
+        value
       end
     end
   end

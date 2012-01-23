@@ -7,15 +7,13 @@ module Elastictastic
       include ActiveModel::Observing
     end
 
-    module InstanceMethods
-      Callbacks::HOOKS.each do |method|
-        module_eval <<-RUBY, __FILE__, __LINE__ + 1
-          def #{method}(*args)
-            notify_observers(:before_#{method})
-            super.tap { notify_observers(:after_#{method}) }
-          end
-        RUBY
-      end
+    Callbacks::HOOKS.each do |method|
+      module_eval <<-RUBY, __FILE__, __LINE__ + 1
+        def #{method}(*args)
+          notify_observers(:before_#{method})
+          super.tap { notify_observers(:after_#{method}) }
+        end
+      RUBY
     end
   end
 end

@@ -13,17 +13,15 @@ module Elastictastic
       end
     end
 
-    module InstanceMethods
-      def try_update(scope, &block) #:nodoc:
-        yield self
-        update do |e|
-          case e
-          when nil # chill
-          when Elastictastic::ServerError::VersionConflictEngineException
-            scope.update(id, &block)
-          else
-            raise e
-          end
+    def try_update(scope, &block) #:nodoc:
+      yield self
+      update do |e|
+        case e
+        when nil # chill
+        when Elastictastic::ServerError::VersionConflictEngineException
+          scope.update(id, &block)
+        else
+          raise e
         end
       end
     end

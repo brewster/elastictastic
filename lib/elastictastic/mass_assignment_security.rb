@@ -6,10 +6,8 @@ module Elastictastic
       include ActiveModel::MassAssignmentSecurity
     end
 
-    module InstanceMethods
-      def attributes=(attributes)
-        super(sanitize_for_mass_assignment(attributes))
-      end
+    def attributes=(attributes)
+      super(sanitize_for_mass_assignment(attributes))
     end
   end
 end

@@ -50,58 +50,56 @@ module Elastictastic
       end
     end
 
-    module InstanceMethods
-      def write_attribute(field, value)
-        attribute_may_change!(field) { super }
-      end
+    def write_attribute(field, value)
+      attribute_may_change!(field) { super }
+    end
 
-      def write_embed(field, value)
-        attribute_may_change!(field) do
-          if Array === value
-            value.each do |el|
-              el.nesting_document = self
-              el.nesting_association = field
-            end
-            super(field, NestedCollectionProxy.new(self, field, value))
-          elsif value
-            value.nesting_document = self
-            value.nesting_association = field
-            super
-          else
-            super
+    def write_embed(field, value)
+      attribute_may_change!(field) do
+        if Array === value
+          value.each do |el|
+            el.nesting_document = self
+            el.nesting_association = field
           end
+          super(field, NestedCollectionProxy.new(self, field, value))
+        elsif value
+          value.nesting_document = self
+          value.nesting_association = field
+          super
+        else
+          super
         end
       end
+    end
 
-      def save
-        super
-        clean_attributes!
+    def save
+      super
+      clean_attributes!
+    end
+
+    def elasticsearch_doc=(doc)
+      super
+      clean_attributes!
+    end
+
+    protected
+
+    def clean_attributes!
+      changed_attributes.clear
+      @embeds.each_pair do |name, embedded|
+        Util.call_or_map(embedded) { |doc| doc && doc.clean_attributes! }
       end
+    end
 
-      def elasticsearch_doc=(doc)
-        super
-        clean_attributes!
-      end
+    def attribute_may_change!(field)
+      attribute_will_change!(field) unless changed_attributes.key?(field)
+      old_value = changed_attributes[field]
+      yield
+      attribute_not_changed!(field) if old_value == __send__(field)
+    end
 
-      protected
-
-      def clean_attributes!
-        changed_attributes.clear
-        @embeds.each_pair do |name, embedded|
-          Util.call_or_map(embedded) { |doc| doc && doc.clean_attributes! }
-        end
-      end
-
-      def attribute_may_change!(field)
-        attribute_will_change!(field) unless changed_attributes.key?(field)
-        old_value = changed_attributes[field]
-        yield
-        attribute_not_changed!(field) if old_value == __send__(field)
-      end
-
-      def attribute_not_changed!(field)
-        changed_attributes.delete(field)
-      end
+    def attribute_not_changed!(field)
+      changed_attributes.delete(field)
     end
 
     module NestedDocumentMethods

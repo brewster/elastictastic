@@ -41,66 +41,64 @@ module Elastictastic
       end
     end
 
-    module InstanceMethods
 
-      def initialize(attributes = {})
-        super
-        @children = Hash.new do |hash, child_association_name|
-          hash[child_association_name] = Elastictastic::ChildCollectionProxy.new(
-            self.class.child_association(child_association_name.to_s),
-            self
-          )
-        end
+    def initialize(attributes = {})
+      super
+      @children = Hash.new do |hash, child_association_name|
+        hash[child_association_name] = Elastictastic::ChildCollectionProxy.new(
+          self.class.child_association(child_association_name.to_s),
+          self
+        )
       end
-
-      def elasticsearch_doc=(doc)
-        @parent_id = doc.delete('_parent')
-        super
-      end
-
-      def _parent #:nodoc:
-        return @parent if defined? @parent
-        @parent =
-          if @parent_id
-            self.class.parent_association.clazz.in_index(index).find(@parent_id)
-          end
-      end
-
-      def _parent_id #:nodoc:
-        if @parent_id
-          @parent_id
-        elsif @parent
-          @parent_id = @parent.id
-        end
-      end
-
-      def parent=(parent)
-        if @parent
-          raise Elastictastic::IllegalModificationError,
-            "Document is already a child of #{_parent}"
-        end
-        if persisted?
-          raise Elastictastic::IllegalModificationError,
-            "Can't change parent of persisted object"
-        end
-        @parent = parent
-      end
-
-      def save
-        super
-        self.class.child_associations.each_pair do |name, association|
-          association.extract(self).transient_children.each do |child|
-            child.save unless child.pending_save?
-          end
-        end
-      end
-
-      protected
-
-      def read_child(field_name)
-        @children[field_name.to_s]
-      end
-
     end
+
+    def elasticsearch_doc=(doc)
+      @parent_id = doc.delete('_parent')
+      super
+    end
+
+    def _parent #:nodoc:
+      return @parent if defined? @parent
+      @parent =
+        if @parent_id
+          self.class.parent_association.clazz.in_index(index).find(@parent_id)
+        end
+    end
+
+    def _parent_id #:nodoc:
+      if @parent_id
+        @parent_id
+      elsif @parent
+        @parent_id = @parent.id
+      end
+    end
+
+    def parent=(parent)
+      if @parent
+        raise Elastictastic::IllegalModificationError,
+          "Document is already a child of #{_parent}"
+      end
+      if persisted?
+        raise Elastictastic::IllegalModificationError,
+          "Can't change parent of persisted object"
+      end
+      @parent = parent
+    end
+
+    def save
+      super
+      self.class.child_associations.each_pair do |name, association|
+        association.extract(self).transient_children.each do |child|
+          child.save unless child.pending_save?
+        end
+      end
+    end
+
+    protected
+
+    def read_child(field_name)
+      @children[field_name.to_s]
+    end
+
   end
 end
