@@ -4,6 +4,7 @@ require 'elastictastic/errors'
 
 module Elastictastic
   autoload :Association, 'elastictastic/association'
+  autoload :BasicDocument, 'elastictastic/basic_document'
   autoload :BulkPersistenceStrategy, 'elastictastic/bulk_persistence_strategy'
   autoload :Callbacks, 'elastictastic/callbacks'
   autoload :ChildCollectionProxy, 'elastictastic/child_collection_proxy'

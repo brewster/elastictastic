@@ -211,6 +211,14 @@ combine to define the full resource locator for the document in ElasticSearch.
 You should not define fields or methods with these names. You may, however, set
 the id explicitly on new (not yet saved) model instances.
 
+### ActiveModel ###
+
+Elastictastic documents include all the usual ActiveModel functionality:
+validations, lifecycle hooks, observers, dirty-tracking, mass-assignment
+security, and the like. If you would like to squeeze a bit of extra performance
+out of the library at the cost of convenience, you can include the
+`Elastictastic::BasicDocument` class instead of `Elastictastic::Document`.
+
 ## Persistence ##
 
 Elastictastic models are persisted the usual way, namely by calling `save`:
@@ -277,8 +285,10 @@ Post.get('default' => ['123', '456'], 'my_special_index' => '789')
 ### Bulk operations ###
 
 If you are writing a large amount of data to ElasticSearch in a single process,
-use of the [bulk API](#TK) is encouraged. To perform bulk operations using
-Elastictastic, simply wrap your operations in a `bulk` block:
+use of the
+[bulk API](http://www.elasticsearch.org/guide/reference/api/bulk.html)
+is encouraged. To perform bulk operations using Elastictastic, simply wrap your
+operations in a `bulk` block:
 
 ```ruby
 Elastictastic.bulk do
@@ -330,12 +340,13 @@ if the save was successful, the argument will be nil.
 ### Optimistic locking ###
 
 Elastictastic provides optimistic locking via ElasticSearch's built-in
-[document versioning](#TK). When a document is retrieved from persistence, it
-carries a version, which is a number that increments from 1 on each update. When
-Elastictastic models are updated, the document version that it carried when it
-was loaded is passed into the update operation; if this version does not match
-ElasticSearch's current version for that document, it indicates that another
-process has modified the document concurrently, and an
+[document versioning](http://www.elasticsearch.org/guide/reference/api/index_.html).
+When a document is retrieved from persistence, it carries a version, which is a
+number that increments from 1 on each update. When Elastictastic models are
+updated, the document version that it carried when it was loaded is passed into
+the update operation; if this version does not match ElasticSearch's current
+version for that document, it indicates that another process has modified the
+document concurrently, and an
 Elastictastic::ServerError::VersionConflictEngineException is raised. This
 prevents data loss through concurrent conflicting updates.
 
