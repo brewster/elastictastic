@@ -86,7 +86,7 @@ describe Elastictastic::ParentChild do
     describe 'bulk persistence' do
       let(:bulk_requests) do
         FakeWeb.last_request.body.split("\n").map do |line|
-          JSON.parse(line)
+          Elastictastic.json_decode(line)
         end
       end
 
@@ -184,7 +184,7 @@ describe Elastictastic::ParentChild do
     it 'should set routing to parent ID on multiget' do
       stub_es_mget('my_index', 'post')
       blog.posts.find(1, 2)
-      JSON.parse(FakeWeb.last_request.body).should == {
+      Elastictastic.json_decode(FakeWeb.last_request.body).should == {
         'docs' => [
           { '_id' => 1, 'routing' => blog.id },
           { '_id' => 2, 'routing' => blog.id }
@@ -211,7 +211,7 @@ describe Elastictastic::ParentChild do
         blog.save
       end
       request_statements =
-        FakeWeb.last_request.body.each_line.map { |line| JSON.parse(line) }
+        FakeWeb.last_request.body.each_line.map { |line| Elastictastic.json_decode(line) }
       request_statements.length.should == 4
     end
 

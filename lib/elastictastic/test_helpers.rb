@@ -105,10 +105,10 @@ module Elastictastic
     def stub_es_search(index, type, data)
       if Array === data
         response = data.map do |datum|
-          { :body => datum.to_json }
+          { :body => Elastictastic.json_encode(datum) }
         end
       else
-        response = { :body =>  data.to_json }
+        response = { :body =>  Elastictastic.json_encode(data) }
       end
 
       stub_request(
@@ -128,9 +128,13 @@ module Elastictastic
       )
 
       batches = hits.each_slice(batch_size).each_with_index.map do |hit_batch, i|
-        { :body => { '_scroll_id' => scroll_ids[i+1], 'hits' => { 'hits' => hit_batch }}.to_json }
+        {
+          :body => Elastictastic.json_encode(
+            '_scroll_id' => scroll_ids[i+1], 'hits' => { 'hits' => hit_batch }
+          )
+        }
       end
-      batches << { :body => { 'hits' => { 'hits' => [] }}.to_json }
+      batches << { :body => Elastictastic.json_encode('hits' => { 'hits' => [] }) }
       stub_request(:post, match_es_path('/_search/scroll'), batches)
       scroll_ids
     end
@@ -152,7 +156,7 @@ module Elastictastic
     end
 
     def stub_request_json(method, uri, *responses)
-      json_responses = responses.map { |response| { :body => response.to_json }}
+      json_responses = responses.map { |response| { :body => Elastictastic.json_encode(response) }}
       json_responses = json_responses.first if json_responses.length == 1
       stub_request(method, uri, json_responses)
     end
@@ -166,7 +170,7 @@ module Elastictastic
     end
 
     def last_request_json
-      JSON.parse(last_request.body)
+      Elastictastic.json_decode(last_request.body)
     end
 
     def last_request_uri

@@ -38,6 +38,18 @@ module Elastictastic
       @default_batch_size ||= 100
     end
 
+    def json_engine=(json_engine)
+      original_engine = MultiJson.engine
+      MultiJson.engine = json_engine
+      @json_engine = MultiJson.engine
+    ensure
+      MultiJson.engine = original_engine
+    end
+
+    def json_engine
+      @json_engine || MultiJson.engine
+    end
+
     ActiveModel::Observing::ClassMethods.public_instance_methods(false).each do |method|
       delegate method, :to => :"::Elastictastic::Observing"
     end

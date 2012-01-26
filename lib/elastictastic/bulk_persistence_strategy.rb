@@ -75,7 +75,9 @@ module Elastictastic
       io = StringIO.new
       operations = @operations.reject { |operation| operation.skip }
       operations.each do |operation|
-        operation.commands.each { |command| io.puts command.to_json }
+        operation.commands.each do |command|
+          io.puts Elastictastic.json_encode(command)
+        end
       end
       response = Elastictastic.client.bulk(io.string, params)
 

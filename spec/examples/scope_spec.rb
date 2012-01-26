@@ -7,7 +7,7 @@ describe Elastictastic::Scope do
   include Elastictastic::TestHelpers
 
   let(:last_request) { FakeWeb.last_request }
-  let(:last_request_body) { JSON.parse(last_request.body) }
+  let(:last_request_body) { Elastictastic.json_decode(last_request.body) }
   let(:last_request_path) { last_request.path.split('?', 2)[0] }
   let(:last_request_params) { last_request.path.split('?', 2)[1].try(:split, '&') }
 
@@ -41,7 +41,7 @@ describe Elastictastic::Scope do
         end
 
         it 'should send query in data for initial search' do
-          scan_request.body.should == scope.params.to_json
+          scan_request.body.should == Elastictastic.json_encode(scope.params)
         end
 
         it 'should send POST request initially' do
@@ -114,7 +114,7 @@ describe Elastictastic::Scope do
       let(:requests) { FakeWeb.requests }
       let(:request_bodies) do
         requests.map do |request|
-          JSON.parse(request.body)
+          Elastictastic.json_decode(request.body)
         end
       end
 

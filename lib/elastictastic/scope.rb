@@ -141,7 +141,7 @@ module Elastictastic
 
     def inspect
       inspected = "#{@clazz.name}:#{@index.name}"
-      inspected << @search.params.to_json unless @search.params.empty?
+      inspected << Elastictastic.json_encode(@search.params) unless @search.params.empty?
       inspected
     end
 

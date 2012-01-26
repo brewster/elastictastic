@@ -67,6 +67,14 @@ module Elastictastic
       bulk_persister.flush
     end
 
+    def json_encode(json)
+      config.json_engine.encode(json)
+    end
+
+    def json_decode(json)
+      config.json_engine.decode(json)
+    end
+
     def Index(name_or_index)
       Index === name_or_index ?  name_or_index : Index.new(name_or_index)
     end

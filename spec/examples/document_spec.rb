@@ -4,7 +4,7 @@ describe Elastictastic::Document do
   include Elastictastic::TestHelpers
 
   let(:last_request) { FakeWeb.last_request }
-  let(:last_request_body) { JSON.parse(last_request.body) }
+  let(:last_request_body) { Elastictastic.json_decode(last_request.body) }
 
   describe '#save' do
     context 'new object' do
@@ -25,7 +25,7 @@ describe Elastictastic::Document do
       end
 
       it 'should send document in the body' do
-        last_request.body.should == post.elasticsearch_doc.to_json
+        last_request.body.should == Elastictastic.json_encode(post.elasticsearch_doc)
       end
 
       it 'should populate ID of model object' do
@@ -63,7 +63,7 @@ describe Elastictastic::Document do
         end
 
         it 'should send document in body' do
-          last_request.body.should == post.elasticsearch_doc.to_json
+          last_request.body.should == Elastictastic.json_encode(post.elasticsearch_doc)
         end
       end # context 'with unique ID'
 
@@ -120,7 +120,7 @@ describe Elastictastic::Document do
         end
 
         it "should send document's body in request" do
-          last_request.body.should == post.elasticsearch_doc.to_json
+          last_request.body.should == Elastictastic.json_encode(post.elasticsearch_doc)
         end
 
         it 'should populate new version' do
@@ -269,7 +269,7 @@ describe Elastictastic::Document do
       end
 
       it 'should send mapping to ES' do
-        last_request.body.should == Post.mapping.to_json
+        last_request.body.should == Elastictastic.json_encode(Post.mapping)
       end
     end # shared_examples_for 'put mapping'
 

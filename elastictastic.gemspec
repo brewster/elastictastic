@@ -3,7 +3,7 @@ require File.expand_path('../lib/elastictastic/version', __FILE__)
 Gem::Specification.new do |s|
   s.name = 'elastictastic'
   s.version = Elastictastic::VERSION
-  s.author = 'Mat Brown'
+  s.authors = ['Mat Brown', 'Aubrey Holland', 'John Crepezzi']
   s.email = 'mat.a.brown@gmail.com'
   s.license = 'MIT'
   s.summary = 'Object-document mapper for ElasticSearch'
@@ -21,9 +21,10 @@ DESC
   s.required_ruby_version = '>= 1.9'
   s.add_runtime_dependency 'activesupport', '~> 3.0'
   s.add_runtime_dependency 'activemodel', '~> 3.0'
+  s.add_runtime_dependency 'faraday', '~> 0.7'
   s.add_runtime_dependency 'hashie'
   s.add_runtime_dependency 'i18n'
-  s.add_runtime_dependency 'faraday', '~> 0.7'
+  s.add_runtime_dependency 'multi_json'
   s.add_development_dependency 'rspec', '~> 2.0'
   s.add_development_dependency 'rspec-unit', '~> 1.1'
   s.add_development_dependency 'fakeweb', '~> 1.3'

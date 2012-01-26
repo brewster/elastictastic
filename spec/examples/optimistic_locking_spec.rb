@@ -107,11 +107,11 @@ describe Elastictastic::OptimisticLocking do
         end
 
         it 'should send data from latest version in persistence' do
-          JSON.parse(last_update_request.body)['title'].should == 'Hey'
+          Elastictastic.json_decode(last_update_request.body)['title'].should == 'Hey'
         end
 
         it 'should send data from update block' do
-          JSON.parse(last_update_request.body)['comments_count'].should == 2
+          Elastictastic.json_decode(last_update_request.body)['comments_count'].should == 2
         end
 
         it 'should update with latest version' do

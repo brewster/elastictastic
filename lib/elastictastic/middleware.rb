@@ -18,7 +18,7 @@ module Elastictastic
         case env[:body]
         when String, nil
           # nothing
-        else env[:body] = env[:body].to_json
+        else env[:body] = Elastictastic.json_encode(env[:body])
         end
         @app.call(env)
       end
@@ -27,7 +27,7 @@ module Elastictastic
     class JsonDecodeResponse < Faraday::Middleware
       def call(env)
         @app.call(env).on_complete do
-          env[:body] &&= JSON.parse(env[:body])
+          env[:body] &&= Elastictastic.json_decode(env[:body])
         end
       end
     end

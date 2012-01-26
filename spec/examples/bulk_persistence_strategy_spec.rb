@@ -6,7 +6,7 @@ describe Elastictastic::BulkPersistenceStrategy do
   let(:last_request) { FakeWeb.last_request }
   let(:bulk_requests) do
     last_request.body.split("\n").map do |request|
-      JSON.parse(request)
+      Elastictastic.json_decode(request)
     end
   end
 
