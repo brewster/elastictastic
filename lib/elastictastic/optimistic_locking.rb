@@ -1,8 +1,26 @@
 module Elastictastic
+
   module OptimisticLocking
+
     extend ActiveSupport::Concern
 
     module ClassMethods
+
+      def create_or_update(id, &block)
+        new.tap do |instance|
+          instance.id = id
+          yield instance
+        end.create do |e|
+          case e
+          when nil # chill
+          when Elastictastic::ServerError::DocumentAlreadyExistsEngineException
+            update(id, &block)
+          else
+            raise e
+          end
+        end
+      end
+
       def update(id, &block)
         instance = find(id)
         instance.try_update(current_scope, &block) if instance
@@ -11,6 +29,7 @@ module Elastictastic
       def update_each(&block)
         all.each { |instance| instance.try_update(current_scope, &block) }
       end
+
     end
 
     def try_update(scope, &block) #:nodoc:
@@ -25,5 +44,7 @@ module Elastictastic
         end
       end
     end
+
   end
+
 end

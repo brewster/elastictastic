@@ -279,13 +279,99 @@ describe Elastictastic::OptimisticLocking do
     it_should_behave_like 'updatable scope'
   end
 
-  context 'when called on nonexistent document' do
+  context '::update called on nonexistent document' do
     before do
       stub_es_get('default', 'post', '1', nil)
     end
 
     it 'should not do anything' do
       expect { Post.update('1') { |post| post.title = 'bogus' }}.to_not raise_error
+    end
+  end
+
+  describe '::create_or_update' do
+    let :already_exists do
+      {
+        'error' => 'DocumentAlreadyExistsEngineException: [[default][2] [post][1]: document already exists]',
+        'status' => 409
+      }
+    end
+
+    let :version_conflict do
+      {
+        'error' => "VersionConflictEngineException: [[default][3] [post][1]: version conflict, current[2], required[1]]",
+        'status' => 409
+      }
+    end
+
+    context 'with discrete persistence' do
+      context "when document doesn't already exist" do
+        before do
+          stub_es_create('default', 'post', '1')
+          Post.create_or_update('1') { |post| post.title = 'hey' }
+        end
+
+        it 'should post to create endpoint' do
+          last_request.path.should == '/default/post/1/_create'
+        end
+
+        it 'should yield before saving' do
+          last_request_json['title'].should == 'hey'
+        end
+      end
+
+      context "when document already exists" do
+        before do
+          stub_request_json(
+            :put,
+            match_es_path('/default/post/1/_create'),
+            already_exists
+          )
+          stub_es_get('default', 'post', '1', :comments_count => 2)
+          stub_es_update('default', 'post', '1')
+          Post.create_or_update('1') { |post| post.title = 'hey' }
+        end
+
+        it 'should re-update data with correct version' do
+          last_request.path.should == '/default/post/1?version=1'
+        end
+
+        it 'should include data from storage' do
+          last_request_json['comments_count'].should == 2
+        end
+
+        it 'should include updated data from block' do
+          last_request_json['title'].should == 'hey'
+        end
+      end
+    end
+
+    context 'with bulk persistence' do
+      context 'when document already exists' do
+        before do
+          stub_es_bulk(
+            'create' => {
+              '_index' => 'default', '_type' => 'post', '_id' => '1',
+              'error' => already_exists['error']
+            }
+          )
+          stub_es_get('default', 'post', '1', 'comments_count' => 2)
+          stub_es_update('default', 'post', '1')
+          Elastictastic.bulk { Post.create_or_update('1') { |post| post.title = 'hey' } }
+        end
+
+        it 'should send update' do
+          last_request.path.should == '/default/post/1?version=1'
+        end
+
+        it 'should send data from existing document' do
+          last_request_json['comments_count'].should == 2
+        end
+
+        it 'should send data from block' do
+          last_request_json['title'].should == 'hey'
+        end
+      end
     end
   end
 end

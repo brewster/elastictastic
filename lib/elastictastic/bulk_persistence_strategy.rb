@@ -25,7 +25,7 @@ module Elastictastic
         instance.elasticsearch_doc
       ) do |response|
         if response['create']['error']
-          block.call(ServerError[response['error']])
+          block.call(ServerError[response['create']['error']])
         else
           instance.id = response['create']['_id']
           instance.version = response['create']['_version']
