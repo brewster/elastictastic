@@ -217,7 +217,7 @@ Elastictastic documents include all the usual ActiveModel functionality:
 validations, lifecycle hooks, observers, dirty-tracking, mass-assignment
 security, and the like. If you would like to squeeze a bit of extra performance
 out of the library at the cost of convenience, you can include the
-`Elastictastic::BasicDocument` class instead of `Elastictastic::Document`.
+`Elastictastic::BasicDocument` module instead of `Elastictastic::Document`.
 
 ## Persistence ##
 
@@ -229,7 +229,7 @@ post.title = 'You know, for search.'
 post.save
 ```
 
-To retrieve a document from the data store, use `get`:
+To retrieve a document from the data store, use `find`:
 
 ```ruby
 Post.find('123')
@@ -271,15 +271,15 @@ the `in_index` class method:
 
 ```ruby
 new_post = Post.in_index('my_special_index').new # create in an index
-post = Post.in_index('my_special_index').get('123') # retrieve from an index
+post = Post.in_index('my_special_index').find('123') # retrieve from an index
 ```
 
 To retrieve documents from multiple indices at the same time, pass a hash into
-`get` where the keys are index names and the values are the IDs you wish to
+`find` where the keys are index names and the values are the IDs you wish to
 retrieve from that index:
 
 ```ruby
-Post.get('default' => ['123', '456'], 'my_special_index' => '789')
+Post.find('default' => ['123', '456'], 'my_special_index' => '789')
 ```
 
 ### Bulk operations ###
@@ -371,7 +371,7 @@ updated, the document version that it carried when it was loaded is passed into
 the update operation; if this version does not match ElasticSearch's current
 version for that document, it indicates that another process has modified the
 document concurrently, and an
-Elastictastic::ServerError::VersionConflictEngineException is raised. This
+`Elastictastic::ServerError::VersionConflictEngineException` is raised. This
 prevents data loss through concurrent conflicting updates.
 
 The easiest way to guard against concurrent modification is to use the
@@ -414,7 +414,7 @@ or Mongoid:
 
 ```ruby
 Post.query(:query_string => { :query => 'pizza' }).facets(:cuisine => { :term => { :field => :tags }}).from(10).size(10)
-# Generates { :query => { :query_string => { :query => 'pizza' }}, :facets => { :cuisine => { :term => { :field => :tags }}}, :from => 10, :size => 10 }
+# Generates {"query": {"query_string": {"query": "pizza"}}, "facets": {"cuisine": {"term": {"field": "tags" }}}, "from": 10, "size": 10}
 ```
 
 Elastictastic also has an alternate block-based query builder, if you prefer:
@@ -458,7 +458,7 @@ Post.highlight { fields(:title => {}) }.find_each do |post, hit|
 end
 ```
 
-Search scope also expose a #find_in_batches method, which also yields the raw
+Search scopes also expose a `#find_in_batches` method, which also yields the raw
 hit. The following code gives the same result as the previous example:
 
 ```ruby
