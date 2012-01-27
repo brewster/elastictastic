@@ -337,6 +337,30 @@ If the save was not successful (due to a duplicate ID or a version mismatch,
 for instance), the `e` argument to the block will be passed an exception object;
 if the save was successful, the argument will be nil.
 
+### Concurrent document creation ###
+
+When Elastictastic creates a document with an application-defined ID, it uses
+the `_create` verb in ElasticSearch, ensuring that a document with that ID does
+not already exist. If the document does already exist, an
+`Elastictastic::ServerError::DocumentAlreadyExistsEngineException` will be
+raised. In the case where multiple processes may attempt concurrent creation of
+the same document, you can gracefully handle concurrent creation using the
+`::create_or_update` class method on your document class. This will first
+attempt to create the document; if a document with that ID already exists, it
+will then load the document and modify it using the block passed:
+
+```ruby
+Post.create_or_update('1') do |post|
+	post.title = 'My Post'
+end
+```
+
+In the above case, Elastictastic will first attempt to create a new post with ID
+"1" and title "My Post". If a Post with that ID already exists, it will load it,
+set its title to "My Post", and save it. The update uses the `::update` method
+(see next section) to ensure that concurrent modification doesn't cause data to
+be lost.
+
 ### Optimistic locking ###
 
 Elastictastic provides optimistic locking via ElasticSearch's built-in
