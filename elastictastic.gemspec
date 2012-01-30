@@ -29,5 +29,6 @@ DESC
   s.add_development_dependency 'rspec-unit', '~> 1.1'
   s.add_development_dependency 'fakeweb', '~> 1.3'
   s.add_development_dependency 'ruby-debug19', '~> 0.11'
+  s.add_development_dependency 'yard', '~> 0.6'
   s.requirements << 'ElasticSearch'
 end
