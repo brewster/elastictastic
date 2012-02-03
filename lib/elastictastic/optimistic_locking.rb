@@ -7,6 +7,7 @@ module Elastictastic
     module ClassMethods
 
       def create_or_update(id, &block)
+        scope = current_scope
         new.tap do |instance|
           instance.id = id
           yield instance
@@ -14,7 +15,7 @@ module Elastictastic
           case e
           when nil # chill
           when Elastictastic::ServerError::DocumentAlreadyExistsEngineException
-            update(id, &block)
+            scope.update(id, &block)
           else
             raise e
           end
