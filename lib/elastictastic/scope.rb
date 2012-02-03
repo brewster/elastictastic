@@ -25,6 +25,29 @@ module Elastictastic
       end
     end
 
+    #
+    # Iterate over all documents matching this scope. The underlying mechanism
+    # used differs depending on the construction of this scope:
+    #
+    # * If the scope has a size, documents will be retrieved in a single request
+    # * If the scope has a sort but no size, documents will be retrieved in
+    #   batches using a `query_then_fetch` search. *In this case, it is
+    #   impossible to guarantee a consistent result set if concurrent
+    #   modification is occurring.*
+    # * If the scope has neither a sort nor a size, documents will be retrieved
+    #   in batches using a cursor (search type `scan`). In this case, the result
+    #   set is guaranteed to be consistent even if concurrent modification
+    #   occurs.
+    #
+    # @param (see #find_in_batches)
+    # @option (see #find_in_batches)
+    # @yield [document, hit] Each result is yielded to the block
+    # @yieldparam [Document] document A materialized Document instance
+    # @yieldparam [Hashie::Mash] hit The raw hit from ElasticSearch, wrapped in
+    #   a Hashie::Mash. Useful for extracting metadata, e.g. highlighting
+    # @return [Enumerator] An enumerator, if no block is passed
+    # @see http://www.elasticsearch.org/guide/reference/api/search/search-type.html
+    #
     def find_each(batch_options = {}, &block)
       if block
         find_in_batches(batch_options) { |batch| batch.each(&block) }
@@ -33,6 +56,20 @@ module Elastictastic
       end
     end
 
+    #
+    # Yield batches of documents matching this scope. See #find_each for a
+    # discussion of different strategies for retrieving documents from
+    # ElasticSearch depending on the construction of this scope.
+    #
+    # @option batch_options [Fixnum] :batch_size (Elastictastic.config.default_batch_size)
+    #   How many documents to retrieve from the server in each batch.
+    # @option batch_options [Fixnum] :ttl (60) How long to keep the cursor
+    #   alive, in the case where search is performed with a cursor.
+    # @yield [batch] Once for each batch of hits
+    # @yieldparam [Enumerator] batch An enumerator for this batch of hits.
+    #   The enumerator will yield a materialized Document and a Hashie::Mash wrapping each raw hit.
+    # @return [Enumerator] An enumerator that yields batches, if no block is passed.
+    #
     def find_in_batches(batch_options = {}, &block)
       return ::Enumerator.new(self, :find_in_batches, batch_options) unless block
       if params.key?('size') || params.key?('from')
@@ -87,6 +124,11 @@ module Elastictastic
       )
     end
 
+    #
+    # Destroy all documents in this index.
+    #
+    # @note This will *not* take into account filters or queries in this scope.
+    #
     def destroy_all
       #FIXME support delete-by-query
       ::Elastictastic.client.delete(@index, @clazz.type)
@@ -97,6 +139,30 @@ module Elastictastic
       ::Elastictastic.client.put_mapping(index, type, @clazz.mapping)
     end
 
+    #
+    # Look up one or more documents by ID.
+    #
+    # Retrieve one or more Elastictastic documents by ID
+    #
+    # @overload find(*ids)
+    #   Retrieve a single document or a collection of documents
+    #
+    #   @param [String] ids Document IDs
+    #   @return [Elastictastic::BasicDocument,Array] Collection of documents with the given IDs
+    #
+    # @overload find(id)
+    #   Retrieve a single Elastictastic document
+    #   
+    #   @param [String] id ID of the document
+    #   @return [Elastictastic::BasicDocument] The document with that ID, or nil if not found
+    #
+    # @overload find(ids)
+    #   Retrieve a collection of Elastictastic documents by ID. This will
+    #   return an Array even if the ids argument is a one-element Array.
+    #
+    #   @param [Array] ids Document IDs
+    #   @return [Array] Collection of documents with the given IDs
+    #
     def find(*ids)
       #TODO support combining this with other filters/query
       force_array = ::Array === ids.first

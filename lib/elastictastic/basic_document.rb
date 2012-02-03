@@ -1,4 +1,23 @@
 module Elastictastic
+  #
+  # The top-level module mixed in to classes which will be mapped as
+  # ElasticSearch documents. Note that most people will want to use the Document
+  # mixin, which extends BasicDocument with ActiveModel functionality such as
+  # validations, lifecycle hooks, observers, mass-assignment security, etc. The
+  # BasicDocument module is exposed directly for those who wish to avoid the
+  # performance penalty associated with ActiveModel functionality, or those who
+  # wish to only mix in the ActiveModel modules they need.
+  #
+  # Most of the functionality for BasicDocument is provided by submodules; see
+  # below.
+  #
+  # @see Document
+  # @see Scoped
+  # @see Properties
+  # @see Persistence
+  # @see OptimisticLocking
+  # @see ParentChild
+  #
   module BasicDocument
     extend ActiveSupport::Concern
 
@@ -18,6 +37,79 @@ module Elastictastic
     end
 
     module ClassMethods
+      #
+      # Retrieve one or more documents by ID.
+      #
+      # @param (see Elastictastic::Scope#find)
+      # @overload (see Elastictastic::Scope#find)
+      #
+
+      #
+      # @method destroy_all
+      #
+      # Destroy all instances of this class in the default index
+      #
+
+      #
+      # @method sync_mapping
+      #
+      # Push the mapping defined in this class to ElasticSearch. Be sure to do
+      # this before saving instances of your class, or after making changes to
+      # the class's mapping (e.g. adding fields)
+      #
+
+      #
+      # @method find_each(batch_options = {}) {|document, hit| ... }
+      #
+      # Iterate over all documents in the default index, retrieving documents
+      # in batches using a cursor, but yielding them one by one.
+      #
+      # @param (see Elastictastic::Scope#find_each)
+      # @option (see Elastictastic::Scope#find_each)
+      # @yield (see Elastictastic::Scope#find_each)
+      # @yieldparam (see Elastictastic::Scope#find_each)
+      # @return (see Elastictastic::Scope#find_each)
+      #
+
+      #
+      # @method find_in_batches(batch_options = {}) {|batch| ... }
+      #
+      # Retrieve all documents in the default index, yielding them in batches.
+      #
+      # @param (see Elastictastic::Scope#find_in_batches)
+      # @option (see Elastictastic::Scope#find_in_batches)
+      # @yield (see Elastictastic::Scope#find_in_batches)
+      # @yieldparam (see Elastictastic::Scope#find_in_batches)
+      # @return (see Elastictastic::Scope#find_in_batches)
+      #
+
+      #
+      # @method first
+      #
+      # @return [Document] The "first" document in the index ("first" is
+      #   undefined).
+      #
+
+      #
+      # @method count
+      #
+      # @return [Fixnum] The number of documents of this type in the default index.
+      #
+
+      #
+      # @method empty?
+      #
+      # @return [TrueClass,FalseClass] True if there are no documents of this
+      #   type in the default index.
+      #
+
+      #
+      # @method any?
+      #
+      # @return [TrueClass,FalseClass] True if there are documents of this type
+      #   in the default index.
+      #
+
       delegate :find, :destroy_all, :sync_mapping, :inspect, :find_each,
                :find_in_batches, :first, :count, :empty?, :any?, :all,
                :query, :filter, :from, :size, :sort, :highlight, :fields,

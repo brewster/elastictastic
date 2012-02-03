@@ -1,4 +1,10 @@
 module Elastictastic
+  #
+  # Container for information about generic Elastictastic associations --
+  # this might be an embed association or a parent/child association.
+  #
+  # @api private
+  #
   class Association
     attr_reader :name, :options
 
