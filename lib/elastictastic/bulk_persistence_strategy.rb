@@ -74,6 +74,8 @@ module Elastictastic
       params[:refresh] = true if Elastictastic.config.auto_refresh
       io = StringIO.new
       operations = @operations.reject { |operation| operation.skip }
+      @operations.clear
+
       operations.each do |operation|
         operation.commands.each do |command|
           io.puts Elastictastic.json_encode(command)
@@ -85,7 +87,6 @@ module Elastictastic
         operation = operations[i]
         operation.handler.call(op_response) if operation.handler
       end
-      @operations.clear
       response
     end
 
