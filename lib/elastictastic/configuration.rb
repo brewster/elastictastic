@@ -9,7 +9,7 @@ module Elastictastic
     end
 
     def hosts
-      @hosts ||= ['http://localhost:9200']
+      @hosts ||= [ENV['ELASTICSEARCH_URL'] || 'http://localhost:9200']
     end
 
     def adapter=(adapter)
