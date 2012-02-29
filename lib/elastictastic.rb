@@ -26,6 +26,7 @@ module Elastictastic
   autoload :Persistence, 'elastictastic/persistence'
   autoload :Properties, 'elastictastic/properties'
   autoload :Resource, 'elastictastic/resource'
+  autoload :Rotor, 'elastictastic/rotor'
   autoload :Scope, 'elastictastic/scope'
   autoload :ScopeBuilder, 'elastictastic/scope_builder'
   autoload :Scoped, 'elastictastic/scoped'

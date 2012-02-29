@@ -13,21 +13,16 @@ module Elastictastic
         if config.logger
           builder.use Middleware::LogRequests, config.logger
         end
-      end
-      if config.hosts.length == 1
         builder.use Middleware::RaiseOnStatusZero
         if Class === config.adapter then builder.use(config.adapter) 
         else builder.adapter config.adapter
         end
+      end
+      if config.hosts.length == 1
         @connection =
           Faraday.new(:url => config.hosts.first, :builder => builder)
       else
-        builder.use Middleware::Rotor, *config.hosts
-        builder.use Middleware::RaiseOnStatusZero
-        if Class === config.adapter then builder.use(config.adapter) 
-        else builder.adapter config.adapter
-        end
-        @connection = Faraday.new(:builder => builder)
+        @connection = Rotor.new(config.hosts, :builder => builder)
       end
     end
 

@@ -72,52 +72,6 @@ module Elastictastic
       end
     end
 
-    class Rotor < Faraday::Middleware
-      def initialize(app, *hosts)
-        first = nil
-        hosts.each do |host|
-          node = Node.new(app, host)
-          first ||= node
-          @head.next = node if @head
-          @head = node
-        end
-        @head.next = first
-      end
-
-      def call(env)
-        last = @head
-        begin
-          @head = @head.next
-          @head.call(env)
-        rescue Faraday::Error::ConnectionFailed => e
-          raise NoServerAvailable if @head == last
-          retry
-        end
-      end
-
-      class Node < Faraday::Middleware
-        attr_accessor :next
-
-        def initialize(app, url)
-          super(app)
-          # Create a connection instance so we can use its #build_url method.
-          # Kinda lame -- seems like it would make more sense for Faraday to
-          # just implement a middleware for injecting a host/path prefix.
-          @connection = Faraday::Connection.new(:url => url)
-        end
-
-        def call(env)
-          original_url = env[:url]
-          begin
-            env[:url] = @connection.build_url(original_url)
-            @app.call(env)
-          ensure
-            env[:url] = original_url
-          end
-        end
-      end
-    end
-
     class RaiseOnStatusZero < Faraday::Middleware
       def call(env)
 
