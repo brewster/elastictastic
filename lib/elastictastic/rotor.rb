@@ -15,6 +15,16 @@ module Elastictastic
       @head_index = 0
     end
 
+    Faraday::Connection::METHODS.each do |method|
+      module_eval <<-RUBY, __FILE__, __LINE__+1
+        def #{method}(*args)
+          try_rotate { |node| node.#{method}(*args) }
+        end
+      RUBY
+    end
+
+    private
+
     def peek
       @connections[@head_index]
     end
@@ -23,18 +33,14 @@ module Elastictastic
       peek.tap { @head_index = (@head_index + 1) % @connections.length }
     end
 
-    Faraday::Connection::METHODS.each do |method|
-      module_eval <<-RUBY, __FILE__, __LINE__+1
-        def #{method}(*args)
-          last = peek
-          begin
-            shift.#{method}(*args)
-          rescue Faraday::Error::ConnectionFailed, NodeUnavailable => e
-            raise NoServerAvailable, e.message if peek == last
-            retry
-          end
-        end
-      RUBY
+    def try_rotate
+      last = peek
+      begin
+        yield shift
+      rescue Faraday::Error::ConnectionFailed, NodeUnavailable => e
+        raise NoServerAvailable, e.message if peek == last
+        retry
+      end
     end
 
     class Node
@@ -49,18 +55,22 @@ module Elastictastic
       Faraday::Connection::METHODS.each do |method|
         module_eval <<-RUBY, __FILE__, __LINE__+1
           def #{method}(*args)
-            raise NodeUnavailable unless available?
-            begin
-              @connection.#{method}(*args).tap { succeeded! }
-            rescue Faraday::Error::ConnectionFailed => e
-              failed!
-              raise e
-            end
+            try_track { @connection.#{method}(*args).tap { succeeded! } }
           end
         RUBY
       end
 
       private
+
+      def try_track
+        raise NodeUnavailable, "Won't retry this node until #{@back_off_until}" unless available?
+        begin
+          yield
+        rescue Faraday::Error::ConnectionFailed => e
+          failed!
+          raise e
+        end
+      end
 
       def available?
         !backoff_failures_reached? ||
