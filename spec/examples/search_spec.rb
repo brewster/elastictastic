@@ -6,6 +6,8 @@ require File.expand_path('../spec_helper', __FILE__)
 # search and dealing with the results
 #
 describe Elastictastic::Search do
+  include Elastictastic::TestHelpers
+
   describe '#to_params' do
     {
       'query' => { 'match_all' => {} },
@@ -44,6 +46,30 @@ describe Elastictastic::Search do
       scope = Post.from(20)
       scope.size(10)
       scope.params.should == { 'from' => 20 }
+    end
+  end
+
+  describe '#[]' do
+    it 'should run #first query with an integer argument' do
+      stub_es_search('default', 'post', 'hits' => {
+        'total' => '2',
+        'hits' => [generate_es_hit('post', :id => '1')]
+      })
+      Post.all[4].id.should == '1'
+      last_request_json['from'].should == 4
+      last_request_json['size'].should == 1
+    end
+
+    it 'should add from/size to scope with a range argument' do
+      params = Post.all[2..4].params
+      params['from'].should == 2
+      params['size'].should == 3
+    end
+
+    it 'should add from/size to scope with an end-excluded range argument' do
+      params = Post.all[2...4].params
+      params['from'].should == 2
+      params['size'].should == 2
     end
   end
 

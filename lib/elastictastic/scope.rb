@@ -109,6 +109,20 @@ module Elastictastic
       scoped({})
     end
 
+    def [](index_or_range)
+      case index_or_range
+      when ::Integer
+        from(index_or_range).size(1).to_a.first
+      when ::Range
+        range_size = index_or_range.last - index_or_range.first
+        range_size += 1 unless index_or_range.exclude_end?
+        from(index_or_range.first).
+          size(range_size)
+      else
+        raise ::ArgumentError, "Expected Integer or Range"
+      end
+    end
+
     def all_facets
       return @all_facets if defined? @all_facets
       populate_counts
