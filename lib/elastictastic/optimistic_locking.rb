@@ -14,7 +14,8 @@ module Elastictastic
         end.create do |e|
           case e
           when nil # chill
-          when Elastictastic::ServerError::DocumentAlreadyExistsEngineException
+          when Elastictastic::ServerError::DocumentAlreadyExistsEngineException,
+            Elastictastic::ServerError::DocumentAlreadyExistsException # 0.19+
             scope.update(id, &block)
           else
             raise e
@@ -38,7 +39,8 @@ module Elastictastic
       update do |e|
         case e
         when nil # chill
-        when Elastictastic::ServerError::VersionConflictEngineException
+        when Elastictastic::ServerError::VersionConflictEngineException,
+          Elastictastic::ServerError::VersionConflictException # 0.19
           scope.update(id, &block)
         else
           raise e
