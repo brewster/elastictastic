@@ -22,7 +22,13 @@ module Elastictastic
         @connection =
           Faraday.new(:url => config.hosts.first, :builder => builder)
       else
-        @connection = Rotor.new(config.hosts, :builder => builder)
+        @connection = Rotor.new(
+          config.hosts,
+          :builder => builder,
+          :backoff_threshold => config.backoff_threshold,
+          :backoff_start => config.backoff_start,
+          :backoff_max => config.backoff_max
+        )
       end
     end
 
