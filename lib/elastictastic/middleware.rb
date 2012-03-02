@@ -4,10 +4,12 @@ module Elastictastic
   module Middleware
     class AddGlobalTimeout < Faraday::Middleware
       def call(env)
+        connect_timeout = Elastictastic.config.connect_timeout
         timeout = Elastictastic.config.request_timeout
-        if timeout
+        if connect_timeout || timeout
           env[:request] ||= {}
-          env[:request][:timeout] = timeout
+          env[:request][:open_timeout] = connect_timeout if connect_timeout
+          env[:request][:timeout] = timeout if timeout
         end
         @app.call(env)
       end
