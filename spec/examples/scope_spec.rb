@@ -477,6 +477,35 @@ describe Elastictastic::Scope do
     end
   end # describe '#first'
 
+  describe 'Elastictastic::multi_search' do
+    let(:scopes) do
+      [
+        Post.query(:query_string => { :query => 'pizza' }).size(10),
+        Blog.in_index('my_index').query(:term => { 'name' => 'Pasta' })
+      ]
+    end
+    let(:request_components) do
+      [].tap do |components|
+        FakeWeb.last_request.body.each_line do |line|
+          components << Elastictastic.json_decode(line) unless line.strip.empty?
+        end
+      end
+    end
+
+    before do
+      stub_elasticsearch_msearch(
+        make_hits(3),
+        make_hits(5) { |hit, i| hit['_type'] = 'blog', hit['_source'] = { 'name' => "blog #{i}" }}
+      )
+      Elastictastic.multi_search(scopes)
+    end
+
+    it 'should send correct type and index' do
+      request_components[0].should == { 'index' => 'default', 'type' => 'post' }
+      request_components[2].should == { 'index' => 'my_index', 'type' => 'blog' }
+    end
+  end
+
   def make_hits(count)
     Array.new(count) do |i|
       hit = {

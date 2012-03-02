@@ -118,6 +118,13 @@ module Elastictastic
       )
     end
 
+    def stub_es_msearch(index, type, data)
+      stub_request(
+        :post,
+        match_es_path('/_msearch'),
+
+    end
+
     def stub_es_scan(index, type, batch_size, *hits)
       scroll_ids = Array.new(batch_size + 1) { rand(10**100).to_s(36) }
       stub_request_json(

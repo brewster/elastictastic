@@ -52,7 +52,17 @@ module Elastictastic
     def config
       @config ||= Configuration.new
     end
-# 
+
+    #
+    # Perform multiple searches in a single request to ElasticSearch. Each
+    # scope will be eagerly populated with results.
+    #
+    # @param [Scope, Array] collection of scopes to execute multisearch on
+    #
+    def multi_search(*scopes)
+    end
+
+    #
     # Return a lower-level ElasticSearch client. This is likely to be extracted
     # into a separate gem in the future.
     #
