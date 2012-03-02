@@ -118,11 +118,26 @@ module Elastictastic
       )
     end
 
-    def stub_es_msearch(index, type, data)
-      stub_request(
+    def stub_es_msearch(*hits_collections)
+      responses = hits_collections.map do |collection|
+        { 'hits' => { 'hits' => collection, 'total' => collection.length }}
+      end
+      stub_request_json(
         :post,
         match_es_path('/_msearch'),
+        'responses' => responses
+      )
+    end
 
+    def stub_es_msearch_count(*counts)
+      responses = counts.map do |count|
+        { 'hits' => { 'hits' => [], 'total' => count }}
+      end
+      stub_request_json(
+        :post,
+        match_es_path('/_msearch'),
+        'responses' => responses
+      )
     end
 
     def stub_es_scan(index, type, batch_size, *hits)

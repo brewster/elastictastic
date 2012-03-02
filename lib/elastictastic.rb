@@ -17,6 +17,7 @@ module Elastictastic
   autoload :Index, 'elastictastic/index'
   autoload :MassAssignmentSecurity, 'elastictastic/mass_assignment_security'
   autoload :Middleware, 'elastictastic/middleware'
+  autoload :MultiSearch, 'elastictastic/multi_search'
   autoload :NestedCollectionProxy, 'elastictastic/nested_collection_proxy'
   autoload :NestedDocument, 'elastictastic/nested_document'
   autoload :Observer, 'elastictastic/observer'

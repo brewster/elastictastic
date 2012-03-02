@@ -211,6 +211,16 @@ module Elastictastic
       inspected
     end
 
+    #
+    # @private
+    #
+    def response=(response)
+      populate_counts(response)
+      if (response['hits']['hits'].length > 0 || response['hits']['total'] == 0)
+        @materialized_hits = materialize_hits(response['hits']['hits'])
+      end
+    end
+
     protected
 
     def search(search_params = {})
@@ -225,9 +235,9 @@ module Elastictastic
     private
 
     def search_all
-      response = search(:search_type => 'query_then_fetch')
-      populate_counts(response)
-      materialize_hits(response['hits']['hits'])
+      return @materialized_hits if defined? @materialized_hits
+      self.response = search(:search_type => 'query_then_fetch')
+      @materialized_hits
     end
 
     def search_in_batches(&block)

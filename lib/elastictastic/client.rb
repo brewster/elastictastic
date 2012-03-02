@@ -75,6 +75,10 @@ module Elastictastic
       ).body
     end
 
+    def msearch(search_bodies)
+      @connection.post('/_msearch', search_bodies).body
+    end
+
     def scroll(id, options = {})
       @connection.post(
         "/_search/scroll?#{options.to_query}",
