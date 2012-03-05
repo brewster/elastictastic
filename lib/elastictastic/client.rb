@@ -6,6 +6,7 @@ module Elastictastic
 
     def initialize(config)
       builder = Faraday::Builder.new do |builder|
+        config.extra_middlewares.each { |args| builder.use(*args) }
         builder.use Middleware::AddGlobalTimeout
         builder.use Middleware::RaiseServerErrors
         builder.use Middleware::JsonEncodeBody

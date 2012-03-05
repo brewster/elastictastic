@@ -3,6 +3,11 @@ module Elastictastic
 
     attr_writer :hosts, :default_index, :auto_refresh, :default_batch_size
     attr_accessor :logger, :connect_timeout, :request_timeout, :backoff_threshold, :backoff_start, :backoff_max
+    attr_reader :extra_middlewares
+
+    def initialize
+      @extra_middlewares = []
+    end
 
     def host=(host)
       @hosts = [host]
@@ -53,6 +58,10 @@ module Elastictastic
 
     def json_engine
       @json_engine || MultiJson.engine
+    end
+
+    def use_middleware(*args)
+      @extra_middlewares << args
     end
 
     private
