@@ -15,8 +15,8 @@ module Elastictastic
       end
     end
 
-    def save
-      if valid?
+    def save(options = {})
+      if options[:validate] == false || valid?
         super
         true
       else

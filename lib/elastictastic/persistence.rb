@@ -1,10 +1,10 @@
 module Elastictastic
   module Persistence
-    def save(&block)
-      persisted? ? update(&block) : create(&block)
+    def save(options = {}, &block)
+      persisted? ? update(options, &block) : create(options, &block)
     end
     
-    def destroy(&block)
+    def destroy(options = {}, &block)
       if persisted?
         Elastictastic.persister.destroy(self, &block)
       else
@@ -47,11 +47,11 @@ module Elastictastic
 
     protected
 
-    def create(&block)
+    def create(options = {}, &block)
       Elastictastic.persister.create(self, &block)
     end
 
-    def update(&block)
+    def update(options = {}, &block)
       Elastictastic.persister.update(self, &block)
     end
 

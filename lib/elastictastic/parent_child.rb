@@ -85,7 +85,7 @@ module Elastictastic
       @parent = parent
     end
 
-    def save
+    def save(options = {})
       super
       self.class.child_associations.each_pair do |name, association|
         association.extract(self).transient_children.each do |child|

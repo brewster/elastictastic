@@ -72,7 +72,7 @@ module Elastictastic
       end
     end
 
-    def save
+    def save(options = {})
       super
       clean_attributes!
     end

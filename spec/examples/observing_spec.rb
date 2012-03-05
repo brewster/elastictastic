@@ -59,6 +59,13 @@ describe Elastictastic::Observing do
     end
   end
 
+  context 'on create with observing disabled' do
+    it 'should not run any observers' do
+      post.save(:observers => false)
+      post.observers_that_ran.should be_empty
+    end
+  end
+
   context 'on update' do
     let(:observers) { persisted_post.observers_that_ran }
 
@@ -99,6 +106,13 @@ describe Elastictastic::Observing do
     end
   end
 
+  context 'on update with observers disabled' do
+    it 'should not run any observers' do
+      persisted_post.save(:observers => false)
+      persisted_post.observers_that_ran.should be_empty
+    end
+  end
+
   context 'on destroy' do
     let(:observers) { persisted_post.observers_that_ran }
 
@@ -136,6 +150,13 @@ describe Elastictastic::Observing do
 
     it 'should run after_destroy' do
       observers.should include(:after_destroy)
+    end
+  end
+
+  context 'on destroy with observers disabled' do
+    it 'should not run any observers' do
+      persisted_post.destroy(:observers => false)
+      persisted_post.observers_that_ran.should be_empty
     end
   end
 end

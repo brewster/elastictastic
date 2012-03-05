@@ -15,6 +15,10 @@ describe Elastictastic::Callbacks do
       before_create :before_create_ran!
       before_update :before_update_ran!
       before_destroy :before_destroy_ran!
+      after_save :after_save_ran!
+      after_create :after_create_ran!
+      after_update :after_update_ran!
+      after_destroy :after_destroy_ran!
       
       def hooks_that_ran
         @hooks_that_ran ||= Set[]
@@ -50,47 +54,74 @@ describe Elastictastic::Callbacks do
     stub_es_destroy('default', 'my_model', id)
   end
 
-  describe '#before_save' do
+  %w(before after).each do |position|
+    describe "##{position}_save" do
 
-    it 'should run before create' do
-      instance.save
-      instance.should have_run_hook(:before_save)
+      it "should run #{position} create" do
+        instance.save
+        instance.should have_run_hook(:"#{position}_save")
+      end
+
+      it 'should run before update' do
+        persisted_instance.save
+        persisted_instance.should have_run_hook(:"#{position}_save")
+      end
+
+      it 'should not run before create when callbacks disabled' do
+        instance.save(:callbacks => false)
+        instance.should_not have_run_hook(:"#{position}_save")
+      end
+
+      it 'should not run before update when hooks disabled' do
+        persisted_instance.save(:callbacks => false)
+        instance.should_not have_run_hook(:"#{position}_save")
+      end
     end
 
-    it 'should run before update' do
-      persisted_instance.save
-      persisted_instance.should have_run_hook(:before_save)
-    end
-  end
+    describe "##{position}_create" do
+      it "should run #{position} create" do
+        instance.save
+        instance.should have_run_hook(:"#{position}_create")
+      end
 
-  describe '#before_create' do
-    it 'should run before create' do
-      instance.save
-      instance.should have_run_hook(:before_create)
-    end
+      it "should not run #{position} update" do
+        persisted_instance.save
+        persisted_instance.should_not have_run_hook(:"#{position}_create")
+      end
 
-    it 'should run before update' do
-      persisted_instance.save
-      persisted_instance.should_not have_run_hook(:before_create)
-    end
-  end
-
-  describe '#before_update' do
-    it 'should not run before create' do
-      instance.save
-      instance.should_not have_run_hook :before_update
+      it "should not run #{position} create when callbacks disabled" do
+        instance.save(:callbacks => false)
+        instance.should_not have_run_hook(:"#{position}_create")
+      end
     end
 
-    it 'should run before update' do
-      persisted_instance.save
-      persisted_instance.should have_run_hook(:before_update)
-    end
-  end
+    describe "##{position}_update" do
+      it "should not run #{position} create" do
+        instance.save
+        instance.should_not have_run_hook :"#{position}_update"
+      end
 
-  describe '#before_destroy' do
-    it 'should run before destroy' do
-      persisted_instance.destroy
-      persisted_instance.should have_run_hook(:before_destroy)
+      it "should run #{position} update" do
+        persisted_instance.save
+        persisted_instance.should have_run_hook(:"#{position}_update")
+      end
+
+      it "should not run #{position} update if callbacks disabled" do
+        persisted_instance.save(:callbacks => false)
+        persisted_instance.should_not have_run_hook(:"#{position}_update")
+      end
+    end
+
+    describe "##{position}_destroy" do
+      it "should run #{position} destroy" do
+        persisted_instance.destroy
+        persisted_instance.should have_run_hook(:"#{position}_destroy")
+      end
+
+      it "should not run #{position} destroy if callbacks disabled" do
+        persisted_instance.destroy(:callbacks => false)
+        persisted_instance.should_not have_run_hook(:"#{position}_destroy")
+      end
     end
   end
 end

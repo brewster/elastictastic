@@ -21,6 +21,12 @@ describe Elastictastic::Validations do
     it 'should raise Elastictastic::RecordInvalid for save!' do
       expect { post.save! }.to raise_error(Elastictastic::RecordInvalid)
     end
+
+    it 'should save successfully if validations disabled' do
+      stub_es_create('default', 'post')
+      post.save(:validate => false)
+      FakeWeb.last_request.path.should == '/default/post'
+    end
   end
 
   describe 'with valid data' do

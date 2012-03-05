@@ -9,20 +9,28 @@ module Elastictastic
       define_model_callbacks(*HOOKS)
     end
 
-    def save
-      run_callbacks(:save) { super }
+    def save(options = {})
+      with_callbacks(:save, options) { super }
     end
 
-    def create
-      run_callbacks(:create) { super }
+    def create(options = {})
+      with_callbacks(:create, options) { super }
     end
 
-    def update
-      run_callbacks(:update) { super }
+    def update(options = {})
+      with_callbacks(:update, options) { super }
     end
 
-    def destroy
-      run_callbacks(:destroy) { super }
+    def destroy(options = {})
+      with_callbacks(:destroy, options) { super }
+    end
+
+    private
+
+    def with_callbacks(name, options)
+      if options[:callbacks] == false then yield
+      else run_callbacks(name) { yield }
+      end
     end
   end
 end

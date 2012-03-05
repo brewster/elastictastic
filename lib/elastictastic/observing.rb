@@ -9,9 +9,13 @@ module Elastictastic
 
     Callbacks::HOOKS.each do |method|
       module_eval <<-RUBY, __FILE__, __LINE__ + 1
-        def #{method}(*args)
-          notify_observers(:before_#{method})
-          super.tap { notify_observers(:after_#{method}) }
+        def #{method}(options = {})
+          if options[:observers] == false
+            super
+          else
+            notify_observers(:before_#{method})
+            super.tap { notify_observers(:after_#{method}) }
+          end
         end
       RUBY
     end
