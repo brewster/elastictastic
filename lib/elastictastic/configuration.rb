@@ -9,7 +9,7 @@ module Elastictastic
     end
 
     def hosts
-      @hosts ||= [ENV['ELASTICSEARCH_URL'] || 'http://localhost:9200']
+      @hosts ||= [default_host]
     end
 
     def adapter=(adapter)
@@ -27,7 +27,12 @@ module Elastictastic
     end
 
     def default_index
-      @default_index ||= 'default'
+      return @default_index if defined? @default_index
+      if url_from_env && url_from_env.path =~ /^\/([^\/]+)/
+        @default_index = $1
+      else
+        @default_index = 'default'
+      end
     end
 
     def auto_refresh
@@ -48,6 +53,27 @@ module Elastictastic
 
     def json_engine
       @json_engine || MultiJson.engine
+    end
+
+    private
+
+    def default_host
+      if url_from_env
+        url_from_env.class.build(
+          :host => url_from_env.host,
+          :port => url_from_env.port
+        )
+      else
+        'http://localhost:9200'
+      end
+    end
+
+    def url_from_env
+      return @url_from_env if defined? @url_from_env
+      @url_from_env = 
+        if ENV['ELASTICSEARCH_URL']
+          URI.parse(ENV['ELASTICSEARCH_URL'])
+        end
     end
 
     ActiveModel::Observing::ClassMethods.public_instance_methods(false).each do |method|
