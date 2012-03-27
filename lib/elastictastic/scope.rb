@@ -1,4 +1,5 @@
 require 'hashie'
+require 'elastictastic/search'
 
 module Elastictastic
   class Scope < BasicObject
