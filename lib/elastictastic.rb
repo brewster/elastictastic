@@ -19,7 +19,7 @@ module Elastictastic
   autoload :Middleware, 'elastictastic/middleware'
   autoload :MultiSearch, 'elastictastic/multi_search'
   autoload :NestedCollectionProxy, 'elastictastic/nested_collection_proxy'
-  autoload :NestedDocument, 'elastictastic/nested_document'
+  autoload :EmbeddedDocument, 'elastictastic/embedded_document'
   autoload :Observer, 'elastictastic/observer'
   autoload :Observing, 'elastictastic/observing'
   autoload :OptimisticLocking, 'elastictastic/optimistic_locking'
@@ -37,6 +37,8 @@ module Elastictastic
   autoload :ThriftAdapter, 'elastictastic/thrift_adapter'
   autoload :Util, 'elastictastic/util'
   autoload :Validations, 'elastictastic/validations'
+
+  autoload :NestedDocument, 'elastictastic/nested_document'
 
   class <<self
     attr_writer :config

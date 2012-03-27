@@ -1,5 +1,5 @@
 class Author
-  include Elastictastic::NestedDocument
+  include Elastictastic::EmbeddedDocument
 
   field :id, :type => 'integer'
   field :name

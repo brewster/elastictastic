@@ -102,7 +102,7 @@ module Elastictastic
       changed_attributes.delete(field)
     end
 
-    module NestedDocumentMethods
+    module EmbeddedDocumentMethods
       attr_writer :nesting_document, :nesting_association
 
       def attribute_may_change!(field)
