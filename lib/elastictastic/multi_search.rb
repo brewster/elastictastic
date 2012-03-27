@@ -2,41 +2,53 @@ require 'stringio'
 
 module Elastictastic
   class MultiSearch
+    Component = Struct.new(:scope, :search_type)
+
     def self.query(*scopes)
-      new(*scopes).query
+      new.query(*scopes).run
     end
 
     def self.count(*scopes)
-      new(*scopes).count
+      new.count(*scopes).run
     end
 
-    def initialize(*scopes)
-      @scopes = scopes.flatten!
+    def initialize
+      @components = []
     end
 
-    def query
-      validate_scopes_for_query
-      msearch('query_then_fetch')
+    def query(*scopes)
+      components = validate_scopes_for_query(scopes.flatten).map do |scope|
+        Component.new(scope, 'query_then_fetch')
+      end
+      @components.concat(components)
+      self
     end
 
-    def count
-      msearch('count')
+    def count(*scopes)
+      components = scopes.flatten.map { |scope| Component.new(scope, 'count') }
+      @components.concat(components)
+      self
+    end
+
+    def run
+      responses = Elastictastic.client.msearch(search_bodies)['responses']
+      responses.zip(@components) do |response, component|
+        raise ServerError[response['error']] if response['error']
+        scope, search_type = component.scope, component.search_type
+        case search_type
+        when 'query_then_fetch' then scope.response = response
+        when 'count' then scope.counts = response
+        end
+      end
+      self
     end
 
     private
 
-    def msearch(search_type)
-      responses = Elastictastic.client.msearch(search_bodies(search_type))['responses']
-      responses.each_with_index do |response, i|
-        raise ServerError[response['error']] if response['error']
-        scope = @scopes[i]
-        scope.response = response
-      end
-    end
-
-    def search_bodies(search_type)
+    def search_bodies
       StringIO.new.tap do |io|
-        @scopes.each do |scope|
+        @components.each do |component|
+          scope, search_type = component.scope, component.search_type
           io.puts(Elastictastic.json_encode(
             'type' => scope.type,
             'index' => scope.index.to_s,
@@ -47,8 +59,8 @@ module Elastictastic
       end.string
     end
 
-    def validate_scopes_for_query
-      @scopes.each do |scope|
+    def validate_scopes_for_query(scopes)
+      scopes.each do |scope|
         if scope.params['size'].blank?
           raise ArgumentError, "Multi-search scopes must have an explicit size"
         end

@@ -109,6 +109,23 @@ describe Elastictastic::Scope do
       end
     end # context 'with from/size'
 
+    describe 'with page out of range' do
+      let(:scope) { Post.from(10).size(10) }
+
+      before do
+        stub_es_search(
+          'default', 'post', 'hits' => {
+            'total' => 2,
+            'hits' => []
+          }
+        )
+      end
+
+      it 'should return empty array of results' do
+        scope.to_a.should == []
+      end
+    end
+
     context 'with sort but no from/size' do
       let(:scope) { Post.sort(:title => 'asc') }
       let(:requests) { FakeWeb.requests }

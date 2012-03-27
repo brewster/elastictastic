@@ -229,9 +229,17 @@ module Elastictastic
     # @private
     #
     def response=(response)
-      populate_counts(response)
-      if (response['hits']['hits'].length > 0 || response['hits']['total'] == 0)
-        @materialized_hits = materialize_hits(response['hits']['hits'])
+      self.counts = response
+      @materialized_hits = materialize_hits(response['hits']['hits'])
+    end
+
+    #
+    # @private
+    #
+    def counts=(response)
+      @count ||= response['hits']['total']
+      if response['facets']
+        @all_facets ||= ::Hashie::Mash.new(response['facets'])
       end
     end
 
@@ -260,7 +268,7 @@ module Elastictastic
       begin
         scope = scope_with_size.from(from)
         response = scope.search(:search_type => 'query_then_fetch')
-        populate_counts(response)
+        self.counts = response
         yield materialize_hits(response['hits']['hits'])
         from += size
         @count ||= scope.count
@@ -290,12 +298,8 @@ module Elastictastic
       end until response['hits']['hits'].empty?
     end
 
-    def populate_counts(response = nil)
-      response ||= search(:search_type => 'count')
-      @count ||= response['hits']['total']
-      if response['facets']
-        @all_facets ||= ::Hashie::Mash.new(response['facets'])
-      end
+    def populate_counts
+      self.counts = search(:search_type => 'count')
     end
 
     def find_one(id)
