@@ -244,6 +244,21 @@ module Elastictastic
       end
     end
 
+    #
+    # @private
+    #
+    def find_one(id, params = {})
+      data = ::Elastictastic.client.
+        get(index, type, id, params_for_find_one.merge(params.stringify_keys))
+      return nil if data['exists'] == false
+      case data['status']
+      when nil
+        materialize_hit(data)
+      when 404
+        nil
+      end
+    end
+
     protected
 
     def search(search_params = {})
@@ -303,27 +318,17 @@ module Elastictastic
       self.counts = search(:search_type => 'count')
     end
 
-    def find_one(id)
-      data = ::Elastictastic.client.get(index, type, id, params_for_find_one)
-      return nil if data['exists'] == false
-      case data['status']
-      when nil
-        materialize_hit(data)
-      when 404
-        nil
-      end
-    end
-
-    def find_many(ids)
+    def find_many(ids, params = {})
       docspec = ids.map do |id|
-        { '_id' => id }.merge!(params_for_find_many)
+        { '_id' => id }.merge!(params_for_find_many).
+          merge!(params.stringify_keys)
       end
       materialize_hits(
         ::Elastictastic.client.mget(docspec, index, type)['docs']
       ).map { |result, hit| result }
     end
 
-    def find_many_in_many_indices(ids_by_index)
+    def find_many_in_many_indices(ids_by_index, params = {})
       docs = []
       ids_by_index.each_pair do |index, ids|
         ::Kernel.Array(ids).each do |id|
@@ -331,7 +336,7 @@ module Elastictastic
             '_id' => id.to_s,
             '_type' => type,
             '_index' => index
-          }
+          }.merge!(params.stringify_keys)
           doc['fields'] = ::Kernel.Array(@search['fields']) if @search['fields']
         end
       end

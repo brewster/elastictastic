@@ -57,6 +57,10 @@ describe Elastictastic::OptimisticLocking do
           FakeWeb.should have(4).requests
         end
 
+        it 'should add preference=_primary to get request' do
+          FakeWeb.requests.first.path.should =~ /preference=_primary/
+        end
+
         it 'should make final update with modification in update block' do
           last_request_json['comments_count'].should == 3
         end
