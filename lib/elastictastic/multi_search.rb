@@ -31,13 +31,15 @@ module Elastictastic
     end
 
     def run
-      responses = Elastictastic.client.msearch(search_bodies)['responses']
-      responses.zip(@components) do |response, component|
-        raise ServerError[response['error']] if response['error']
-        scope, search_type = component.scope, component.search_type
-        case search_type
-        when 'query_then_fetch' then scope.response = response
-        when 'count' then scope.counts = response
+      if @components.any?
+        responses = Elastictastic.client.msearch(search_bodies)['responses']
+        responses.zip(@components) do |response, component|
+          raise ServerError[response['error']] if response['error']
+          scope, search_type = component.scope, component.search_type
+          case search_type
+          when 'query_then_fetch' then scope.response = response
+          when 'count' then scope.counts = response
+          end
         end
       end
       self

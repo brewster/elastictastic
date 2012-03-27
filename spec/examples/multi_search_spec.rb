@@ -70,6 +70,13 @@ describe Elastictastic::MultiSearch do
     end
   end
 
+  describe 'with no components' do
+    it 'should not attempt request' do
+      expect { Elastictastic::MultiSearch.query([]) }.
+        to_not raise_error(FakeWeb::NetConnectNotAllowedError)
+    end
+  end
+
   context 'with unbounded scopes' do
     let(:scopes) do
       [Post.query(:query_string => { :query => 'pizza' })]
