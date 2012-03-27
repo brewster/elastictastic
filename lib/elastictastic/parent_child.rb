@@ -63,6 +63,11 @@ module Elastictastic
         if @parent_id
           self.class.parent_association.clazz.in_index(index).find(@parent_id)
         end
+      #TODO - here's a piece of debugging to fix a problem where we get weird parents. remove after fixing
+      if @parent && !@parent.respond_to?(:id)
+        raise ArgumentError.new("Bad parent loaded from id #{@parent_id} is a #{@parent.class.name}.")
+      end
+      @parent
     end
 
     def _parent_id #:nodoc:
@@ -81,6 +86,10 @@ module Elastictastic
       if persisted?
         raise Elastictastic::IllegalModificationError,
           "Can't change parent of persisted object"
+      end
+      #TODO - here's a piece of debugging to fix a problem where we get weird parents. remove after fixing
+      if parent && !parent.respond_to?(:id)
+        raise ArgumentError.new("Bad parent loaded from id #{parent_id} is a #{parent.class.name}.")
       end
       @parent = parent
     end
