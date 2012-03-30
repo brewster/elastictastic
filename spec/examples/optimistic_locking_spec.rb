@@ -58,6 +58,7 @@ describe Elastictastic::OptimisticLocking do
         end
 
         it 'should add preference=_primary to get request' do
+          pending 'support for "primary_first" preference in ES'
           FakeWeb.requests.first.path.should =~ /preference=_primary/
         end
 
