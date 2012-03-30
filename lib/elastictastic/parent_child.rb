@@ -31,7 +31,7 @@ module Elastictastic
       end
 
       def child_associations
-        @child_associations ||= {}
+        @_child_associations ||= {}
       end
 
       def mapping
@@ -44,7 +44,7 @@ module Elastictastic
 
     def initialize(attributes = {})
       super
-      @children = Hash.new do |hash, child_association_name|
+      @_children = Hash.new do |hash, child_association_name|
         hash[child_association_name] = Elastictastic::ChildCollectionProxy.new(
           self.class.child_association(child_association_name.to_s),
           self
@@ -53,33 +53,33 @@ module Elastictastic
     end
 
     def elasticsearch_doc=(doc)
-      @parent_id = doc.delete('_parent')
+      @_parent_id = doc.delete('_parent')
       super
     end
 
     def _parent #:nodoc:
-      return @parent if defined? @parent
-      @parent =
-        if @parent_id
-          self.class.parent_association.clazz.in_index(index).find(@parent_id)
+      return @_parent if defined? @_parent
+      @_parent =
+        if @_parent_id
+          self.class.parent_association.clazz.in_index(index).find(@_parent_id)
         end
       #TODO - here's a piece of debugging to fix a problem where we get weird parents. remove after fixing
-      if @parent && !@parent.respond_to?(:id)
-        raise ArgumentError.new("Bad parent loaded from id #{@parent_id} is a #{@parent.class.name}.")
+      if @_parent && !@_parent.respond_to?(:id)
+        raise ArgumentError.new("Bad parent loaded from id #{@_parent_id} is a #{@_parent.class.name}.")
       end
-      @parent
+      @_parent
     end
 
     def _parent_id #:nodoc:
-      if @parent_id
-        @parent_id
-      elsif @parent
-        @parent_id = @parent.id
+      if @_parent_id
+        @_parent_id
+      elsif @_parent
+        @_parent_id = @_parent.id
       end
     end
 
     def parent=(parent)
-      if @parent
+      if @_parent
         raise Elastictastic::IllegalModificationError,
           "Document is already a child of #{_parent}"
       end
@@ -91,7 +91,7 @@ module Elastictastic
       if parent && !parent.respond_to?(:id)
         raise ArgumentError.new("Bad parent loaded from id #{parent_id} is a #{parent.class.name}.")
       end
-      @parent = parent
+      @_parent = parent
     end
 
     def save(options = {})
@@ -106,7 +106,7 @@ module Elastictastic
     protected
 
     def read_child(field_name)
-      @children[field_name.to_s]
+      @_children[field_name.to_s]
     end
 
   end

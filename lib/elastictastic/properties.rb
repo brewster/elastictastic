@@ -32,23 +32,23 @@ module Elastictastic
       end
 
       def all_fields
-        @all_fields ||= {}.tap do |fields|
+        @_all_fields ||= {}.tap do |fields|
           each_field { |field, properties| fields[field] = properties }
         end
       end
 
       def field_properties
-        @field_properties ||= {}
+        @_field_properties ||= {}
       end
 
       def properties
-        return @properties if defined? @properties
-        @properties = {}
-        @properties.merge!(field_properties)
+        return @_properties if defined? @_properties
+        @_properties = {}
+        @_properties.merge!(field_properties)
         embeds.each_pair do |name, embed|
-          @properties[name] = { 'properties' => embed.clazz.properties }
+          @_properties[name] = { 'properties' => embed.clazz.properties }
         end
-        @properties
+        @_properties
       end
 
       def properties_for_field(field_name)
@@ -56,7 +56,7 @@ module Elastictastic
       end
 
       def embeds
-        @embeds ||= {}
+        @_embeds ||= {}
       end
 
       def field(*field_names, &block)
@@ -67,7 +67,7 @@ module Elastictastic
       end
 
       def boost(field, options = {})
-        @boost = { 'name' => field.to_s, 'null_value' => 1.0 }.merge(options.stringify_keys)
+        @_boost = { 'name' => field.to_s, 'null_value' => 1.0 }.merge(options.stringify_keys)
       end
 
       def define_field(field_name, options, &block)
@@ -120,13 +120,13 @@ module Elastictastic
 
     def initialize(attributes = {})
       super()
-      @attributes = {}
-      @embeds = {}
+      @_attributes = {}
+      @_embeds = {}
       self.attributes = attributes
     end
 
     def attributes
-      super.merge(@attributes).with_indifferent_access
+      super.merge(@_attributes).with_indifferent_access
     end
 
     def attributes=(attributes)
@@ -147,13 +147,13 @@ module Elastictastic
 
     def elasticsearch_doc
       {}.tap do |doc|
-        @attributes.each_pair do |field, value|
+        @_attributes.each_pair do |field, value|
           next if value.nil?
           doc[field] = Util.call_or_map(value) do |item|
             serialize_value(field, item)
           end
         end
-        @embeds.each_pair do |field, embedded|
+        @_embeds.each_pair do |field, embedded|
           next if embedded.nil?
           doc[field] = Util.call_or_map(embedded) do |item|
             item.elasticsearch_doc
@@ -185,39 +185,39 @@ module Elastictastic
     protected
 
     def read_attribute(field)
-      @attributes[field.to_s]
+      @_attributes[field.to_s]
     end
 
     def write_attribute(field, value)
       if value.nil?
-        @attributes.delete(field.to_s)
+        @_attributes.delete(field.to_s)
       else
-        @attributes[field.to_s] = value
+        @_attributes[field.to_s] = value
       end
     end
 
     def read_attributes
-      @attributes
+      @_attributes
     end
 
     def read_embeds
-      @embeds
+      @_embeds
     end
 
     def write_attributes(attributes)
-      @attributes = attributes
+      @_attributes = attributes
     end
 
     def write_embeds(embeds)
-      @embeds = embeds
+      @_embeds = embeds
     end
 
     def read_embed(field)
-      @embeds[field.to_s]
+      @_embeds[field.to_s]
     end
 
     def write_embed(field, value)
-      @embeds[field.to_s] = value
+      @_embeds[field.to_s] = value
     end
 
     private

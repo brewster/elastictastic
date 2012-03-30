@@ -86,7 +86,7 @@ module Elastictastic
 
     def clean_attributes!
       changed_attributes.clear
-      @embeds.each_pair do |name, embedded|
+      @_embeds.each_pair do |name, embedded|
         Util.call_or_map(embedded) { |doc| doc && doc.clean_attributes! }
       end
     end
