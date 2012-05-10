@@ -161,6 +161,8 @@ module Elastictastic
     #
     def json_encode(object)
       config.json_engine.dump(object)
+    rescue NoMethodError
+      config.json_engine.encode(object)
     end
 
     #
@@ -172,6 +174,8 @@ module Elastictastic
     #
     def json_decode(json)
       config.json_engine.load(json)
+    rescue NoMethodError
+      config.json_engine.decode(json)
     end
 
     #
