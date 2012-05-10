@@ -13,6 +13,32 @@ describe Elastictastic::OptimisticLocking do
       end
     end
 
+    context 'when save is cancelled' do
+      describe '::update' do
+        before do
+          scope.update('some_id') do
+            raise Elastictastic::CancelSave
+          end
+        end
+
+        it 'should make no requests' do
+          FakeWeb.should have(4).requests
+        end
+      end
+
+      describe '::create_or_update' do
+        before do
+          scope.create_or_update('some_id') do
+            raise Elastictastic::CancelSave
+          end
+        end
+
+        it 'should make no requests' do
+          FakeWeb.should have(0).requests
+        end
+      end
+    end
+
     context 'when version conflict raised from discrete persistence' do
       describe '#save' do
         before do

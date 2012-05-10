@@ -21,6 +21,8 @@ module Elastictastic
             raise e
           end
         end
+      rescue Elastictastic::CancelOperation
+        # Do Nothing
       end
 
       def update(id, &block)
@@ -46,6 +48,8 @@ module Elastictastic
           raise e
         end
       end
+    rescue Elastictastic::CancelOperation
+      # Do Nothing
     end
 
   end
