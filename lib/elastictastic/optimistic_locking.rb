@@ -21,7 +21,7 @@ module Elastictastic
             raise e
           end
         end
-      rescue Elastictastic::CancelOperation
+      rescue Elastictastic::CancelSave
         # Do Nothing
       end
 
@@ -48,7 +48,7 @@ module Elastictastic
           raise e
         end
       end
-    rescue Elastictastic::CancelOperation
+    rescue Elastictastic::CancelSave
       # Do Nothing
     end
 

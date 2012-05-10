@@ -14,21 +14,30 @@ describe Elastictastic::OptimisticLocking do
     end
 
     context 'when save is cancelled' do
+      before do
+        stub_request_json(
+          :get,
+          match_es_resource(index, 'post', '123abc'),
+          generate_es_hit('post', :id => '123abc', :index => index, :version => 1).merge('exists' => true),
+          generate_es_hit('post', :id => '123abc', :index => index, :version => 2, :source => { :title => 'Hey' }).merge('exists' => true)
+        )
+      end
+
       describe '::update' do
         before do
-          scope.update('some_id') do
+          scope.update('123abc') do
             raise Elastictastic::CancelSave
           end
         end
 
-        it 'should make no requests' do
-          FakeWeb.should have(4).requests
+        it 'should have 1 request for fetch' do
+          FakeWeb.should have(1).requests # 1 for fetch
         end
       end
 
       describe '::create_or_update' do
         before do
-          scope.create_or_update('some_id') do
+          scope.create_or_update('123abc') do
             raise Elastictastic::CancelSave
           end
         end
