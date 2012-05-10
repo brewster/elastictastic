@@ -24,7 +24,7 @@ DESC
   s.add_runtime_dependency 'faraday', '~> 0.7'
   s.add_runtime_dependency 'hashie'
   s.add_runtime_dependency 'i18n'
-  s.add_runtime_dependency 'multi_json'
+  s.add_runtime_dependency 'multi_json', '~> 1.3.1'
   s.add_development_dependency 'rspec', '~> 2.0'
   s.add_development_dependency 'rspec-unit', '~> 1.1'
   s.add_development_dependency 'fakeweb', '~> 1.3'

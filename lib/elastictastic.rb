@@ -160,7 +160,7 @@ module Elastictastic
     # @api private
     #
     def json_encode(object)
-      config.json_engine.encode(object)
+      config.json_engine.dump(object)
     end
 
     #
@@ -171,7 +171,7 @@ module Elastictastic
     # @api private
     #
     def json_decode(json)
-      config.json_engine.decode(json)
+      config.json_engine.load(json)
     end
 
     #
