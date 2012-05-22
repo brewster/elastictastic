@@ -38,7 +38,10 @@ module Elastictastic
       def call(env)
         @app.call(env).on_complete do
           body = env[:body]
-          if body['error']
+          if body.nil?
+            raise Elastictastic::ServerError::ServerError,
+              "No body in ElasticSearch response with status #{body['status']}"
+          elsif body['error']
             raise_error(body['error'], body['status'])
           elsif body['_shards'] && body['_shards']['failures']
             raise_error(
