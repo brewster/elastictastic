@@ -160,10 +160,10 @@ module Elastictastic
     # @api private
     #
     def json_encode(object)
-      if config.json_engine.respond_to?(:dump)
-        config.json_engine.dump(object)
-      else
+      if config.json_engine.respond_to?(:encode)
         config.json_engine.encode(object)
+      else
+        config.json_engine.dump(object)
       end
     end
 
@@ -175,10 +175,10 @@ module Elastictastic
     # @api private
     #
     def json_decode(json)
-      if config.json_engine.respond_to?(:load)
-        config.json_engine.load(json)
-      else
+      if config.json_engine.respond_to?(:decode)
         config.json_engine.decode(json)
+      else
+        config.json_engine.load(json)
       end
     end
 
