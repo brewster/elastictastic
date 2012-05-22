@@ -13,7 +13,7 @@ module Elastictastic
     end
 
     def persisted?
-      !!@persisted
+      !!@_persisted
     end
 
     def transient?
@@ -21,28 +21,28 @@ module Elastictastic
     end
 
     def pending_save?
-      !!@pending_save
+      !!@_pending_save
     end
 
     def pending_destroy?
-      !!@pending_destroy
+      !!@_pending_destroy
     end
 
     def persisted!
-      @persisted = true
-      @pending_save = false
+      @_persisted = true
+      @_pending_save = false
     end
 
     def transient!
-      @persisted = @pending_destroy = false
+      @_persisted = @_pending_destroy = false
     end
 
     def pending_save!
-      @pending_save = true
+      @_pending_save = true
     end
 
     def pending_destroy!
-      @pending_destroy = true
+      @_pending_destroy = true
     end
 
     protected

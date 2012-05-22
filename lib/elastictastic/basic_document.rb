@@ -117,7 +117,7 @@ module Elastictastic
 
       def mapping
         mapping_for_type = { 'properties' => properties }
-        mapping_for_type['_boost'] = @boost if @boost
+        mapping_for_type['_boost'] = @_boost if @_boost
         { type => mapping_for_type }
       end
 
@@ -149,7 +149,7 @@ module Elastictastic
 
     def reload
       params = {}
-      params['routing'] = @parent_id if @parent_id
+      params['routing'] = @_parent_id if @_parent_id
       self.elasticsearch_hit =
         Elastictastic.client.get(index, self.class.type, id, params)
     end

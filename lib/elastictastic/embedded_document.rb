@@ -24,7 +24,7 @@ module Elastictastic
     end
 
     def ==(other)
-      other.nil? ? false : @attributes == other.read_attributes && @embeds == other.read_embeds
+      other.nil? ? false : @_attributes == other.read_attributes && @_embeds == other.read_embeds
     end
 
     def eql?(other)
