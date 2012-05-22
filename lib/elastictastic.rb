@@ -160,9 +160,11 @@ module Elastictastic
     # @api private
     #
     def json_encode(object)
-#       config.json_engine.dump(object)
-#     rescue NoMethodError
-      config.json_engine.encode(object)
+      if config.json_engine.respond_to?(:dump)
+        config.json_engine.dump(object)
+      else
+        config.json_engine.encode(object)
+      end
     end
 
     #
@@ -173,9 +175,11 @@ module Elastictastic
     # @api private
     #
     def json_decode(json)
-#       config.json_engine.load(json)
-#     rescue NoMethodError
-      config.json_engine.decode(json)
+      if config.json_engine.respond_to?(:load)
+        config.json_engine.load(json)
+      else
+        config.json_engine.decode(json)
+      end
     end
 
     #
