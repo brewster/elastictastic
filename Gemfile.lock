@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    elastictastic (0.8.10)
+    elastictastic (0.8.11)
       activemodel (~> 3.0)
       activesupport (~> 3.0)
       faraday (~> 0.7)
