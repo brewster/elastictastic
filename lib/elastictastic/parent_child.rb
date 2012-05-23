@@ -74,6 +74,9 @@ module Elastictastic
       if @_parent_id
         @_parent_id
       elsif @_parent
+        unless @_parent.respond_to?(:id)
+          raise ArgumentError, "@_parent is incorrectly set to #{@_parent.inspect}"
+        end
         @_parent_id = @_parent.id
       end
     end
