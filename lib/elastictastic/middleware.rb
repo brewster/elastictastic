@@ -40,7 +40,7 @@ module Elastictastic
           body = env[:body]
           if body.nil?
             raise Elastictastic::ServerError::ServerError,
-              "No body in ElasticSearch response with status #{body['status']}"
+              "No body in ElasticSearch response with status #{env[:status]}"
           elsif body['error']
             raise_error(body['error'], body['status'])
           elsif body['_shards'] && body['_shards']['failures']
