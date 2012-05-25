@@ -36,4 +36,6 @@ task :cleanup do
 end
 
 desc 'Run the specs'
-RSpec::Core::RakeTask.new(:test)
+task :test do
+  abort unless system 'bundle', 'exec', 'rspec', 'spec/examples'
+end
