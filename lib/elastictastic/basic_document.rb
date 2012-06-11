@@ -113,11 +113,18 @@ module Elastictastic
       delegate :find, :destroy_all, :sync_mapping, :inspect, :find_each,
                :find_in_batches, :first, :count, :empty?, :any?, :all,
                :query, :filter, :from, :size, :sort, :highlight, :fields,
-               :script_fields, :preference, :facets, :to => :current_scope
+               :script_fields, :preference, :facets, :routing,
+               :to => :current_scope
 
       def mapping
         mapping_for_type = { 'properties' => properties }
         mapping_for_type['_boost'] = @_boost if @_boost
+        if @_routing_field
+          mapping_for_type['_routing'] = {
+            'path' => @_routing_field.to_s,
+            'required' => @_routing_required
+          }
+        end
         { type => mapping_for_type }
       end
 

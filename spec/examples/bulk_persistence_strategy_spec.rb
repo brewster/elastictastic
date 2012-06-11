@@ -324,4 +324,38 @@ describe Elastictastic::BulkPersistenceStrategy do
       bulk_requests.length.should == 4
     end
   end
+
+  describe 'with routing' do
+    let(:photo) { Photo.new(:post_id => 1) }
+
+    it 'should include routing on create' do
+      stub_es_bulk(
+        'create' => { '_index' => 'default', '_type' => 'photo', '_id' => '123', '_version' => 1, 'ok' => true }
+      )
+      Elastictastic.bulk { photo.save }
+      bulk_requests.first['create']['_routing'].should == '1'
+    end
+
+    it 'should include routing on update' do
+      photo.id = '123'
+      photo.version = 1
+      photo.persisted!
+      stub_es_bulk(
+        'index' => { '_index' => 'default', '_type' => 'photo', '_id' => '123', '_version' => 2, 'ok' => true }
+      )
+      Elastictastic.bulk { photo.save }
+      bulk_requests.first['index']['_routing'].should == '1'
+    end
+
+    it 'should include routing on destroy' do
+      photo.id = '123'
+      photo.version = 1
+      photo.persisted!
+      stub_es_bulk(
+        'delete' => { '_index' => 'default', '_type' => 'post', '_id' => '123', '_version' => 2, 'ok' => true }
+      )
+      Elastictastic.bulk { photo.destroy }
+      bulk_requests.first['delete']['_routing'].should == '1'
+    end
+  end
 end

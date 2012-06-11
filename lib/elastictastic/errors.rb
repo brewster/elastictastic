@@ -1,7 +1,9 @@
 module Elastictastic
-  CancelSave = Class.new(StandardError)
-  IllegalModificationError = Class.new(StandardError)
-  OperationNotAllowed = Class.new(StandardError)
-  NoServerAvailable = Class.new(StandardError)
-  RecordInvalid = Class.new(StandardError)
+  Error = Class.new(StandardError)
+  CancelSave = Class.new(Error)
+  IllegalModificationError = Class.new(Error)
+  OperationNotAllowed = Class.new(Error)
+  MissingParameter = Class.new(Error)
+  NoServerAvailable = Class.new(Error)
+  RecordInvalid = Class.new(Error)
 end

@@ -3,7 +3,7 @@ module Elastictastic
     ERROR_PATTERN = /^([A-Z][A-Za-z]*)(?::\s*)?(.*)$/
     NESTED_PATTERN = /^.*nested:\s+(.*)$/
 
-    class ServerError < StandardError
+    class ServerError < Elastictastic::Error
       attr_accessor :status
     end
 

@@ -10,6 +10,8 @@ require 'elastictastic/embedded_document'
 require 'elastictastic/field'
 require 'elastictastic/index'
 require 'elastictastic/middleware'
+require 'elastictastic/multi_get'
+require 'elastictastic/multi_search'
 require 'elastictastic/optimistic_locking'
 require 'elastictastic/persistence'
 require 'elastictastic/properties'
@@ -28,7 +30,6 @@ module Elastictastic
   autoload :Dirty, 'elastictastic/dirty'
   autoload :Document, 'elastictastic/document'
   autoload :MassAssignmentSecurity, 'elastictastic/mass_assignment_security'
-  autoload :MultiSearch, 'elastictastic/multi_search'
   autoload :NestedCollectionProxy, 'elastictastic/nested_collection_proxy'
   autoload :Observer, 'elastictastic/observer'
   autoload :Observing, 'elastictastic/observing'
@@ -54,6 +55,10 @@ module Elastictastic
     #
     def config
       @config ||= Configuration.new
+    end
+
+    def multi_get(&block)
+      MultiGet.new.tap(&block).to_a
     end
 
     #

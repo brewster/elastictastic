@@ -186,6 +186,38 @@ describe Elastictastic::Scope do
         scope.each { |post| post.should be_persisted }
       end
     end # context 'with sort but no from/size'
+
+    describe 'with routing' do
+      it 'should send routing param in single-search query' do
+        stub_es_search(
+          'default', 'post',
+          'hits' => {'total' => 2, 'hits' => make_hits(2)}
+        )
+        Post.routing('7').size(10).to_a
+        last_request_uri.query.split('&').should include('routing=7')
+      end
+
+      it 'should send routing param in scan query' do
+        stub_es_scan(
+          'default', 'post', 2, *make_hits(3)
+        )
+        Post.routing('7').to_a
+        URI.parse(FakeWeb.requests.first.path).query.split('&').
+          should include('routing=7')
+      end
+
+      it 'should send routing param in batch-search queries' do
+        Elastictastic.config.default_batch_size = 2
+        stub_es_search(
+          'default', 'post',
+          make_hits(3).each_slice(2).map { |batch| { 'hits' => { 'hits' => batch, 'total' => 3 }} }
+        )
+        Post.routing('7').sort(:score).to_a
+        FakeWeb.requests.each do |request|
+          URI.parse(request.path).query.split('&').should include('routing=7')
+        end
+      end
+    end
   end # describe '#each'
 
   describe 'hit metadata' do
@@ -326,6 +358,17 @@ describe Elastictastic::Scope do
         FakeWeb.should have(1).request
       end
     end # context 'with paginated scan performed'
+
+    context 'with routing specified' do
+      let!(:count) do
+        stub_es_search('default', 'post', 'hits' => { 'total' => 3 })
+        Post.routing(7).count
+      end
+
+      it 'should send routing parameter' do
+        last_request_uri.query.split('&').should include('routing=7')
+      end
+    end
   end # describe '#count'
 
   describe '#all_facets' do

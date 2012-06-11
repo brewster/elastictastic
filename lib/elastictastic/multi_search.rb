@@ -51,11 +51,9 @@ module Elastictastic
       StringIO.new.tap do |io|
         @components.each do |component|
           scope, search_type = component.scope, component.search_type
-          io.puts(Elastictastic.json_encode(
-            'type' => scope.type,
-            'index' => scope.index.to_s,
-            'search_type' => search_type
-          ))
+          headers = scope.multi_search_headers.
+            merge('search_type' => search_type)
+          io.puts(Elastictastic.json_encode(headers))
           io.puts(Elastictastic.json_encode(scope.params))
         end
       end.string

@@ -38,6 +38,13 @@ describe Elastictastic::Properties do
     it 'should set boost field' do
       mapping['post']['_boost'].should == { 'name' => 'score', 'null_value' => 1.0 }
     end
+
+    it 'should set routing param if given' do
+      Photo.mapping['photo']['_routing'].should == {
+        'required' => true,
+        'path' => 'post_id'
+      }
+    end
   end
 
   describe '#elasticsearch_doc' do

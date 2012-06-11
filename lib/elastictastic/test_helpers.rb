@@ -55,7 +55,7 @@ module Elastictastic
       ids_with_docs.merge!(given_ids_with_docs)
       path = index ? "/#{index}/#{type}/_mget" : "/_mget"
       docs = ids_with_docs.each_pair.map do |id, doc|
-        id, index = *id if Array === id
+        id, type, index = *id if Array === id
         generate_es_hit(
           type, :index => index, :id => id, :source => doc
         ).merge('exists' => !!doc)

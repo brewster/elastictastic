@@ -5,8 +5,8 @@ module Elastictastic
   class Scope < BasicObject
     attr_reader :clazz, :index
 
-    def initialize(index, clazz, search = Search.new, parent = nil)
-      @index, @clazz, @search, @parent = index, clazz, search, parent
+    def initialize(index, clazz, search = Search.new, parent = nil, routing = nil)
+      @index, @clazz, @search, @parent, @routing = index, clazz, search, parent, routing
     end
 
     def initialize_instance(instance)
@@ -135,7 +135,8 @@ module Elastictastic
         @index,
         @clazz,
         @search.merge(Search.new(params)),
-        @parent
+        @parent,
+        @routing
       )
     end
 
@@ -182,9 +183,7 @@ module Elastictastic
       #TODO support combining this with other filters/query
       force_array = ::Array === ids.first
       ids = ids.flatten
-      if ::Hash === ids.first
-        find_many_in_many_indices(*ids)
-      elsif ids.length == 1
+      if ids.length == 1
         instance = find_one(ids.first)
         force_array ? [instance] : instance
       else
@@ -206,6 +205,12 @@ module Elastictastic
           scoped(#{search_key.inspect} => value)
         end
       RUBY
+    end
+
+    def routing(routing)
+      scope = scoped({})
+      scope.routing = routing
+      scope
     end
 
     def method_missing(method, *args, &block)
@@ -259,7 +264,39 @@ module Elastictastic
       end
     end
 
+    def multi_get_params
+      {
+        '_type' => type,
+        '_index' => @index.name
+      }.tap do |params|
+        params['fields'] = ::Kernel.Array(@search['fields']) if @search['fields']
+        if @routing
+          params['routing'] = @routing
+        elsif @clazz.routing_required?
+          ::Kernel.raise ::Elastictastic::MissingParameter,
+            "Must specify routing parameter to look up #{@clazz.name} by ID"
+        end
+      end
+    end
+
+    def multi_search_headers
+      {'type' => type, 'index' => @index.name}.tap do |params|
+        params['routing'] = @routing if @routing
+      end
+    end
+
+    #
+    # @private
+    #
+    def materialize_hit(hit)
+      @clazz.new.tap do |result|
+        result.parent = @parent if @parent
+        result.elasticsearch_hit = hit
+      end
+    end
+
     protected
+    attr_writer :routing
 
     def search(search_params = {})
       ::Elastictastic.client.search(
@@ -274,7 +311,9 @@ module Elastictastic
 
     def search_all
       return @materialized_hits if defined? @materialized_hits
-      self.response = search(:search_type => 'query_then_fetch')
+      search_params = {:search_type => 'query_then_fetch'}
+      search_params[:routing] = @routing if @routing
+      self.response = search(search_params)
       @materialized_hits
     end
 
@@ -283,7 +322,9 @@ module Elastictastic
       scope_with_size = self.size(size)
       begin
         scope = scope_with_size.from(from)
-        response = scope.search(:search_type => 'query_then_fetch')
+        params = {:search_type => 'query_then_fetch'}
+        params[:routing] = @routing if @routing
+        response = scope.search(params)
         self.counts = response
         yield materialize_hits(response['hits']['hits'])
         from += size
@@ -297,6 +338,7 @@ module Elastictastic
         :scroll => "#{batch_options[:ttl] || 60}s",
         :size => batch_options[:batch_size] || ::Elastictastic.config.default_batch_size
       }
+      scroll_options[:routing] = @routing if @routing
       scan_response = ::Elastictastic.client.search(
         @index,
         @clazz.type,
@@ -315,7 +357,9 @@ module Elastictastic
     end
 
     def populate_counts
-      self.counts = search(:search_type => 'count')
+      params = {:search_type => 'count'}
+      params[:routing] = @routing if @routing
+      self.counts = search(params)
     end
 
     def find_many(ids, params = {})
@@ -325,23 +369,6 @@ module Elastictastic
       end
       materialize_hits(
         ::Elastictastic.client.mget(docspec, index, type)['docs']
-      ).map { |result, hit| result }
-    end
-
-    def find_many_in_many_indices(ids_by_index, params = {})
-      docs = []
-      ids_by_index.each_pair do |index, ids|
-        ::Kernel.Array(ids).each do |id|
-          docs << doc = {
-            '_id' => id.to_s,
-            '_type' => type,
-            '_index' => index
-          }.merge!(params.stringify_keys)
-          doc['fields'] = ::Kernel.Array(@search['fields']) if @search['fields']
-        end
-      end
-      materialize_hits(
-        ::Elastictastic.client.mget(docs)['docs']
       ).map { |result, hit| result }
     end
 
@@ -358,6 +385,12 @@ module Elastictastic
     def params_for_find
       {}.tap do |params|
         params['fields'] = ::Kernel.Array(@search['fields']) if @search['fields']
+        if @routing
+          params['routing'] = @routing
+        elsif @clazz.routing_required?
+          ::Kernel.raise ::Elastictastic::MissingParameter,
+            "Must specify routing parameter to look up #{@clazz.name} by ID"
+        end
       end
     end
 
@@ -369,13 +402,6 @@ module Elastictastic
         unless hit['exists'] == false
           yield materialize_hit(hit), ::Hashie::Mash.new(hit)
         end
-      end
-    end
-
-    def materialize_hit(hit)
-      @clazz.new.tap do |result|
-        result.parent = @parent if @parent
-        result.elasticsearch_hit = hit
       end
     end
   end

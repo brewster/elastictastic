@@ -41,6 +41,19 @@ describe Elastictastic::Document do
       end
     end # context 'new object'
 
+    context 'new object with routing' do
+      let!(:id) { stub_es_create('default', 'photo') }
+      let(:photo) { Photo.new(:post_id => '123') }
+
+      before do
+        photo.save
+      end
+
+      it 'should send routing param' do
+        last_request_uri.query.split('&').should include('routing=123')
+      end
+    end
+
     context 'new object with ID' do
       let(:post) { Post.new.tap { |post| post.id = '123' }}
 
@@ -97,6 +110,16 @@ describe Elastictastic::Document do
       end # context 'with duplicate ID'
     end # context 'new object with ID'
 
+    context 'new object with ID with routing' do
+      let(:photo) { Photo.new(:id => 'abc', :post_id => '123') }
+
+      it 'should include routing param when saving' do
+        stub_es_create('default', 'photo', 'abc')
+        photo.save
+        last_request_uri.query.split('&').should include('routing=123')
+      end
+    end
+
     shared_examples_for 'persisted object' do
       describe 'identity attributes' do
         it 'should not allow setting of ID' do
@@ -149,6 +172,26 @@ describe Elastictastic::Document do
 
       it_should_behave_like 'persisted object'
     end # context 'existing persisted object'
+
+    context 'persisted object with routing' do
+      let(:photo) do
+        Photo.new.tap do |photo|
+          photo.id = 'abc'
+          photo.post_id = '123'
+          photo.version = 1
+          photo.persisted!
+        end
+      end
+
+      before do
+        stub_es_update('default', 'photo', 'abc')
+        photo.save!
+      end
+
+      it 'should include routing param' do
+        last_request_uri.query.split('&').should include('routing=123')
+      end
+    end
   end # describe '#save'
 
   describe '#destroy' do
@@ -181,6 +224,26 @@ describe Elastictastic::Document do
         @result.should be_true
       end
     end # context 'existing persisted object'
+
+    context 'persisted object with routing' do
+      let(:photo) do
+        Photo.new.tap do |photo|
+          photo.id = 'abc'
+          photo.post_id = '123'
+          photo.version = 1
+          photo.persisted!
+        end
+      end
+
+      before do
+        stub_es_destroy('default', 'photo', 'abc')
+        photo.destroy
+      end
+
+      it 'should include routing param' do
+        last_request_uri.query.split('&').should include('routing=123')
+      end
+    end
 
     context 'transient object' do
       let(:post) { Post.new }
@@ -401,76 +464,6 @@ describe Elastictastic::Document do
       it_should_behave_like 'single document lookup'
       it_should_behave_like 'multi document single index lookup'
 
-      describe 'multi-index multi-get' do
-        before do
-          stub_es_mget(
-            nil,
-            nil,
-            ['1', 'default'], ['2', 'my_index'], ['3', 'my_index']
-          )
-          posts
-        end
-
-        describe 'with no options' do
-          let(:posts) { Post.find('default' => '1', 'my_index' => %w(2 3)) }
-
-          it 'should send request to base path' do
-            last_request.path.should == '/_mget'
-          end
-
-          it 'should request ids with type and index' do
-            last_request_body.should == {
-              'docs' => [{
-                '_id' => '1',
-                '_type' => 'post',
-                '_index' => 'default'
-              }, {
-                '_id' => '2',
-                '_type' => 'post',
-                '_index' => 'my_index'
-              }, {
-                '_id' => '3',
-                '_type' => 'post',
-                '_index' => 'my_index'
-              }]
-            }
-          end
-
-          it 'should return docs with IDs' do
-            posts.map(&:id).should == %w(1 2 3)
-          end
-
-          it 'should set proper indices' do
-            posts.map { |post| post.index.name }.should ==
-              %w(default my_index my_index)
-          end
-        end # context 'with no options' 
-
-        context 'with fields specified' do
-          let(:posts) { Post.fields('title').find('default' => '1', 'my_index' => %w(2 3)) }
-
-          it 'should inject fields into each identifier' do
-            last_request_body.should == {
-              'docs' => [{
-                '_id' => '1',
-                '_type' => 'post',
-                '_index' => 'default',
-                'fields' => %w(title)
-              }, {
-                '_id' => '2',
-                '_type' => 'post',
-                '_index' => 'my_index',
-                'fields' => %w(title)
-              }, {
-                '_id' => '3',
-                '_type' => 'post',
-                '_index' => 'my_index',
-                'fields' => %w(title)
-              }]
-            }
-          end
-        end
-      end # describe 'multi-index multi-get'
 
       context 'when documents are missing' do
         let(:posts) { Post.find('1', '2') }
@@ -493,6 +486,21 @@ describe Elastictastic::Document do
       it_should_behave_like 'single document lookup'
       it_should_behave_like 'multi document single index lookup'
     end # context 'with specified index'
+
+    context 'with routing specified' do
+      context 'single document lookup' do
+        it 'should specify routing' do
+          stub_es_get('default', 'photo', 'abc')
+          Photo.routing('123').find('abc')
+          last_request_uri.query.split('&').should include('routing=123')
+        end
+
+        it 'should complain if routing required but not specified' do
+          expect { Photo.find('abc') }.
+            to raise_error(Elastictastic::MissingParameter)
+        end
+      end
+    end
   end # describe '::find'
 
   describe '#elasticsearch_hit=' do

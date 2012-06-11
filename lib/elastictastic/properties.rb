@@ -70,6 +70,23 @@ module Elastictastic
         @_boost = { 'name' => field.to_s, 'null_value' => 1.0 }.merge(options.stringify_keys)
       end
 
+      def route_with(field, options = {})
+        @_routing_field = field
+        @_routing_required = !!options[:required]
+      end
+
+      def routing_required?
+        !!@_routing_required
+      end
+
+      def route(instance)
+        if @_routing_field
+          @_routing_field.to_s.split('.').inject(instance) do |obj, attr|
+            Util.call_or_map(obj) { |el| el.__send__(attr) } if obj
+          end
+        end
+      end
+
       def define_field(field_name, options, &block)
         field_name = field_name.to_s
 
@@ -180,6 +197,9 @@ module Elastictastic
           end
         end
       end
+    end
+
+    def _routing
     end
 
     protected

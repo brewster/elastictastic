@@ -96,6 +96,8 @@ module Elastictastic
       identifier = { :_index => instance.index.name, :_type => instance.class.type }
       identifier['_id'] = instance.id if instance.id
       identifier['_version'] = instance.version if instance.version
+      routing = instance.class.route(instance)
+      identifier['_routing'] = routing.to_s if routing
       identifier['parent'] = instance._parent_id if instance._parent_id
       identifier
     end
