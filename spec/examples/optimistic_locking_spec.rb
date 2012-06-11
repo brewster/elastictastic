@@ -93,8 +93,8 @@ describe Elastictastic::OptimisticLocking do
         end
 
         it 'should add preference=_primary to get request' do
-          pending 'support for "primary_first" preference in ES'
-          FakeWeb.requests.first.path.should =~ /preference=_primary/
+          URI.parse(FakeWeb.requests.first.path).query.split('&').
+            should include('preference=_primary_first')
         end
 
         it 'should make final update with modification in update block' do

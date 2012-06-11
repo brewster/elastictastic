@@ -26,7 +26,7 @@ module Elastictastic
       end
 
       def update(id, &block)
-        instance = scoped({}).find_one(id)
+        instance = scoped({}).find_one(id, :preference => '_primary_first')
         instance.try_update(current_scope, &block) if instance
       end
 
