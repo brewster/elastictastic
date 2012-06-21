@@ -42,24 +42,24 @@ module Elastictastic
   class ExconAdapter < Adapter
 
     def initialize(host, options = {})
-      super(options)
-      @connection = Excon.new(host)
+      super
+      params = {}
+      if options[:request_timeout]
+        params[:read_timeout] = params[:write_timeout] =
+          options[:request_timeout]
+      end
+      if options[:connect_timeout]
+        params[:connect_timeout] = options[:connect_timeout]
+      end
+      @connection = Excon.new(host, params)
     end
 
     def request(method, path, body = nil)
       @connection.request(
-        default_options.merge(:body => body, :method => method, :path => path)
+        :body => body, :method => method, :path => path
       ).body
     rescue Excon::Errors::Error => e
       raise ConnectionFailed, e
-    end
-
-    def default_options
-      @default_options ||= {
-        :read_timeout => @request_timeout,
-        :write_timeout => @request_timeout,
-        :connect_timeout => @connect_timeout
-      }
     end
 
   end

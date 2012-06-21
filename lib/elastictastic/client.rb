@@ -3,15 +3,22 @@ module Elastictastic
     attr_reader :connection
 
     def initialize(config)
+      adapter_options = {
+        :request_timeout => config.request_timeout,
+        :connect_timeout => config.connect_timeout
+      }
       if config.hosts.length == 1
-        connection = Adapter[config.adapter].new(config.hosts.first)
+        connection = Adapter[config.adapter].
+          new(config.hosts.first, adapter_options)
       else
         connection = Rotor.new(
           config.hosts,
-          :adapter => config.adapter,
-          :backoff_threshold => config.backoff_threshold,
-          :backoff_start => config.backoff_start,
-          :backoff_max => config.backoff_max
+          adapter_options.merge(
+            :adapter => config.adapter,
+            :backoff_threshold => config.backoff_threshold,
+            :backoff_start => config.backoff_start,
+            :backoff_max => config.backoff_max
+          )
         )
       end
       if config.logger
