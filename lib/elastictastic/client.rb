@@ -1,57 +1,61 @@
-require 'faraday'
-
 module Elastictastic
   class Client
     attr_reader :connection
 
     def initialize(config)
-      builder = Faraday::Builder.new do |builder|
-        config.extra_middlewares.each { |args| builder.use(*args) }
-        builder.use Middleware::AddGlobalTimeout
-        builder.use Middleware::RaiseServerErrors
-        builder.use Middleware::JsonEncodeBody
-        builder.use Middleware::JsonDecodeResponse
-        if config.logger
-          builder.use Middleware::LogRequests, config.logger
-        end
-        builder.use Middleware::RaiseOnStatusZero
-        if Class === config.adapter then builder.use(config.adapter) 
-        else builder.adapter config.adapter
-        end
-      end
       if config.hosts.length == 1
-        @connection =
-          Faraday.new(:url => config.hosts.first, :builder => builder)
+        connection = Adapter[config.adapter].new(config.hosts.first)
       else
-        @connection = Rotor.new(
+        connection = Rotor.new(
           config.hosts,
-          :builder => builder,
+          :adapter => config.adapter,
           :backoff_threshold => config.backoff_threshold,
           :backoff_start => config.backoff_start,
           :backoff_max => config.backoff_max
         )
       end
+      if config.logger
+        connection = Middleware::LogRequests.new(connection, config.logger)
+      end
+      connection = Middleware::JsonDecodeResponse.new(connection)
+      connection = Middleware::JsonEncodeBody.new(connection)
+      connection = Middleware::RaiseServerErrors.new(connection)
+      @connection = connection
     end
 
     def create(index, type, id, doc, params = {})
       if id
-        @connection.put(
-          path_with_query("/#{index}/#{type}/#{id}/_create", params), doc)
+        @connection.request(
+          :put,
+          path_with_query("/#{index}/#{type}/#{id}/_create", params),
+          doc
+        )
       else
-        @connection.post(path_with_query("/#{index}/#{type}", params), doc)
-      end.body
+        @connection.request(
+          :post,
+          path_with_query("/#{index}/#{type}", params),
+          doc
+        )
+      end
     end
 
     def update(index, type, id, doc, params = {})
-      @connection.put(path_with_query("/#{index}/#{type}/#{id}", params), doc).body
+      @connection.request(
+        :put,
+        path_with_query("/#{index}/#{type}/#{id}", params),
+        doc
+      )
     end
 
     def bulk(commands, params = {})
-      @connection.post(path_with_query('/_bulk', params), commands).body
+      @connection.request(:post, path_with_query('/_bulk', params), commands)
     end
 
     def get(index, type, id, params = {})
-      @connection.get(path_with_query("/#{index}/#{type}/#{id}", params)).body
+      @connection.request(
+        :get,
+        path_with_query("/#{index}/#{type}/#{id}", params)
+      )
     end
 
     def mget(docspec, index = nil, type = nil)
@@ -65,30 +69,28 @@ module Elastictastic
         else
           "/_mget"
         end
-      @connection.post(path, 'docs' => docspec).body
+      @connection.request(:post, path, 'docs' => docspec)
     end
 
     def search(index, type, search, options = {})
       path = "/#{index}/#{type}/_search"
-      @connection.post(
+      @connection.request(
+        :post,
         "#{path}?#{options.to_query}",
         search
-      ).body
+      )
     end
 
     def msearch(search_bodies)
-      @connection.post('/_msearch', search_bodies).body
+      @connection.request(:post, '/_msearch', search_bodies)
     end
 
     def scroll(id, options = {})
-      @connection.post(
-        "/_search/scroll?#{options.to_query}",
-        id
-      ).body
+      @connection.request(:post, "/_search/scroll?#{options.to_query}", id)
     end
 
     def put_mapping(index, type, mapping)
-      @connection.put("/#{index}/#{type}/_mapping", mapping).body
+      @connection.request(:put, "/#{index}/#{type}/_mapping", mapping)
     end
 
     def delete(index = nil, type = nil, id = nil, params = {})
@@ -98,7 +100,7 @@ module Elastictastic
         elsif index then "/#{index}"
         else "/"
         end
-      @connection.delete(path_with_query(path, params)).body
+      @connection.request(:delete, path_with_query(path, params))
     end
 
     private

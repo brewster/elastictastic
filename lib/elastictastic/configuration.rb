@@ -1,7 +1,7 @@
 module Elastictastic
   class Configuration
 
-    attr_writer :hosts, :default_index, :auto_refresh, :default_batch_size
+    attr_writer :hosts, :default_index, :auto_refresh, :default_batch_size, :adapter
     attr_accessor :logger, :connect_timeout, :request_timeout, :backoff_threshold, :backoff_start, :backoff_max
     attr_reader :extra_middlewares
 
@@ -15,16 +15,6 @@ module Elastictastic
 
     def hosts
       @hosts ||= [default_host]
-    end
-
-    def adapter=(adapter)
-      @adapter =
-        case adapter
-        when 'Thrift', 'thrift' then Elastictastic::ThriftAdapter
-        when Class, /^[A-Z][A-Za-z0-9]+$/ then adapter
-        when /^[a-z_]+/ then adapter.camelize
-        else raise ArgumentError, "Unrecognized adapter name #{adapter}"
-        end
     end
 
     def adapter

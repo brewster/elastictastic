@@ -21,7 +21,6 @@ DESC
   s.required_ruby_version = '>= 1.9'
   s.add_runtime_dependency 'activesupport', '~> 3.0'
   s.add_runtime_dependency 'activemodel', '~> 3.0'
-  s.add_runtime_dependency 'faraday', '~> 0.7'
   s.add_runtime_dependency 'hashie'
   s.add_runtime_dependency 'i18n'
   s.add_runtime_dependency 'multi_json'

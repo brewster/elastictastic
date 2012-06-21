@@ -1,26 +1,21 @@
-require 'faraday'
-
 module Elastictastic
   class Rotor
     NodeUnavailable = Class.new(StandardError)
 
-    def initialize(hosts, options, &block)
+    def initialize(hosts, options)
       node_options = {}
       [:backoff_threshold, :backoff_start, :backoff_max].each do |key|
         node_options[key] = options.delete(key)
       end
+      adapter = Adapter[options.delete(:adapter)]
       @connections = hosts.map do |host|
-        Node.new(Faraday.new(options.merge(:url => host), &block), node_options)
+        Node.new(adapter.new(host, options), node_options)
       end
       @head_index = 0
     end
 
-    Faraday::Connection::METHODS.each do |method|
-      module_eval <<-RUBY, __FILE__, __LINE__+1
-        def #{method}(*args)
-          try_rotate { |node| node.#{method}(*args) }
-        end
-      RUBY
+    def request(method, path, body = nil)
+      try_rotate { |node| node.request(method, path, body) }
     end
 
     private
@@ -37,8 +32,8 @@ module Elastictastic
       last = peek
       begin
         yield shift
-      rescue Faraday::Error::ConnectionFailed, NodeUnavailable => e
-        raise NoServerAvailable, e.message if peek == last
+      rescue ConnectionFailed, NodeUnavailable => e
+        raise NoServerAvailable, e if peek == last
         retry
       end
     end
@@ -52,12 +47,8 @@ module Elastictastic
         @backoff_max = options[:backoff_max]
       end
 
-      Faraday::Connection::METHODS.each do |method|
-        module_eval <<-RUBY, __FILE__, __LINE__+1
-          def #{method}(*args)
-            try_track { @connection.#{method}(*args).tap { succeeded! } }
-          end
-        RUBY
+      def request(method, path, body = nil)
+        try_track { @connection.request(method, path, body).tap { succeeded! }}
       end
 
       private
@@ -66,7 +57,7 @@ module Elastictastic
         raise NodeUnavailable, "Won't retry this node until #{@back_off_until}" unless available?
         begin
           yield
-        rescue Faraday::Error::ConnectionFailed => e
+        rescue ConnectionFailed => e
           failed!
           raise e
         end
