@@ -41,25 +41,30 @@ module Elastictastic
 
   class ExconAdapter < Adapter
 
-    def initialize(host, options = {})
-      super
-      params = {}
-      if options[:request_timeout]
-        params[:read_timeout] = params[:write_timeout] =
-          options[:request_timeout]
-      end
-      if options[:connect_timeout]
-        params[:connect_timeout] = options[:connect_timeout]
-      end
-      @connection = Excon.new(host, params)
-    end
-
     def request(method, path, body = nil)
-      @connection.request(
+      connection.request(
         :body => body, :method => method, :path => path
       ).body
     rescue Excon::Errors::Error => e
+      connection.reset
       raise ConnectionFailed, e
+    end
+
+    private
+
+    def connection
+      @connection ||= Excon.new(@host, connection_params)
+    end
+
+    def connection_params
+      @connection_params ||= {}.tap do |params|
+        if @request_timeout
+          params[:read_timeout] = params[:write_timeout] = @request_timeout
+        end
+        if @connect_timeout
+          params[:connect_timeout] = @connect_timeout
+        end
+      end
     end
 
   end
