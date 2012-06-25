@@ -54,6 +54,14 @@ module Elastictastic
       @extra_middlewares << args
     end
 
+    def presets
+      @presets ||= ActiveSupport::HashWithIndifferentAccess.new
+    end
+
+    def presets=(new_presets)
+      presets.merge!(new_presets)
+    end
+
     private
 
     def default_host

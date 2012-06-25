@@ -47,6 +47,39 @@ describe Elastictastic::Properties do
     end
   end
 
+  describe ':preset' do
+    before do
+      Elastictastic.config.presets[:silly] = { :type => 'integer', :store => 'yes', :index => 'no' }
+    end
+
+    let :clazz do
+      Class.new do
+        include Elastictastic::Document
+
+        def self.name
+          'Clazz'
+        end
+
+        field :title, :type => 'string', :preset => 'silly'
+        field :created, :preset => :silly
+      end
+    end
+
+    let(:properties) { clazz.mapping.values.first['properties'] }
+
+    it 'should apply preset values' do
+      properties['created'].should == {
+        'type' => 'integer', 'store' => 'yes', 'index' => 'no'
+      }
+    end
+
+    it 'should override preset values with given values' do
+      properties['title'].should == {
+        'type' => 'string', 'store' => 'yes', 'index' => 'no'
+      }
+    end
+  end
+
   describe '#elasticsearch_doc' do
     let(:post) { Post.new }
     let(:doc) { post.elasticsearch_doc }
