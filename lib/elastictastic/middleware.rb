@@ -1,6 +1,13 @@
+require 'elastictastic/transport_methods'
+
 module Elastictastic
+
   module Middleware
+
     class Base
+
+      include TransportMethods
+
       def initialize(connection)
         @connection = connection
       end
@@ -8,9 +15,11 @@ module Elastictastic
       def request(method, path, body = nil)
         @connection.request(method, path, body)
       end
+
     end
 
     class JsonEncodeBody < Base
+
       def request(method, path, body = nil)
         case body
         when String, nil
@@ -22,26 +31,40 @@ module Elastictastic
           )
         end
       end
+
     end
 
     class JsonDecodeResponse < Base
+
       def request(method, path, body = nil)
-        response_body = super
-        Elastictastic.json_decode(response_body) if response_body
+        response = super
+        if response.body
+          Adapter::Response.new(
+            response.status,
+            response.headers,
+            Elastictastic.json_decode(response.body)
+          )
+        else
+          response
+        end
       end
+
     end
 
     class RaiseServerErrors < Base
+
       def request(method, path, body = nil)
-        super.tap do |response_body|
-          if response_body.nil?
-            raise Elastictastic::ServerError::ServerError,
-              "No body in ElasticSearch response with status #{env[:status]}"
-          elsif response_body['error']
-            raise_error(response_body['error'], response_body['status'])
-          elsif response_body['_shards'] && response_body['_shards']['failures']
-            raise_error(
-              response_body['_shards']['failures'].first['reason'], response_body['status'])
+        super.tap do |response|
+          if method != :head
+            if response.body.nil?
+              raise Elastictastic::ServerError::ServerError,
+                "No body in ElasticSearch response with status #{env[:status]}"
+            elsif response.body['error']
+              raise_error(response.body['error'], response.body['status'])
+            elsif response.body['_shards'] && response.body['_shards']['failures']
+              raise_error(
+                response.body['_shards']['failures'].first['reason'], response.body['status'])
+            end
           end
         end
       end
@@ -51,9 +74,11 @@ module Elastictastic
       def raise_error(server_message, status)
         ::Kernel.raise(Elastictastic::ServerError[server_message, status])
       end
+
     end
 
     class LogRequests < Base
+
       def initialize(connection, logger)
         super(connection)
         @logger = logger
@@ -68,6 +93,9 @@ module Elastictastic
           @logger.debug(message)
         end
       end
+
     end
+
   end
+
 end

@@ -32,37 +32,33 @@ module Elastictastic
 
     def create(index, type, id, doc, params = {})
       if id
-        @connection.request(
-          :put,
+        @connection.put(
           path_with_query("/#{index}/#{type}/#{id}/_create", params),
           doc
         )
       else
-        @connection.request(
-          :post,
+        @connection.post(
           path_with_query("/#{index}/#{type}", params),
           doc
         )
-      end
+      end.body
     end
 
     def update(index, type, id, doc, params = {})
-      @connection.request(
-        :put,
+      @connection.put(
         path_with_query("/#{index}/#{type}/#{id}", params),
         doc
-      )
+      ).body
     end
 
     def bulk(commands, params = {})
-      @connection.request(:post, path_with_query('/_bulk', params), commands)
+      @connection.post(path_with_query('/_bulk', params), commands).body
     end
 
     def get(index, type, id, params = {})
-      @connection.request(
-        :get,
+      @connection.get(
         path_with_query("/#{index}/#{type}/#{id}", params)
-      )
+      ).body
     end
 
     def mget(docspec, index = nil, type = nil)
@@ -76,28 +72,27 @@ module Elastictastic
         else
           "/_mget"
         end
-      @connection.request(:post, path, 'docs' => docspec)
+      @connection.post(path, 'docs' => docspec).body
     end
 
     def search(index, type, search, options = {})
       path = "/#{index}/#{type}/_search"
-      @connection.request(
-        :post,
+      @connection.post(
         "#{path}?#{options.to_query}",
         search
-      )
+      ).body
     end
 
     def msearch(search_bodies)
-      @connection.request(:post, '/_msearch', search_bodies)
+      @connection.post('/_msearch', search_bodies).body
     end
 
     def scroll(id, options = {})
-      @connection.request(:post, "/_search/scroll?#{options.to_query}", id)
+      @connection.post("/_search/scroll?#{options.to_query}", id).body
     end
 
     def put_mapping(index, type, mapping)
-      @connection.request(:put, "/#{index}/#{type}/_mapping", mapping)
+      @connection.put("/#{index}/#{type}/_mapping", mapping).body
     end
 
     def delete(index = nil, type = nil, id = nil, params = {})
@@ -107,7 +102,7 @@ module Elastictastic
         elsif index then "/#{index}"
         else "/"
         end
-      @connection.request(:delete, path_with_query(path, params))
+      @connection.delete(path_with_query(path, params)).body
     end
 
     private

@@ -1,5 +1,11 @@
+require 'elastictastic/transport_methods'
+
 module Elastictastic
+
   class Rotor
+
+    include TransportMethods
+
     NodeUnavailable = Class.new(StandardError)
 
     def initialize(hosts, options)
@@ -93,5 +99,7 @@ module Elastictastic
         end
       end
     end
+
   end
+
 end

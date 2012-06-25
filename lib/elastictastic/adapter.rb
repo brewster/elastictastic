@@ -1,6 +1,12 @@
+require 'elastictastic/transport_methods'
+
 module Elastictastic
 
   class Adapter
+
+    include TransportMethods
+
+    Response = Struct.new(:status, :headers, :body)
 
     def self.[](str)
       case str
@@ -19,6 +25,7 @@ module Elastictastic
   end
 
   class NetHttpAdapter < Adapter
+
     def initialize(host, options = {})
       super
       uri = URI.parse(host)
@@ -27,24 +34,29 @@ module Elastictastic
     end
 
     def request(method, path, body = nil)
-      case method
-      when :get then @connection.get(path).body
-      when :post then @connection.post(path, body.to_s).body
-      when :put then @connection.put(path, body.to_s).body
-      when :delete then @connection.delete(path).body
-      else raise ArgumentError, "Unsupported method #{method.inspect}"
-      end
+      response =
+        case method
+        when :head then @connection.head(path)
+        when :get then @connection.get(path)
+        when :post then @connection.post(path, body.to_s)
+        when :put then @connection.put(path, body.to_s)
+        when :delete then @connection.delete(path)
+        else raise ArgumentError, "Unsupported method #{method.inspect}"
+        end
+      Response.new(response.code.to_i, response.to_hash, response.body)
     rescue Errno::ECONNREFUSED, Timeout::Error, SocketError => e
       raise ConnectionFailed, e
     end
+
   end
 
   class ExconAdapter < Adapter
 
     def request(method, path, body = nil)
-      connection.request(
+      response = connection.request(
         :body => body, :method => method, :path => path
-      ).body
+      )
+      Response.new(response.status, response.headers, response.body)
     rescue Excon::Errors::Error => e
       connection.reset
       raise ConnectionFailed, e
