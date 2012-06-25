@@ -34,6 +34,15 @@ module Elastictastic
       )
     end
 
+    def stub_es_head(index, type, id, exists)
+      stub_request(
+        :head,
+        match_es_resource(index, type, id),
+        :status => (exists ? 200 : 404),
+        :body => nil
+      )
+    end
+
     def stub_es_get(index, type, id, doc = {}, version = 1)
       stub_request_json(
         :get,

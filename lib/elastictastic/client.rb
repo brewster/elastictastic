@@ -55,6 +55,12 @@ module Elastictastic
       @connection.post(path_with_query('/_bulk', params), commands).body
     end
 
+    def exists?(index, type, id, params = {})
+      @connection.head(
+        path_with_query("/#{index}/#{type}/#{id}", params)
+      ).status == 200
+    end
+
     def get(index, type, id, params = {})
       @connection.get(
         path_with_query("/#{index}/#{type}/#{id}", params)

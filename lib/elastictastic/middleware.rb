@@ -38,7 +38,7 @@ module Elastictastic
 
       def request(method, path, body = nil)
         response = super
-        if response.body
+        if response.body.present?
           Adapter::Response.new(
             response.status,
             response.headers,

@@ -155,6 +155,11 @@ module Elastictastic
       ::Elastictastic.client.put_mapping(index, type, @clazz.mapping)
     end
 
+    def exists?(id)
+      ::Elastictastic.client.
+        exists?(index, type, id, params_for_find.slice('routing'))
+    end
+
     #
     # Look up one or more documents by ID.
     #

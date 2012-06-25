@@ -503,6 +503,24 @@ describe Elastictastic::Document do
     end
   end # describe '::find'
 
+  describe '::exists?' do
+    it 'should return true if document exists' do
+      stub_es_head('my_index', 'post', 1, true)
+      Post.in_index('my_index').exists?(1).should be_true
+    end
+
+    it 'should return false if document does not exist' do
+      stub_es_head('my_index', 'post', 1, false)
+      Post.in_index('my_index').exists?(1).should be_false
+    end
+
+    it 'should send routing when given' do
+      stub_es_head('my_index', 'post', 1, true)
+      Post.in_index('my_index').routing('my_route').exists?(1)
+      last_request_uri.query.split('&').should include('routing=my_route')
+    end
+  end
+
   describe '#elasticsearch_hit=' do
     context 'with full _source' do
       let :post do
