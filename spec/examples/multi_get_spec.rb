@@ -9,16 +9,16 @@ describe Elastictastic::MultiGet do
     stub_es_mget(
       nil,
       nil,
-      ['1', 'post', 'default'], ['2', 'post', 'my_index'], ['3', 'post', 'my_index']
+      ['1', 'post', 'default'], ['2', 'post', 'my_index'], ['3', 'post', 'my_index'],
+      ['4', 'post', 'my_index'] => nil
     )
-    posts
   end
 
   describe 'with no options' do
-    let(:posts) do
+    let!(:posts) do
       Elastictastic.multi_get do |mget|
         mget.add(Post, 1)
-        mget.add(Post.in_index('my_index'), 2, 3)
+        mget.add(Post.in_index('my_index'), 2, 3, 4)
       end
     end
 
@@ -40,11 +40,15 @@ describe Elastictastic::MultiGet do
         '_id' => '3',
         '_type' => 'post',
         '_index' => 'my_index'
+      }, {
+        '_id' => '4',
+        '_type' => 'post',
+        '_index' => 'my_index'
       }]
       }
     end
 
-    it 'should return docs with IDs' do
+    it 'should return existing docs with IDs' do
       posts.map(&:id).should == %w(1 2 3)
     end
 
@@ -55,7 +59,7 @@ describe Elastictastic::MultiGet do
   end # context 'with no options' 
 
   context 'with fields specified' do
-    let(:posts) do
+    let!(:posts) do
       Elastictastic.multi_get do |mget|
         mget.add(Post.fields('title'), '1')
         mget.add(Post.in_index('my_index').fields('title'), '2', '3')
@@ -85,7 +89,7 @@ describe Elastictastic::MultiGet do
   end
 
   context 'with routing specified' do
-    let(:posts) do
+    let!(:posts) do
       Elastictastic.multi_get do |mget|
         mget.add(Post.routing('foo'), '1')
         mget.add(Post.in_index('my_index').routing('bar'), '2', '3')
@@ -111,6 +115,13 @@ describe Elastictastic::MultiGet do
         'routing' => 'bar'
       }]
       }
+    end
+  end
+
+  context 'with no docspecs given' do
+    it 'should gracefully return nothing' do
+      FakeWeb.clean_registry
+      Elastictastic.multi_get {}.to_a.should == []
     end
   end
 end

@@ -19,8 +19,9 @@ module Elastictastic
     end
 
     def each
+      return if @docspecs.empty?
       Elastictastic.client.mget(@docspecs)['docs'].zip(@scopes) do |hit, scope|
-        yield scope.materialize_hit(hit)
+        yield scope.materialize_hit(hit) if hit['exists']
       end
     end
 
