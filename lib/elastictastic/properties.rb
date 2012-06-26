@@ -100,11 +100,6 @@ module Elastictastic
           end
         RUBY
 
-        if preset = options.delete(:preset)
-          options = Elastictastic.config.presets[preset].
-            with_indifferent_access.merge(options)
-        end
-
         field_properties[field_name.to_s] =
           Field.process(field_name, options, &block)
       end

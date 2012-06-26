@@ -10,6 +10,9 @@ module Elastictastic
 
     def self.with_defaults(options)
       options = Util.deep_stringify(options)
+      if preset = options.delete('preset')
+        options = ::Elastictastic.config.presets[preset].merge(options)
+      end
       { 'type' => 'string' }.merge(options).tap do |field_properties|
         if field_properties['type'].to_s == 'date'
           field_properties['format'] = 'date_time_no_millis'

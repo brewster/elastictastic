@@ -62,6 +62,9 @@ describe Elastictastic::Properties do
 
         field :title, :type => 'string', :preset => 'silly'
         field :created, :preset => :silly
+        field :multi, :type => 'string' do
+          field :searchable, :preset => 'silly', :index => 'yes'
+        end
       end
     end
 
@@ -76,6 +79,12 @@ describe Elastictastic::Properties do
     it 'should override preset values with given values' do
       properties['title'].should == {
         'type' => 'string', 'store' => 'yes', 'index' => 'no'
+      }
+    end
+
+    it 'should apply presets to field alternates' do
+      properties['multi']['fields']['searchable'].should == {
+        'store' => 'yes', 'index' => 'yes', 'type' => 'integer'
       }
     end
   end
