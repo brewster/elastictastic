@@ -22,8 +22,10 @@ task :update_stable do
   end
 end
 
-desc 'Push gem to repository'
-task :push => :inabox
+desc 'Push gem to rubygems.org'
+task :push do
+  system "gem push elastictastic-#{Elastictastic::VERSION}.gem"
+end
 
 task 'Push gem to geminabox'
 task :inabox do
