@@ -87,10 +87,12 @@ module Elastictastic
       def request(method, path, body = nil)
         now = Time.now
         super.tap do
-          time = ((Time.now - now) * 1000).to_i
-          message = "ElasticSearch #{method.to_s.upcase} (#{time}ms) #{path}"
-          message << ' ' << body if body
-          @logger.debug(message)
+          @logger.debug do
+            time = ((Time.now - now) * 1000).to_i
+            message = "ElasticSearch #{method.to_s.upcase} (#{time}ms) #{path}"
+            message << ' ' << body if body
+            message
+          end
         end
       end
 
