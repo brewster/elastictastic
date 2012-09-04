@@ -27,6 +27,9 @@ module Elastictastic
       connection = Middleware::JsonDecodeResponse.new(connection)
       connection = Middleware::JsonEncodeBody.new(connection)
       connection = Middleware::RaiseServerErrors.new(connection)
+      config.extra_middlewares.each do |middleware_class, *args|
+        connection = middleware_class.new(connection, *args)
+      end
       @connection = connection
     end
 
