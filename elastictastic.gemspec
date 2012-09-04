@@ -26,7 +26,7 @@ DESC
   s.add_runtime_dependency 'multi_json'
   s.add_development_dependency 'rspec', '~> 2.0'
   s.add_development_dependency 'fakeweb', '~> 1.3'
-  s.add_development_dependency 'ruby-debug19', '~> 0.11'
+  s.add_development_dependency 'debugger'
   s.add_development_dependency 'yard', '~> 0.6'
   s.requirements << 'ElasticSearch'
 end
