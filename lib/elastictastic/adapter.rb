@@ -53,13 +53,26 @@ module Elastictastic
   class ExconAdapter < Adapter
 
     def request(method, path, body = nil)
-      response = connection.request(
-        :body => body, :method => method, :path => path
-      )
-      Response.new(response.status, response.headers, response.body)
-    rescue Excon::Errors::Error => e
-      connection.reset
-      raise ConnectionFailed, e
+      retried = false
+      begin
+        response = connection.request(
+          :body => body, :method => method, :path => path
+        )
+        Response.new(response.status, response.headers, response.body)
+      rescue Excon::Errors::SocketError => e
+        connection.reset
+        case e.socket_error
+        when Errno::EPIPE, Errno::ECONNRESET
+          if !retried
+            retried = true
+            retry
+          end
+        end
+        raise ConnectionFailed, e
+      rescue Excon::Errors::Error => e
+        connection.reset
+        raise ConnectionFailed, e
+      end
     end
 
     private
