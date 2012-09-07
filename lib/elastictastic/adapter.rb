@@ -60,19 +60,19 @@ module Elastictastic
         )
         Response.new(response.status, response.headers, response.body)
       rescue Excon::Errors::SocketError => e
-        connection.reset
         case e.socket_error
         when Errno::EPIPE, Errno::ECONNRESET
           if !retried
+            connection.reset
             retried = true
             retry
           end
         end
-        raise ConnectionFailed, e
-      rescue Excon::Errors::Error => e
-        connection.reset
-        raise ConnectionFailed, e
+        raise
       end
+    rescue Excon::Errors::Error => e
+      connection.reset
+      raise ConnectionFailed, e
     end
 
     private
