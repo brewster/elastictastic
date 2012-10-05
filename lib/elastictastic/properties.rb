@@ -262,7 +262,8 @@ module Elastictastic
     def deserialize_value(field_name, value)
       return nil if value.nil?
       if self.class.properties_for_field(field_name)['type'].to_s == 'date'
-        if value.is_a? Fixnum
+        case value
+        when Fixnum, Bignum
           sec, usec = value / 1000, (value % 1000) * 1000
           Time.at(sec, usec).utc
         else
