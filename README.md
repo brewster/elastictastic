@@ -469,7 +469,17 @@ Post.highlight { fields(:title => {}) }.find_in_batches do |batch|
 end
 ```
 
-Both `find_each` and `find_in_batches` accept a :batch_size option.
+Both `find_each` and `find_in_batches` accept a `:batch_size` option.
+
+## Support & Bugs ##
+
+If you find a bug, feel free to
+[open an issue](https://github.com/brewster/elastictastic/issues/new) on GitHub.
+Pull requests are most welcome.
+
+For questions or feedback, hit up our mailing list at
+[elastictastic@groups.google.com](http://groups.google.com/group/elastictastic)
+or find outoftime on the #elasticsearch IRC channel on Freenode.
 
 ## License ##
 
