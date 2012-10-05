@@ -6,6 +6,8 @@ is to define model classes which use ElasticSearch as a primary
 document-oriented data store, and to expose ElasticSearch's search functionality
 to query for those models.
 
+[![Build Status](https://secure.travis-ci.org/brewster/elastictastic.png)](http://travis-ci.org/brewster/elastictastic)
+
 ## Dependencies ##
 
 Elastictastic requires Ruby 1.9 and ActiveSupport 3. Elastictastic does not
