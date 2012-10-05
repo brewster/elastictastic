@@ -1,5 +1,4 @@
 require File.expand_path('../spec_helper', __FILE__)
-require 'ruby-debug'
 
 describe Elastictastic::OptimisticLocking do
   include Elastictastic::TestHelpers
