@@ -192,7 +192,7 @@ module Elastictastic
     end
 
     def ==(other)
-      index == other.index && id == other.id
+      index == other.index && self.class == other.class && id == other.id
     end
 
     def attributes
