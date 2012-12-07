@@ -659,4 +659,24 @@ describe Elastictastic::Document do
       end
     end
   end
+
+  describe '#==' do
+    it 'should return true if index, id and class of both objects are equal' do
+      first_post = Post.new(index: "post", title: "Hello, world!")
+      first_post.id = 1
+      other_post = Post.new(index: "post", title: "Hello, world!")
+      other_post.id = 1
+
+      other_post.should eq first_post
+    end
+
+    it 'should fail when classes are not equal' do
+      post = Post.new
+      post.id = 1
+      photo = Photo.new
+      photo.id = 1
+
+      photo.should_not eq post
+    end
+  end
 end
