@@ -116,6 +116,8 @@ module Elastictastic
                :script_fields, :preference, :facets, :routing,
                :to => :current_scope
 
+      attr_writer :default_index
+
       def mapping
         mapping_for_type = { 'properties' => properties }
         mapping_for_type['_boost'] = @_boost if @_boost
@@ -143,7 +145,11 @@ module Elastictastic
       private
 
       def default_scope
-        in_index(Index.default)
+        in_index(default_index)
+      end
+
+      def default_index
+        @default_index || Index.default
       end
     end
 
