@@ -231,7 +231,7 @@ module Elastictastic
     end
 
     def inspect
-      self.entries
+      self.entries.inspect
     end
 
     #
