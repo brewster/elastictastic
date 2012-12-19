@@ -194,6 +194,45 @@ describe Elastictastic::Document do
     end
   end # describe '#save'
 
+  describe '::destroy' do
+    context 'with default index and no routing' do
+      before do
+        stub_es_destroy('default', 'post', '123')
+        Post.destroy('123')
+      end
+
+      it 'should send DELETE request' do
+        last_request.method.should == 'DELETE'
+      end
+
+      it 'should send request to document resource path' do
+        last_request.path.should == '/default/post/123'
+      end
+    end # context 'existing persisted object'
+
+    context 'with routing' do
+      before do
+        stub_es_destroy('default', 'photo', 'abc')
+        Photo.routing('123').destroy('abc')
+      end
+
+      it 'should include routing param' do
+        last_request_uri.query.split('&').should include('routing=123')
+      end
+    end
+
+    context 'on specified index' do
+      before do
+        stub_es_destroy('my_index', 'post', '123')
+        Post.in_index('my_index').destroy('123')
+      end
+
+      it 'should send request to specified index resource' do
+        last_request.path.should == '/my_index/post/123'
+      end
+    end
+  end # describe '#destroy'
+
   describe '#destroy' do
     context 'existing persisted object' do
       let(:post) do

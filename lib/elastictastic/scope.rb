@@ -141,6 +141,21 @@ module Elastictastic
     end
 
     #
+    # Destroy one or more documents by ID, without reading them first
+    #
+    def destroy(*ids)
+      ids.each do |id|
+        ::Elastictastic.persister.destroy!(
+          @index,
+          @clazz.type,
+          id,
+          @routing,
+          (@parent.id if @parent)
+        )
+      end
+    end
+
+    #
     # Destroy all documents in this index.
     #
     # @note This will *not* take into account filters or queries in this scope.

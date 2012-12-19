@@ -200,6 +200,21 @@ describe Elastictastic::BulkPersistenceStrategy do
     end
   end
 
+  describe 'destroy!' do
+    before do
+      stub_es_bulk(
+        'delete' => { '_index' => 'default', '_type' => 'post', '_id' => '123', '_version' => 2, 'ok' => true }
+      )
+      Elastictastic.bulk { Post.in_index('my_index').destroy('123') }
+    end
+
+    it 'should send destroy' do
+      bulk_requests.should == [
+        { 'delete' => { '_index' => 'my_index', '_type' => 'post', '_id' => '123' }}
+      ]
+    end
+  end
+
   shared_examples_for 'block with error' do
     it 'should not run bulk operation' do
       error_proc.call rescue nil

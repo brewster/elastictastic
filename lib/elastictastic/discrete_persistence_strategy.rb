@@ -16,7 +16,7 @@ module Elastictastic
           doc.class.type,
           doc.id,
           doc.elasticsearch_doc,
-          params_for(doc)
+          params_for_doc(doc)
         )
       rescue => e
         return block.call(e)
@@ -35,7 +35,7 @@ module Elastictastic
           doc.class.type,
           doc.id,
           doc.elasticsearch_doc,
-          params_for(doc)
+          params_for_doc(doc)
         )
       rescue => e
         return block.call(e)
@@ -52,7 +52,7 @@ module Elastictastic
           doc.index.name,
           doc.class.type,
           doc.id,
-          params_for(doc)
+          params_for_doc(doc)
         )
       rescue => e
         return block.call(e)
@@ -62,15 +62,32 @@ module Elastictastic
       response['found']
     end
 
+    def destroy!(index, type, id, routing, parent)
+      response = Elastictastic.client.delete(
+        index,
+        type,
+        id,
+        params_for(routing, parent, nil)
+      )
+      response['found']
+    end
+
     private
 
-    def params_for(doc)
+    def params_for_doc(doc)
+      params_for(
+        doc.class.route(doc),
+        doc._parent_id,
+        doc.version
+      )
+    end
+
+    def params_for(routing, parent_id, version)
       {}.tap do |params|
         params[:refresh] = true if Elastictastic.config.auto_refresh
-        params[:parent] = doc._parent_id if doc._parent_id
-        params[:version] = doc.version if doc.version
-        routing = doc.class.route(doc)
-        params[:routing] = routing if routing
+        params[:parent] = parent_id if parent_id
+        params[:version] = version if version
+        params[:routing] = routing.to_s if routing
       end
     end
   end

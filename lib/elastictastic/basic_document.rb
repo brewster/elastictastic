@@ -110,9 +110,9 @@ module Elastictastic
       #   in the default index.
       #
 
-      delegate :find, :destroy_all, :sync_mapping, :inspect, :find_each,
-               :find_in_batches, :first, :count, :empty?, :any?, :all,
-               :query, :filter, :from, :size, :sort, :highlight, :fields,
+      delegate :find, :destroy, :destroy_all, :sync_mapping, :inspect,
+               :find_each, :find_in_batches, :first, :count, :empty?, :any?,
+               :all, :query, :filter, :from, :size, :sort, :highlight, :fields,
                :script_fields, :preference, :facets, :routing,
                :to => :current_scope
 

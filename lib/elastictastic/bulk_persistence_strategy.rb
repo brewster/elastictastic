@@ -21,7 +21,7 @@ module Elastictastic
       add(
         instance.index,
         instance.id,
-        { 'create' => bulk_identifier(instance) },
+        { 'create' => bulk_identifier_for_instance(instance) },
         instance.elasticsearch_doc
       ) do |response|
         if response['create']['error']
@@ -41,7 +41,7 @@ module Elastictastic
       add(
         instance.index,
         instance.id,
-        { 'index' => bulk_identifier(instance) },
+        { 'index' => bulk_identifier_for_instance(instance) },
         instance.elasticsearch_doc
       ) do |response|
         if response['index']['error']
@@ -56,7 +56,7 @@ module Elastictastic
     def destroy(instance, &block)
       block ||= DEFAULT_HANDLER
       instance.pending_destroy!
-      add(instance.index, instance.id, :delete => bulk_identifier(instance)) do |response|
+      add(instance.index, instance.id, :delete => bulk_identifier_for_instance(instance)) do |response|
         if response['delete']['error']
           block.call(ServerError[response['delete']['error']])
         else
@@ -65,6 +65,13 @@ module Elastictastic
           block.call
         end
       end
+    end
+
+    def destroy!(index, type, id, routing, parent)
+      add(
+        index, id,
+        :delete => bulk_identifier(index, type, id, routing, parent, nil)
+      )
     end
 
     def flush
@@ -92,13 +99,23 @@ module Elastictastic
 
     private
 
-    def bulk_identifier(instance)
-      identifier = { :_index => instance.index.name, :_type => instance.class.type }
-      identifier['_id'] = instance.id if instance.id
-      identifier['_version'] = instance.version if instance.version
-      routing = instance.class.route(instance)
+    def bulk_identifier_for_instance(instance)
+      bulk_identifier(
+        instance.index,
+        instance.class.type,
+        instance.id,
+        instance.class.route(instance),
+        instance._parent_id,
+        instance.version
+      )
+    end
+
+    def bulk_identifier(index, type, id, routing, parent_id, version)
+      identifier = { :_index => index.name, :_type => type }
+      identifier['_id'] = id if id
+      identifier['_version'] = version if version
       identifier['_routing'] = routing.to_s if routing
-      identifier['parent'] = instance._parent_id if instance._parent_id
+      identifier['parent'] = parent_id if parent_id
       identifier
     end
 

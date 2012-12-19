@@ -81,6 +81,12 @@ describe Elastictastic::ParentChild do
         post.destroy
         URI.parse(FakeWeb.last_request.path).query.split('&').should include("parent=#{blog.id}")
       end
+
+      it 'should pass parent on ::delete' do
+        stub_es_destroy('default', 'post', '123')
+        blog.posts.destroy('123')
+        URI.parse(FakeWeb.last_request.path).query.split('&').should include("parent=#{blog.id}")
+      end
     end
 
     describe 'bulk persistence' do
