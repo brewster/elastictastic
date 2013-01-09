@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    elastictastic (0.10.7)
+    elastictastic (0.10.8)
       activemodel (~> 3.0)
       activesupport (~> 3.0)
       hashie
@@ -11,10 +11,10 @@ PATH
 GEM
   remote: http://rubygems.org/
   specs:
-    activemodel (3.2.9)
-      activesupport (= 3.2.9)
+    activemodel (3.2.11)
+      activesupport (= 3.2.11)
       builder (~> 3.0.0)
-    activesupport (3.2.9)
+    activesupport (3.2.11)
       i18n (~> 0.6)
       multi_json (~> 1.0)
     builder (3.0.4)
@@ -30,7 +30,7 @@ GEM
     rspec-core (2.12.2)
     rspec-expectations (2.12.1)
       diff-lcs (~> 1.1.3)
-    rspec-mocks (2.12.0)
+    rspec-mocks (2.12.1)
     yard (0.8.3)
 
 PLATFORMS
