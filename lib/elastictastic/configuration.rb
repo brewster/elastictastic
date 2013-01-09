@@ -68,7 +68,8 @@ module Elastictastic
       if url_from_env
         url_from_env.class.build(
           :host => url_from_env.host,
-          :port => url_from_env.port
+          :port => url_from_env.port,
+          :path => url_from_env.path
         )
       else
         'http://localhost:9200'
