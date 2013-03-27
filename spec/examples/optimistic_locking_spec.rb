@@ -113,6 +113,52 @@ describe Elastictastic::OptimisticLocking do
         end
       end # describe '::update'
 
+      describe '::update with multiple arguments' do
+        let(:last_update_request) do
+          FakeWeb.requests.reverse.find { |req| req.method == 'PUT' }
+        end
+
+        before do
+          stub_es_mget(
+            index,
+            'post',
+            '1' => {},
+            '2' => {}
+          )
+          stub_es_get(index, 'post', '2', { :title => 'Hey' }, 2)
+          stub_es_update(index, 'post', '1')
+          stub_request_json(
+            :put,
+            match_es_resource(index, 'post', '2'),
+            version_conflict,
+            generate_es_hit('post', :id => '2', :index => index, :version => 3)
+          )
+          scope.update('1', '2') do |post|
+            post.comments_count = 2
+          end
+        end
+
+        it 'should retry unsuccessful updates' do
+          FakeWeb.should have(5).requests # mget, update '1', update '2' (fail), get '2', update '2'
+        end
+
+        it 'should re-perform update on failed document' do
+          URI.parse(last_update_request.path).path.should == "/#{index}/post/2"
+        end
+
+        it 'should send data from latest version in persistence' do
+          Elastictastic.json_decode(last_update_request.body)['title'].should == 'Hey'
+        end
+
+        it 'should send data from update block' do
+          Elastictastic.json_decode(last_update_request.body)['comments_count'].should == 2
+        end
+
+        it 'should update with latest version' do
+          URI.parse(last_update_request.path).query.split('&').should include('version=2')
+        end
+      end # describe '::update with multiple requests'
+
       describe '::update_each' do
         let(:last_update_request) do
           FakeWeb.requests.reverse.find { |req| req.method == 'PUT' }
@@ -381,6 +427,46 @@ describe Elastictastic::OptimisticLocking do
 
         it 'should include updated data from block' do
           last_request_json['title'].should == 'hey'
+        end
+      end
+
+      context "with multiple arguments some of which exist" do
+        before do
+          stub_es_create('my_index', 'post', '1')
+          stub_request_json(
+            :put,
+            match_es_path('/my_index/post/2/_create'),
+            already_exists
+          )
+          stub_es_get('my_index', 'post', '2', :comments_count => 2)
+          stub_es_update('my_index', 'post', '2')
+          Post.in_index('my_index').create_or_update('1', '2') do |post|
+            post.title = "hey #{post.id}"
+          end
+        end
+
+        it 'should post to create endpoint for both documents' do
+          FakeWeb.requests.
+            should be_any { |request| request.path == '/my_index/post/1/_create' }
+          FakeWeb.requests.
+            should be_any { |request| request.path == '/my_index/post/2/_create' }
+        end
+
+        it 'should not send update request for successful create' do
+          FakeWeb.requests.
+            should_not be_any { |request| request.path == '/my_index/post/1?version=1' }
+        end
+
+        it 'should re-update existing data with correct version' do
+          last_request.path.should == '/my_index/post/2?version=1'
+        end
+
+        it 'should include data from storage' do
+          last_request_json['comments_count'].should == 2
+        end
+
+        it 'should include updated data from block' do
+          last_request_json['title'].should == 'hey 2'
         end
       end
     end

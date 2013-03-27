@@ -282,6 +282,19 @@ module Elastictastic
       end
     end
 
+    #
+    # @private
+    #
+    def find_many(ids, params = {})
+      docspec = ids.map do |id|
+        { '_id' => id }.merge!(params_for_find_many).
+          merge!(params.stringify_keys)
+      end
+      materialize_hits(
+        ::Elastictastic.client.mget(docspec, index, type)['docs']
+      ).map { |result, hit| result }
+    end
+
     def multi_get_params
       {
         '_type' => type,
@@ -378,16 +391,6 @@ module Elastictastic
       params = {:search_type => 'count'}
       params[:routing] = @routing if @routing
       self.counts = search(params)
-    end
-
-    def find_many(ids, params = {})
-      docspec = ids.map do |id|
-        { '_id' => id }.merge!(params_for_find_many).
-          merge!(params.stringify_keys)
-      end
-      materialize_hits(
-        ::Elastictastic.client.mget(docspec, index, type)['docs']
-      ).map { |result, hit| result }
     end
 
     def params_for_find_one
