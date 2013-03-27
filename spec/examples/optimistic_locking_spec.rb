@@ -499,4 +499,44 @@ describe Elastictastic::OptimisticLocking do
       end
     end
   end
+
+  describe '::update_or_create' do
+    let(:scope) { Post }
+
+    before do
+      stub_es_mget(
+        'default', 'post',
+        '1' => {title: 'Post 1'},
+        '2' => nil
+      )
+      stub_es_update('default', 'post', '1')
+      stub_es_create('default', 'post', '2')
+      scope.update_or_create('1', '2') do |post|
+        post.comments_count = 1
+      end
+    end
+
+    let :create_request do
+      FakeWeb.requests.
+        find { |request| request.path == "/default/post/2/_create" }
+    end
+
+    let :update_request do
+      FakeWeb.requests.
+        find { |request| request.path =~ %r(^/default/post/1\??) }
+    end
+
+    it 'should not send any extraneous requests' do
+      FakeWeb.should have(3).requests # multiget, create, update
+    end
+
+    it 'should send create request for nonexistent document' do
+      create_request.should be
+    end
+
+    it 'should send update request for existent document' do
+      update_request.should be
+    end
+  end
+
 end

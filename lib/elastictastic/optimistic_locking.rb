@@ -30,19 +30,30 @@ module Elastictastic
       end
 
       def update(*ids, &block)
-        case ids.length
-        when 0 then return
-        when 1
-          id = ids.first
-          instance = scoped({}).find_one(id, :preference => '_primary_first')
-          return unless instance
-          instances = [instance]
-        else
-          instances = scoped({}).find_many(ids, :preference => '_primary_first')
+        [].tap do |found|
+          case ids.length
+          when 0 then return
+          when 1
+            id = ids.first
+            instance = scoped({}).find_one(id, :preference => '_primary_first')
+            return unless instance
+            found << id
+            instances = [instance]
+          else
+            instances = scoped({}).
+              find_many(ids, :preference => '_primary_first')
+            found.concat(instances.map { |instance| instance.id })
+          end
+          instances.each do |instance|
+            instance.try_update(current_scope, &block)
+          end
         end
-        instances.each do |instance|
-          instance.try_update(current_scope, &block)
-        end
+      end
+
+      def update_or_create(*ids, &block)
+        updated_ids = update(*ids, &block)
+        create_ids = ids - updated_ids
+        create_or_update(*create_ids, &block) if create_ids.any?
       end
 
       def update_each(&block)
