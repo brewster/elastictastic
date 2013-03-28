@@ -36,9 +36,12 @@ module Elastictastic
           when 1
             id = ids.first
             instance = scoped({}).find_one(id, :preference => '_primary_first')
-            return unless instance
-            found << id
-            instances = [instance]
+            if instance
+              found << id
+              instances = [instance]
+            else
+              instances = []
+            end
           else
             instances = scoped({}).
               find_many(ids, :preference => '_primary_first')
