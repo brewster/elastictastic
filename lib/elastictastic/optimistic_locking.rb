@@ -32,16 +32,13 @@ module Elastictastic
       def update(*ids, &block)
         [].tap do |found|
           case ids.length
-          when 0 then return
+          when 0 then return []
           when 1
             id = ids.first
             instance = scoped({}).find_one(id, :preference => '_primary_first')
-            if instance
-              found << id
-              instances = [instance]
-            else
-              instances = []
-            end
+            return [] unless instance
+            found << id
+            instances = [instance]
           else
             instances = scoped({}).
               find_many(ids, :preference => '_primary_first')
