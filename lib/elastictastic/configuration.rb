@@ -78,14 +78,10 @@ module Elastictastic
 
     def url_from_env
       return @url_from_env if defined? @url_from_env
-      @url_from_env = 
+      @url_from_env =
         if ENV['ELASTICSEARCH_URL']
           URI.parse(ENV['ELASTICSEARCH_URL'])
         end
-    end
-
-    ActiveModel::Observing::ClassMethods.public_instance_methods(false).each do |method|
-      delegate method, :to => :"::Elastictastic::Observing"
     end
   end
 end

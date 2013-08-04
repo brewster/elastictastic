@@ -32,8 +32,6 @@ module Elastictastic
   autoload :Document, 'elastictastic/document'
   autoload :MassAssignmentSecurity, 'elastictastic/mass_assignment_security'
   autoload :NestedCollectionProxy, 'elastictastic/nested_collection_proxy'
-  autoload :Observer, 'elastictastic/observer'
-  autoload :Observing, 'elastictastic/observing'
   autoload :ParentChild, 'elastictastic/parent_child'
   autoload :Rotor, 'elastictastic/rotor'
   autoload :TestHelpers, 'elastictastic/test_helpers'

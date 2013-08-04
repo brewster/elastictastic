@@ -21,10 +21,6 @@ class Post
 
   validates :title, :exclusion => %w(INVALID)
 
-  def observers_that_ran
-    @observers_that_ran ||= Set[]
-  end
-
   def self.search_keywords(keywords)
     query do
       query_string do
