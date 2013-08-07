@@ -198,4 +198,5 @@ module Elastictastic
   end
 end
 
+
 require 'elastictastic/railtie' if defined? Rails

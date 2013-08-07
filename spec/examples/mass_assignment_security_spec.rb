@@ -1,6 +1,6 @@
 require File.expand_path('../spec_helper', __FILE__)
 
-describe Elastictastic::MassAssignmentSecurity do
+describe Elastictastic::MassAssignmentSecurity, compatibility: :active_model_4 do
   let(:post) { Post.new(:title => 'hey guy', :comments_count => 3) }
 
   it 'should allow allowed attributes' do

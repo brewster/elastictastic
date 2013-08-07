@@ -17,7 +17,9 @@ class Post
 
   belongs_to :blog
 
-  attr_accessible :title
+  if defined? attr_accessible
+    attr_accessible :title
+  end
 
   validates :title, :exclusion => %w(INVALID)
 

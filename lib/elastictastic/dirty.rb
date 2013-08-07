@@ -19,7 +19,7 @@ module Elastictastic
 
       private
 
-      # 
+      #
       # We have to rewrite ActiveModel functionality here because in Rails 3.0,
       # #define_attribute_methods has to be called exactly one time, and there's
       # no place for us to do that. This appears to be fixed in ActiveModel 3.1
