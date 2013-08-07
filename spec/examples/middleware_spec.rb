@@ -21,12 +21,12 @@ describe Elastictastic::Middleware::LogRequests do
   it 'should log get requests to logger' do
     FakeWeb.register_uri(:get, "http://localhost:9200/default/post/1", :body => '{}')
     client.get('default', 'post', '1')
-    io.string.should == "ElasticSearch GET (3ms) /default/post/1\n"
+    io.string.should include "ElasticSearch GET (3ms) /default/post/1\n"
   end
 
   it 'should log body of POST requests to logger' do
     stub_es_create('default', 'post')
     client.create('default', 'post', nil, {})
-    io.string.should == "ElasticSearch POST (3ms) /default/post {}\n"
+    io.string.should include "ElasticSearch POST (3ms) /default/post {}\n"
   end
 end

@@ -5,7 +5,6 @@ module Elastictastic
     included do
       include BasicDocument
       include Callbacks
-      include Observing
       include Dirty
       include MassAssignmentSecurity
       include Validations

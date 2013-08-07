@@ -22,14 +22,5 @@ module Elastictastic
       require 'elastictastic/new_relic_instrumentation' if defined? NewRelic
     end
 
-    initializer "elastictastic.instantiate_observers" do
-      config.after_initialize do
-        ::Elastictastic::Observing.instantiate_observers
-
-        ActionDispatch::Callbacks.to_prepare do
-          ::Elastictastic::Observing.instantiate_observers
-        end
-      end
-    end
   end
 end

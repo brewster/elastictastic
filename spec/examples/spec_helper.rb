@@ -12,4 +12,6 @@ RSpec.configure do |config|
     FakeWeb.requests.clear
     FakeWeb.clean_registry
   end
+
+  config.filter_run_excluding compatibility: :active_model_4
 end

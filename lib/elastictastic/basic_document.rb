@@ -3,7 +3,7 @@ module Elastictastic
   # The top-level module mixed in to classes which will be mapped as
   # ElasticSearch documents. Note that most people will want to use the Document
   # mixin, which extends BasicDocument with ActiveModel functionality such as
-  # validations, lifecycle hooks, observers, mass-assignment security, etc. The
+  # validations, lifecycle hooks, mass-assignment security, etc. The
   # BasicDocument module is exposed directly for those who wish to avoid the
   # performance penalty associated with ActiveModel functionality, or those who
   # wish to only mix in the ActiveModel modules they need.
