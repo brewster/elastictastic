@@ -9,6 +9,8 @@ module Elastictastic
       @operations = []
       @operations_by_id = {}
       @auto_flush = options.delete(:auto_flush)
+      @auto_flush_size = options.delete(:auto_flush_bytes)
+      @current_bulk_size = 0
     end
 
     def create(instance, params = {}, &block)
@@ -94,6 +96,7 @@ module Elastictastic
         operation = operations[i]
         operation.handler.call(op_response) if operation.handler
       end
+      @current_bulk_size = 0
       response
     end
 
@@ -126,7 +129,8 @@ module Elastictastic
       end
       @operations << operation = Operation.new(id, commands, block)
       @operations_by_id[document_id] = operation
-      flush if @auto_flush && @operations.length >= @auto_flush
+      commands.each { |command| @current_bulk_size += Elastictastic.json_encode(command).bytesize }
+      flush if (@auto_flush && @operations.length >= @auto_flush) || (@auto_flush_size && @current_bulk_size >= @auto_flush_size)
     end
   end
 end

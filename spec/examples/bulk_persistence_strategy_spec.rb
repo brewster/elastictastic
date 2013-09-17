@@ -269,6 +269,89 @@ describe Elastictastic::BulkPersistenceStrategy do
     end
   end
 
+  describe 'with :auto_flush_bytes specified' do
+    context "when the flush size is smaller than one item" do
+      before do
+        responses = Array.new(3) do
+          { 'create' => generate_es_hit('post').except('_source').merge('ok' => true) }
+        end.each_slice(1).map { |slice| { 'items' => slice } }
+        stub_request_json(
+          :post,
+          match_es_path('/_bulk'),
+          *responses
+        )
+        Elastictastic.bulk(:auto_flush_bytes => 47) { 3.times { Post.new.save } }
+      end
+
+      it 'should perform 3 requests' do
+        FakeWeb.should have(3).requests
+      end
+    end
+
+    context "when the flush size is exactly than one item" do
+      before do
+        responses = Array.new(3) do
+          { 'create' => generate_es_hit('post').except('_source').merge('ok' => true) }
+        end.each_slice(1).map { |slice| { 'items' => slice } }
+        stub_request_json(
+          :post,
+          match_es_path('/_bulk'),
+          *responses
+        )
+        Elastictastic.bulk(:auto_flush_bytes => 48) { 3.times { Post.new.save } }
+      end
+
+      it 'should perform 3 requests' do
+        FakeWeb.should have(3).requests
+      end
+    end
+    context "when the flush size causes two requests to be batched" do
+      before do
+        responses = Array.new(3) do
+          { 'create' => generate_es_hit('post').except('_source').merge('ok' => true) }
+        end.each_slice(2).map { |slice| { 'items' => slice } }
+        stub_request_json(
+          :post,
+          match_es_path('/_bulk'),
+          *responses
+        )
+        Elastictastic.bulk(:auto_flush_bytes => 49) { 3.times { Post.new.save } }
+      end
+
+      it 'should perform 2 requests' do
+        FakeWeb.should have(2).requests
+      end
+
+      it 'should flush at the right time' do
+        FakeWeb.requests.first.body.split("\n").should have(4).items
+        FakeWeb.requests.last.body.split("\n").should have(2).items
+      end
+    end
+    context "when the flush size causes all requests to be batched" do
+      before do
+        responses = Array.new(3) do
+          { 'create' => generate_es_hit('post').except('_source').merge('ok' => true) }
+        end.each_slice(2).map { |slice| { 'items' => slice } }
+        stub_request_json(
+          :post,
+          match_es_path('/_bulk'),
+          *responses
+        )
+        Elastictastic.bulk(:auto_flush_bytes => (48*3)+1) { 3.times { Post.new.save } }
+      end
+
+      it 'should perform 1 request' do
+        FakeWeb.should have(1).requests
+      end
+
+      it 'should flush at the right time' do
+        FakeWeb.requests.first.body.split("\n").should have(6).items
+      end
+    end
+
+
+  end
+
   describe 'multiple operations on the same document' do
     let(:post) do
       Post.new.tap do |post|
