@@ -315,6 +315,19 @@ end
 The above will perform two bulk requests: the first after the first 100
 operations, and the second when the block completes.
 
+You can alternatively pass an `:auto_flush_bytes` option to flush the bulk buffer
+after it reaches the specified number of bytes:
+
+```ruby
+Elastictastic.bulk(:auto_flush_bytes => 48 * 100) do
+  150.times { Post.new.save! }
+end
+```
+
+Assuming, as in the specs in this project. that 'Post.new.save!' sends a
+48-byte operation to Elastic Search, this will cause two batches of requests:
+one with 100 Posts, and one with 50.
+
 Note that the nature of bulk writes means that any operation inside a bulk block
 is essentially asynchronous: instances are not created, updated, or destroyed
 immediately upon calling `save` or `destroy`, but rather when the bulk block
