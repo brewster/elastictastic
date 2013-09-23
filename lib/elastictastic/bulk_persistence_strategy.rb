@@ -86,9 +86,7 @@ module Elastictastic
       @operations.clear
 
       operations.each do |operation|
-        operation.commands.each do |command|
-          io.puts Elastictastic.json_encode(command)
-        end
+        io.puts operation.commands
       end
       response = Elastictastic.client.bulk(io.string, params)
 
@@ -127,9 +125,16 @@ module Elastictastic
       if id && @operations_by_id.key?(document_id)
         @operations_by_id[document_id].skip = true
       end
-      @operations << operation = Operation.new(id, commands, block)
+
+      json_commands = commands.map do |command|
+        json = Elastictastic.json_encode(command)
+        @current_bulk_size += json.bytesize
+        json
+      end
+
+      @operations << operation = Operation.new(id, json_commands, block)
       @operations_by_id[document_id] = operation
-      commands.each { |command| @current_bulk_size += Elastictastic.json_encode(command).bytesize }
+
       flush if (@auto_flush && @operations.length >= @auto_flush) || (@auto_flush_size && @current_bulk_size >= @auto_flush_size)
     end
   end
