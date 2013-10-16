@@ -2,7 +2,7 @@ module Elastictastic
   class Configuration
 
     attr_writer :hosts, :default_index, :auto_refresh, :default_batch_size, :adapter
-    attr_accessor :logger, :connect_timeout, :request_timeout, :backoff_threshold, :backoff_start, :backoff_max
+    attr_accessor :logger, :connect_timeout, :request_timeout, :write_timeout, :backoff_threshold, :backoff_start, :backoff_max
     attr_reader :extra_middlewares
 
     def initialize

@@ -5,6 +5,7 @@ module Elastictastic
     def initialize(config)
       adapter_options = {
         :request_timeout => config.request_timeout,
+        :write_timeout => config.write_timeout,
         :connect_timeout => config.connect_timeout
       }
       if config.hosts.length == 1
