@@ -19,6 +19,7 @@ module Elastictastic
     def initialize(host, options = {})
       @host = host
       @request_timeout = options[:request_timeout]
+      @write_timeout = options[:write_timeout] || options[:request_timeout]
       @connect_timeout = options[:connect_timeout]
     end
 
@@ -84,7 +85,8 @@ module Elastictastic
     def connection_params
       @connection_params ||= {}.tap do |params|
         if @request_timeout
-          params[:read_timeout] = params[:write_timeout] = @request_timeout
+          params[:read_timeout] = @request_timeout
+          params[:write_timeout] = @write_timeout
         end
         if @connect_timeout
           params[:connect_timeout] = @connect_timeout
