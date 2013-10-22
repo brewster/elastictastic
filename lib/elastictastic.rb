@@ -1,6 +1,8 @@
 require 'active_support/core_ext'
 require 'active_model'
 
+require 'elastictastic/enumerable'
+
 require 'elastictastic/adapter'
 require 'elastictastic/basic_document'
 require 'elastictastic/errors'
