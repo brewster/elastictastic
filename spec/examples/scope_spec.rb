@@ -28,6 +28,10 @@ describe Elastictastic::Scope do
       it 'should return all contact documents' do
         scope.map { |doc| doc.id }.should == %w(1 2 3)
       end
+      
+      it 'should return an enumerable when no block is passed' do
+        scope.each.should be_a Enumerable
+      end
 
       it 'should mark contact documents persisted' do
         scope.each { |doc| doc.should be_persisted }

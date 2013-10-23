@@ -22,7 +22,11 @@ module Elastictastic
       if ::Kernel.block_given?
         find_each { |result, hit| yield result }
       else
-        ::Enumerator.new(self, :each)
+        ::Enumerator.new do |y|
+          self.each do |val|
+            y.yield val
+          end
+        end
       end
     end
 
@@ -414,11 +418,20 @@ module Elastictastic
         end
       end
     end
-
     def materialize_hits(hits)
       unless ::Kernel.block_given?
-        return ::Enumerator.new(self, :materialize_hits, hits)
+        # TODO: This is a hack to avoid using to_enum, which seems to have some subclassing issues (tries to call :materialize_hit on a generic Class)
+        #return ::Enumerator.new(self, :materialize_hits, hits)
+        
+        return ::Enumerator.new do |y|
+          hits.each do |hit|
+            unless hit['exists'] == false
+              y.yield materialize_hit(hit), ::Hashie::Mash.new(hit)
+            end
+          end
+        end
       end
+      
       hits.each do |hit|
         unless hit['exists'] == false
           yield materialize_hit(hit), ::Hashie::Mash.new(hit)
