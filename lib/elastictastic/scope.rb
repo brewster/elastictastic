@@ -2,7 +2,7 @@ require 'hashie'
 require 'elastictastic/search'
 
 module Elastictastic
-  class Scope < EnumerableObject
+  class Scope < BasicObject
     attr_reader :clazz, :index
 
     def initialize(index, clazz, search = Search.new, parent = nil, routing = nil)
@@ -22,7 +22,7 @@ module Elastictastic
       if ::Kernel.block_given?
         find_each { |result, hit| yield result }
       else
-        to_enum
+        ::Enumerator.new(self, :each)
       end
     end
 
@@ -417,10 +417,8 @@ module Elastictastic
 
     def materialize_hits(hits)
       unless ::Kernel.block_given?
-        # TODO: This is a hack to avoid using to_enum, which seems to have some subclassing issues (tries to call :materialize_hit on a generic Class)
-        return hits.select { |h| h['exists'] != false }.collect { |h| [materialize_hit(h), ::Hashie::Mash.new(h)] }
+        return ::Enumerator.new(self, :materialize_hits, hits)
       end
-
       hits.each do |hit|
         unless hit['exists'] == false
           yield materialize_hit(hit), ::Hashie::Mash.new(hit)
