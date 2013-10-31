@@ -22,7 +22,11 @@ module Elastictastic
       if ::Kernel.block_given?
         find_each { |result, hit| yield result }
       else
-        ::Enumerator.new(self, :each)
+        ::Enumerator.new do |yielder|
+          self.each do |*vals|
+            yielder.yield(*vals)
+          end
+        end
       end
     end
 
@@ -53,7 +57,11 @@ module Elastictastic
       if block
         find_in_batches(batch_options) { |batch| batch.each(&block) }
       else
-        ::Enumerator.new(self, :find_each, batch_options)
+        ::Enumerator.new do |yielder|
+          self.find_each(batch_options) do |*vals|
+            yielder.yield(*vals)
+          end
+        end
       end
     end
 
@@ -72,7 +80,12 @@ module Elastictastic
     # @return [Enumerator] An enumerator that yields batches, if no block is passed.
     #
     def find_in_batches(batch_options = {}, &block)
-      return ::Enumerator.new(self, :find_in_batches, batch_options) unless block
+      return ::Enumerator.new do |yielder|
+        self.find_in_batches(batch_options) do |*vals|
+          yielder.yield(*vals)
+        end
+      end unless block
+
       if params.key?('size') || params.key?('from')
         yield search_all
       elsif params.key?('sort') || params.key('facets')
@@ -417,7 +430,11 @@ module Elastictastic
 
     def materialize_hits(hits)
       unless ::Kernel.block_given?
-        return ::Enumerator.new(self, :materialize_hits, hits)
+        return ::Enumerator.new do |yielder|
+          self.__send__(:materialize_hits, hits) do |*vals|
+            yielder.yield(*vals)
+          end
+        end
       end
       hits.each do |hit|
         unless hit['exists'] == false

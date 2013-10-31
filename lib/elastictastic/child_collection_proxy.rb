@@ -33,7 +33,11 @@ module Elastictastic
         super if @parent.persisted?
         transient_children.each(&block)
       else
-        ::Enumerator.new(self, :each)
+        ::Enumerator.new do |yielder|
+          self.each do |val|
+            yielder.yield val
+          end
+        end
       end
     end
 
