@@ -36,6 +36,7 @@ module Elastictastic
 
     def create(index, type, id, doc, params = {})
       if id
+        id = Util.urlencode(id)
         @connection.put(
           path_with_query("/#{index}/#{type}/#{id}/_create", params),
           doc
@@ -49,6 +50,7 @@ module Elastictastic
     end
 
     def update(index, type, id, doc, params = {})
+      id = Util.urlencode(id)
       @connection.put(
         path_with_query("/#{index}/#{type}/#{id}", params),
         doc
@@ -60,12 +62,14 @@ module Elastictastic
     end
 
     def exists?(index, type, id, params = {})
+      id = Util.urlencode(id)
       @connection.head(
         path_with_query("/#{index}/#{type}/#{id}", params)
       ).status == 200
     end
 
     def get(index, type, id, params = {})
+      id = Util.urlencode(id)
       @connection.get(
         path_with_query("/#{index}/#{type}/#{id}", params)
       ).body
@@ -107,7 +111,7 @@ module Elastictastic
 
     def delete(index = nil, type = nil, id = nil, params = {})
       path =
-        if id then "/#{index}/#{type}/#{id}"
+        if id then "/#{index}/#{type}/#{Util.urlencode(id)}"
         elsif type then "/#{index}/#{type}"
         elsif index then "/#{index}"
         else "/"

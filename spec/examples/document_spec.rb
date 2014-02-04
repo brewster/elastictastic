@@ -55,7 +55,8 @@ describe Elastictastic::Document do
     end
 
     context 'new object with ID' do
-      let(:post) { Post.new.tap { |post| post.id = '123' }}
+      let(:post) { Post.new.tap { |post| post.id = post_id }}
+      let(:post_id) { '123' }
 
       context 'with unique id' do
         before do
@@ -77,6 +78,18 @@ describe Elastictastic::Document do
 
         it 'should send document in body' do
           last_request.body.should == Elastictastic.json_encode(post.elasticsearch_doc)
+        end
+
+        context 'when the ID is special' do
+          let(:post_id) { '123/1' }
+
+          it 'should send PUT request' do
+            last_request.method.should == 'PUT'
+          end
+
+          it 'should send request to _create verb for document resource with URL encoding' do
+            last_request.path.should == '/default/post/123%2F1/_create'
+          end
         end
       end # context 'with unique ID'
 

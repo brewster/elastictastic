@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    elastictastic (0.12.1)
+    elastictastic (0.12.3)
       activemodel (~> 3.0)
       activesupport (~> 3.0)
       hashie
@@ -11,18 +11,18 @@ PATH
 GEM
   remote: https://rubygems.org/
   specs:
-    activemodel (3.2.12)
-      activesupport (= 3.2.12)
+    activemodel (3.2.16)
+      activesupport (= 3.2.16)
       builder (~> 3.0.0)
-    activesupport (3.2.12)
-      i18n (~> 0.6)
+    activesupport (3.2.16)
+      i18n (~> 0.6, >= 0.6.4)
       multi_json (~> 1.0)
     builder (3.0.4)
     diff-lcs (1.2.1)
     fakeweb (1.3.0)
-    hashie (2.0.3)
-    i18n (0.6.4)
-    multi_json (1.7.2)
+    hashie (2.0.5)
+    i18n (0.6.9)
+    multi_json (1.8.4)
     rspec (2.13.0)
       rspec-core (~> 2.13.0)
       rspec-expectations (~> 2.13.0)

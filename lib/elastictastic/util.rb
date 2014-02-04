@@ -1,6 +1,12 @@
+require 'open-uri'
+
 module Elastictastic
   module Util
     extend self
+
+    def urlencode(string)
+      URI::encode(string.to_s).gsub('/', '%2F')
+    end
 
     def deep_stringify(hash)
       {}.tap do |stringified|
