@@ -191,7 +191,7 @@ describe Elastictastic::BulkPersistenceStrategy do
 
     it 'should send destroy' do
       bulk_requests.should == [
-        { 'delete' => { '_index' => 'default', '_type' => 'post', '_id' => '123', '_version' => 1 }}
+        { 'delete' => { '_index' => 'default', '_type' => 'post', '_id' => '123'}}
       ]
     end
 
@@ -376,7 +376,7 @@ describe Elastictastic::BulkPersistenceStrategy do
     end
 
     it 'should send last operation for each document' do
-      bulk_requests.last.should ==  { 'delete' => generate_es_hit('post', :id => '1').except('_source') }
+      bulk_requests.last.should ==  { 'delete' => generate_es_hit('post', :id => '1').except('_source', '_version') }
     end
   end
 
