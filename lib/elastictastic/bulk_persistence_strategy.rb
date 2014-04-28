@@ -58,7 +58,7 @@ module Elastictastic
     def destroy(instance, &block)
       block ||= DEFAULT_HANDLER
       instance.pending_destroy!
-      add(instance.index, instance.id, :delete => bulk_identifier_for_instance(instance)) do |response|
+      add(instance.index, instance.id, :delete => bulk_identifier_for_instance!(instance)) do |response|
         if response['delete']['error']
           block.call(ServerError[response['delete']['error']])
         else
@@ -109,6 +109,12 @@ module Elastictastic
         instance._parent_id,
         instance.version
       )
+    end
+
+    def bulk_identifier_for_instance!(instance)
+      identifier = bulk_identifier_for_instance(instance)
+      identifier.delete('_version')
+      identifier
     end
 
     def bulk_identifier(index, type, id, routing, parent_id, version)
