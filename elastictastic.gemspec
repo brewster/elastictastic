@@ -27,5 +27,6 @@ DESC
   s.add_development_dependency 'rspec', '~> 2.0'
   s.add_development_dependency 'fakeweb', '~> 1.3'
   s.add_development_dependency 'yard', '~> 0.6'
+  s.add_development_dependency 'byebug'
   s.requirements << 'ElasticSearch'
 end
