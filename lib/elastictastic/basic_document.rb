@@ -113,7 +113,7 @@ module Elastictastic
       delegate :find, :destroy, :destroy_all, :sync_mapping, :inspect,
                :find_each, :find_in_batches, :first, :count, :empty?, :any?,
                :all, :query, :filter, :from, :size, :sort, :highlight, :fields,
-               :script_fields, :preference, :facets, :routing,
+               :script_fields, :preference, :facets, :routing, :_source,
                :to => :current_scope
 
       attr_writer :default_index
