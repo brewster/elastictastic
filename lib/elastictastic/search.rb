@@ -1,9 +1,9 @@
 module Elastictastic
   class Search
     KEYS = %w(query filter from size sort highlight fields script_fields
-              preference facets)
+              preference facets _source)
 
-    attr_reader :sort, :from, :size, :fields, :script_fields, :preference, :facets
+    attr_reader :sort, :from, :size, :fields, :script_fields, :preference, :facets, :_source
     delegate :[], :to => :params
 
     def initialize(params = {})
@@ -22,6 +22,7 @@ module Elastictastic
       @script_fields = params.delete('script_fields')
       @preference = params.delete('preference')
       @facets = params.delete('facets')
+      @_source = Util.ensure_array(params.delete('_source'))
     end
 
     def initialize_copy(other)
@@ -33,6 +34,7 @@ module Elastictastic
       @fields = other.fields.dup if other.fields
       @script_fields = deep_copy(other.script_fields)
       @facets = deep_copy(other.facets)
+      @_source = other._source.dup if other._source
     end
 
     def params
@@ -47,6 +49,7 @@ module Elastictastic
         params['script_fields'] = script_fields
         params['preference'] = preference
         params['facets'] = facets
+        params['_source'] = maybe_array(_source)
         params.reject! { |k, v| v.blank? }
       end
     end
@@ -103,6 +106,7 @@ module Elastictastic
       @script_fields = combine(@script_fields, other.script_fields)
       @preference = other.preference || @preference
       @facets = combine(@facets, other.facets)
+      @_source = combine(@_source, other._source)
       self
     end
 
