@@ -15,6 +15,7 @@ describe Elastictastic::Search do
       'from' => 10,
       'sort' => { 'created_at' => 'desc' },
       'highlight' => { 'fields' => { 'body' => {}}},
+      '_source' => %w(title body),
       'fields' => %w(title body),
       'script_fields' => { 'rtitle' => { 'script' => "_source.title.reverse()" }},
       'preference' => '_local',
