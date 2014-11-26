@@ -47,7 +47,6 @@ module Elastictastic
         params['highlight'] = highlight
         params['fields'] = maybe_array(fields)
         params['script_fields'] = script_fields
-        params['preference'] = preference
         params['facets'] = facets
         params['_source'] = maybe_array(_source)
         params.reject! { |k, v| v.blank? }

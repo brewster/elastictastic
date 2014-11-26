@@ -18,7 +18,6 @@ describe Elastictastic::Search do
       '_source' => %w(title body),
       'fields' => %w(title body),
       'script_fields' => { 'rtitle' => { 'script' => "_source.title.reverse()" }},
-      'preference' => '_local',
       'facets' => { 'tags' => { 'terms' => { 'field' => 'tags' }}}
     }.each_pair do |method, value|
       it "should build scope for #{method} param" do
@@ -325,12 +324,7 @@ describe Elastictastic::Search do
         'script_fields' => { 'test1' => { 'script' => '1' }, 'test2' => { 'script' => '2' }}
       }
     end
-
-    it 'should overwrite chained preference' do
-      scope.preference('_local').preference('_primary').params.should ==
-        { 'preference' => '_primary' }
-    end
-
+    
     it 'should merge facets' do
       scope = self.scope.facets(:title => { :terms => { :field => 'title' }})
       scope = scope.facets(:tags => { :terms => { :field => 'tags' }})
