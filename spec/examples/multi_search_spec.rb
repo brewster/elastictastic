@@ -16,7 +16,8 @@ describe Elastictastic::MultiSearch do
       [
         Post.query(:query_string => { :query => 'pizza' }).size(10),
         Blog.in_index('my_index').query(:term => { 'name' => 'Pasta' }).size(10),
-        Photo.routing('7').query(:query_string => {:query => 'pizza'}).size(10)
+        Photo.routing('7').query(:query_string => {:query => 'pizza'}).size(10),
+        Photo.preference('_primary').query(:query_string => {:query => 'pizza'}).size(10)
       ]
     end
 
@@ -24,6 +25,7 @@ describe Elastictastic::MultiSearch do
       stub_es_msearch(
         Array.new(3) { |i| generate_es_hit('post', :source => { 'title' => "post #{i}" }) },
         Array.new(5) { |i| generate_es_hit('blog', :source => { 'name' => "blog #{i}" }) },
+        Array.new(2) { |i| generate_es_hit('photo', :source => { 'caption' => "photo #{i}" }) },
         Array.new(2) { |i| generate_es_hit('photo', :source => { 'caption' => "photo #{i}" }) }
       )
       Elastictastic::MultiSearch.query(scopes)
@@ -33,11 +35,13 @@ describe Elastictastic::MultiSearch do
       request_components[0].should == { 'index' => 'default', 'type' => 'post', 'search_type' => 'query_then_fetch' }
       request_components[2].should == { 'index' => 'my_index', 'type' => 'blog', 'search_type' => 'query_then_fetch' }
       request_components[4].should == { 'index' => 'default', 'type' => 'photo', 'search_type' => 'query_then_fetch', 'routing' => '7' }
+      request_components[6].should == { 'index' => 'default', 'type' => 'photo', 'search_type' => 'query_then_fetch', 'preference' => '_primary' }
     end
 
     it 'should send correct scope params' do
       request_components[1].should == scopes[0].params
       request_components[3].should == scopes[1].params
+      request_components[5].should == scopes[2].params
       request_components[5].should == scopes[2].params
     end
 

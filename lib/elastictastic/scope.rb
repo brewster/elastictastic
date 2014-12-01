@@ -326,6 +326,7 @@ module Elastictastic
     def multi_search_headers
       {'type' => type, 'index' => @index.name}.tap do |params|
         params['routing'] = @routing if @routing
+        params['preference'] = @search.preference if @search.preference
       end
     end
 
@@ -357,6 +358,7 @@ module Elastictastic
       return @materialized_hits if defined? @materialized_hits
       search_params = {:search_type => 'query_then_fetch'}
       search_params[:routing] = @routing if @routing
+      search_params[:preference] = @search.preference if @search.preference
       self.response = search(search_params)
       @materialized_hits
     end
@@ -368,7 +370,8 @@ module Elastictastic
         scope = scope_with_size.from(from)
         params = {:search_type => 'query_then_fetch'}
         params[:routing] = @routing if @routing
-        response = scope.search(params)
+        params[:preference] = @search.preference if @search.preference
+        response= scope.search(params)
         self.counts = response
         yield materialize_hits(response['hits']['hits'])
         from += size
@@ -383,6 +386,8 @@ module Elastictastic
         :size => batch_options[:batch_size] || ::Elastictastic.config.default_batch_size
       }
       scroll_options[:routing] = @routing if @routing
+      scroll_options[:preference] = @search.preference if @search.preference
+
       scan_response = ::Elastictastic.client.search(
         @index,
         @clazz.type,
@@ -403,6 +408,7 @@ module Elastictastic
     def populate_counts
       params = {:search_type => 'count'}
       params[:routing] = @routing if @routing
+      params[:preference] = @search.preference if @search.preference
       self.counts = search(params)
     end
 

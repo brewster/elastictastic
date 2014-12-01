@@ -218,6 +218,38 @@ describe Elastictastic::Scope do
         end
       end
     end
+
+    describe 'with preference' do
+      it 'should send preference param in single-search query' do
+        stub_es_search(
+            'default', 'post',
+            'hits' => {'total' => 2, 'hits' => make_hits(2)}
+        )
+        Post.preference('_primary').size(10).to_a
+        last_request_uri.query.split('&').should include('preference=_primary')
+      end
+
+      it 'should send routing param in scan query' do
+        stub_es_scan(
+            'default', 'post', 2, *make_hits(3)
+        )
+        Post.preference('_primary').to_a
+        URI.parse(FakeWeb.requests.first.path).query.split('&').
+            should include('preference=_primary')
+      end
+
+      it 'should send routing param in batch-search queries' do
+        Elastictastic.config.default_batch_size = 2
+        stub_es_search(
+            'default', 'post',
+            make_hits(3).each_slice(2).map { |batch| { 'hits' => { 'hits' => batch, 'total' => 3 }} }
+        )
+        Post.preference('_primary').sort(:score).to_a
+        FakeWeb.requests.each do |request|
+          URI.parse(request.path).query.split('&').should include('preference=_primary')
+        end
+      end
+    end
   end # describe '#each'
 
   describe 'hit metadata' do
