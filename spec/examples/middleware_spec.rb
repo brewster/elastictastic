@@ -29,4 +29,54 @@ describe Elastictastic::Middleware::LogRequests do
     client.create('default', 'post', nil, {})
     io.string.should == "ElasticSearch POST (3ms) /default/post {}\n"
   end
+
+  context "error is raied" do
+
+    let(:query_hash) do
+      {
+          "query" => {
+            "match_all" => {}
+        }
+      }
+    end
+
+    let(:error_hash) do
+      {
+        "error" => "SearchPhaseExecutionException[Failed to execute phase [query]...",
+        "status" => 400
+      }
+    end
+
+    before do
+      FakeWeb.register_uri(:post, "http://localhost:9200/default/post/_search?", :body => error_hash.to_json)
+    end
+
+    subject do
+      client.search("default", "post", query_hash)
+    end
+
+    it 'should generate error from ElasticSearch response body' do
+      expect { subject }.to raise_error { |error|
+        error.should be_a(Elastictastic::ServerError::SearchPhaseExecutionException)
+      }
+    end
+
+    it 'should attach response status' do
+      expect { subject }.to raise_error { |error|
+        error.status.should eq(400)
+      }
+    end
+
+    it 'should attach request path' do
+      expect { subject }.to raise_error { |error|
+        error.request_path.should eq("/default/post/_search?")
+      }
+    end
+
+    it 'should attach request body' do
+      expect { subject }.to raise_error { |error|
+        error.request_body.should eq(query_hash)
+      }
+    end
+  end
 end
