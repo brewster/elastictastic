@@ -4,7 +4,7 @@ module Elastictastic
     NESTED_PATTERN = /^.*nested:\s+(.*)$/
 
     class ServerError < Elastictastic::Error
-      attr_accessor :status
+      attr_accessor :status, :request_path, :request_body
     end
 
     class <<self
@@ -14,15 +14,17 @@ module Elastictastic
         end
       end
 
-      def [](server_message, status = nil)
+      def [](server_message, status = nil, path = nil, body = nil)
         match = ERROR_PATTERN.match(server_message)
         if match
           if (nested_match = NESTED_PATTERN.match(match[2]))
-            return self[nested_match[1], status]
+            return self[nested_match[1], status, path, body]
           else
             clazz = Elastictastic::ServerError.const_get(match[1])
             error = clazz.new(match[2])
             error.status = status
+            error.request_path = path
+            error.request_body = body
             error
           end
         else

@@ -60,10 +60,10 @@ module Elastictastic
               raise Elastictastic::ServerError::ServerError,
                 "No body in ElasticSearch response with status #{env[:status]}"
             elsif response.body['error']
-              raise_error(response.body['error'], response.body['status'])
+              raise_error(response.body['error'], response.body['status'], path, body)
             elsif response.body['_shards'] && response.body['_shards']['failures']
               raise_error(
-                response.body['_shards']['failures'].first['reason'], response.body['status'])
+                response.body['_shards']['failures'].first['reason'], response.body['status'], path, body)
             end
           end
         end
@@ -71,8 +71,8 @@ module Elastictastic
 
       private
 
-      def raise_error(server_message, status)
-        ::Kernel.raise(Elastictastic::ServerError[server_message, status])
+      def raise_error(server_message, status, path, body)
+        ::Kernel.raise(Elastictastic::ServerError[server_message, status, path, body])
       end
 
     end
