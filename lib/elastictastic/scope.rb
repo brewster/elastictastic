@@ -314,6 +314,7 @@ module Elastictastic
         '_index' => @index.name
       }.tap do |params|
         params['fields'] = ::Kernel.Array(@search['fields']) if @search['fields']
+        params['preference'] = @search.preference if @search.preference
         if @routing
           params['routing'] = @routing
         elsif @clazz.routing_required?
@@ -425,6 +426,7 @@ module Elastictastic
     def params_for_find
       {}.tap do |params|
         params['fields'] = ::Kernel.Array(@search['fields']) if @search['fields']
+        params['preference'] = @search.preference if @search.preference
         if @routing
           params['routing'] = @routing
         elsif @clazz.routing_required?
