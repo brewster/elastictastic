@@ -118,6 +118,36 @@ describe Elastictastic::MultiGet do
     end
   end
 
+  context 'with preference specified' do
+    let!(:posts) do
+      Elastictastic.multi_get do |mget|
+        mget.add(Post.preference('_primary'), '1')
+        mget.add(Post.in_index('my_index').preference('_primary'), '2', '3')
+      end
+    end
+
+    it 'should inject fields into each identifier' do
+      last_request_body.should == {
+          'docs' => [{
+                         '_id' => '1',
+                         '_type' => 'post',
+                         '_index' => 'default',
+                         'preference' => '_primary'
+                     }, {
+                         '_id' => '2',
+                         '_type' => 'post',
+                         '_index' => 'my_index',
+                         'preference' => '_primary'
+                     }, {
+                         '_id' => '3',
+                         '_type' => 'post',
+                         '_index' => 'my_index',
+                         'preference' => '_primary'
+                     }]
+      }
+    end
+  end
+
   context 'with no docspecs given' do
     it 'should gracefully return nothing' do
       FakeWeb.clean_registry
