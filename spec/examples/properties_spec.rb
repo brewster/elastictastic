@@ -21,11 +21,11 @@ describe Elastictastic::Properties do
       properties['comments_count']['type'].should == 'integer'
     end
 
-    it 'should set up multifield' do
+    it 'should set up fields' do
       properties['tags'].should == {
-        'type' => 'multi_field',
+        'type' => 'string',
+        'index' => 'analyzed',
         'fields' => {
-          'tags' => { 'type' => 'string', 'index' => 'analyzed' },
           'non_analyzed' => { 'type' => 'string', 'index' => 'not_analyzed' }
         }
       }

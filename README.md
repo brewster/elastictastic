@@ -79,9 +79,8 @@ mapping; thus, the above is the same as the following:
 
 ```ruby
 field :title,
-  :type => 'multi_field',
+  :type => 'string',
   :fields => {
-    :title => { :type => 'string', :index => 'analyzed' },
     :unanalyzed => { :type => 'string', :index => 'not_analyzed' }
   }
 ```
