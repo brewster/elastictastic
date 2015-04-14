@@ -106,7 +106,7 @@ module Elastictastic
     def stub_es_put_mapping(index, type)
       stub_request_json(
         :put,
-        match_es_resource(index, type, '_mapping'),
+        match_es_resource(index, '_mapping', type),
         'ok' => true, 'acknowledged' => true
       )
     end

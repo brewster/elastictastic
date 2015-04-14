@@ -382,7 +382,7 @@ describe Elastictastic::Document do
       end
 
       it 'should send to resource path for mapping' do
-        last_request.path.should == '/default/post/_mapping'
+        last_request.path.should == '/default/_mapping/post'
       end
 
       it_should_behave_like 'put mapping'
@@ -395,7 +395,7 @@ describe Elastictastic::Document do
       end
 
       it 'should send to specified index resource path' do
-        last_request.path.should == '/my_cool_index/post/_mapping'
+        last_request.path.should == '/my_cool_index/_mapping/post'
       end
 
       it_should_behave_like 'put mapping'
