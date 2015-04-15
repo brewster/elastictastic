@@ -66,10 +66,6 @@ module Elastictastic
         end
       end
 
-      def boost(field, options = {})
-        @_boost = { 'name' => field.to_s, 'null_value' => 1.0 }.merge(options.stringify_keys)
-      end
-
       def route_with(field, options = {})
         @_routing_field = field
         @_routing_required = !!options[:required]

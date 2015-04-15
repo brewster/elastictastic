@@ -10,8 +10,6 @@ class Post
   field :created_at, :type => 'date'
   field :published_at, :type => 'date'
 
-  boost :score
-
   embed :author
   embed :comments
 

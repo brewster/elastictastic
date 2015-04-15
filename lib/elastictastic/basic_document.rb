@@ -120,7 +120,6 @@ module Elastictastic
 
       def mapping
         mapping_for_type = { 'properties' => properties }
-        mapping_for_type['_boost'] = @_boost if @_boost
         if @_routing_field
           mapping_for_type['_routing'] = {
             'path' => @_routing_field.to_s,
