@@ -286,7 +286,7 @@ module Elastictastic
     def find_one(id, params = {})
       data = ::Elastictastic.client.
         get(index, type, id, params_for_find_one.merge(params.stringify_keys))
-      return nil if data['exists'] == false
+      return nil if data['found'] == false
       case data['status']
       when nil
         materialize_hit(data)
@@ -445,7 +445,7 @@ module Elastictastic
         end
       end
       hits.each do |hit|
-        unless hit['exists'] == false
+        unless hit['found'] == false
           yield materialize_hit(hit), ::Hashie::Mash.new(hit)
         end
       end
