@@ -9,7 +9,8 @@ module Elastictastic
     def initialize(params = {})
       params = Util.deep_stringify(params) # this creates a copy
       @queries, @query_filters = extract_queries_and_query_filters(params['query'])
-      @filters = extract_filters(params['filter'])
+      pure_filters = extract_filters(params['filter'])
+      @query_filters += pure_filters if pure_filters.present?
       @from = params.delete('from')
       @size = params.delete('size')
       @sort = Util.ensure_array(params.delete('sort'))
@@ -28,7 +29,6 @@ module Elastictastic
     def initialize_copy(other)
       @queries = deep_copy(other.queries)
       @query_filters = deep_copy(other.query_filters)
-      @filters = deep_copy(other.filters)
       @sort = deep_copy(other.sort)
       @highlight = deep_copy(other.highlight)
       @fields = other.fields.dup if other.fields
@@ -40,7 +40,6 @@ module Elastictastic
     def params
       {}.tap do |params|
         params['query'] = query
-        params['filter'] = filter
         params['from'] = from
         params['size'] = size
         params['sort'] = maybe_array(sort)
@@ -71,12 +70,6 @@ module Elastictastic
       end
     end
 
-    def filter
-      maybe_array(filters) do
-        { 'and' => filters }
-      end
-    end
-
     def highlight
       if @highlight_fields
         @highlight_settings.merge('fields' => @highlight_fields)
@@ -90,7 +83,6 @@ module Elastictastic
     def merge!(other)
       @queries = combine(@queries, other.queries)
       @query_filters = combine(@query_filters, other.query_filters)
-      @filters = combine(@filters, other.filters)
       @from = other.from  || @from
       @size = other.size || @size
       @sort = combine(@sort, other.sort)
@@ -110,7 +102,7 @@ module Elastictastic
     end
 
     protected
-    attr_reader :queries, :query_filters, :filters, :highlight_fields,
+    attr_reader :queries, :query_filters, :highlight_fields,
                 :highlight_settings
 
     def highlight_fields_with_settings
