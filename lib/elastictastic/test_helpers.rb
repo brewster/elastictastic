@@ -53,7 +53,7 @@ module Elastictastic
           :id => id,
           :version => version,
           :source => doc
-        ).merge('exists' => !doc.nil?)
+        ).merge('found' => !doc.nil?)
       )
     end
 
@@ -67,7 +67,7 @@ module Elastictastic
         id, type, index = *id if Array === id
         generate_es_hit(
           type, :index => index, :id => id, :source => doc
-        ).merge('exists' => !!doc)
+        ).merge('found' => !!doc)
       end
 
       stub_request_json(

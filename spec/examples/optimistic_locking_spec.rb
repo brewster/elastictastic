@@ -17,8 +17,8 @@ describe Elastictastic::OptimisticLocking do
         stub_request_json(
           :get,
           match_es_resource(index, 'post', '123abc'),
-          generate_es_hit('post', :id => '123abc', :index => index, :version => 1).merge('exists' => true),
-          generate_es_hit('post', :id => '123abc', :index => index, :version => 2, :source => { :title => 'Hey' }).merge('exists' => true)
+          generate_es_hit('post', :id => '123abc', :index => index, :version => 1).merge('found' => true),
+          generate_es_hit('post', :id => '123abc', :index => index, :version => 2, :source => { :title => 'Hey' }).merge('found' => true)
         )
       end
 
@@ -74,7 +74,7 @@ describe Elastictastic::OptimisticLocking do
             :get,
             match_es_resource(index, 'post', '123abc'),
             generate_es_hit('post', :id => '123abc', :index => index, :version => 1).merge('exists' => true),
-            generate_es_hit('post', :id => '123abc', :index => index, :version => 2, :source => { :title => 'Hey' }).merge('exists' => true)
+            generate_es_hit('post', :id => '123abc', :index => index, :version => 2, :source => { :title => 'Hey' }).merge('found' => true)
           )
           stub_request_json(
             :put,

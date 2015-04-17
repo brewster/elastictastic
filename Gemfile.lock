@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    elastictastic (1.0.4)
+    elastictastic (2.0.0)
       activemodel (= 3.2.13)
       activesupport (= 3.2.13)
       hashie (~> 2.1)
