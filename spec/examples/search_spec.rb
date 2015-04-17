@@ -11,7 +11,6 @@ describe Elastictastic::Search do
   describe '#to_params' do
     {
       'query' => { 'match_all' => {} },
-      'filter' => { 'ids' => { 'values' => 1 }},
       'from' => 10,
       'sort' => { 'created_at' => 'desc' },
       'highlight' => { 'fields' => { 'body' => {}}},
@@ -219,10 +218,17 @@ describe Elastictastic::Search do
       scope = self.scope.filter('term' => { 'comments_count' => 0 })
       scope = scope.filter('term' => { 'tags' => 'delicious' })
       scope.params.should == {
-        'filter' => { 'and' => [
-          { 'term' => { 'comments_count' => 0 }},
-          { 'term' => { 'tags' => 'delicious' }}
-        ]}
+          "query"=> {
+              "constant_score"=> {
+                  "filter"=> {
+                      "and"=> [
+                          {"term"=>{"comments_count"=>0}},
+                          {"term"=>{"tags"=>"delicious"}
+                          }
+                      ]
+                  }
+              }
+          }
       }
     end
 
@@ -230,11 +236,16 @@ describe Elastictastic::Search do
       scope = self.scope.filter('and' => [{ 'term' => { 'title' => 'pizza' }}, { 'term' => { 'comments_count' => 0 }}])
       scope = scope.filter('term' => { 'tags' => 'delicious' })
       scope.params.should == {
-        'filter' => { 'and' => [
-          { 'term' => { 'title' => 'pizza' }},
-          { 'term' => { 'comments_count' => 0 }},
-          { 'term' => { 'tags' => 'delicious' }}
-        ]}
+          "query"=>{ "constant_score"=> {
+              "filter"=> { "and"=>
+                               [
+                                   {"term"=>{"title"=>"pizza"}},
+                                   {"term"=>{"comments_count"=>0}},
+                                   {"term"=>{"tags"=>"delicious"}}
+                               ]
+              }
+          }
+          }
       }
     end
     

@@ -21,11 +21,11 @@ describe Elastictastic::Properties do
       properties['comments_count']['type'].should == 'integer'
     end
 
-    it 'should set up multifield' do
+    it 'should set up fields' do
       properties['tags'].should == {
-        'type' => 'multi_field',
+        'type' => 'string',
+        'index' => 'analyzed',
         'fields' => {
-          'tags' => { 'type' => 'string', 'index' => 'analyzed' },
           'non_analyzed' => { 'type' => 'string', 'index' => 'not_analyzed' }
         }
       }
@@ -33,10 +33,6 @@ describe Elastictastic::Properties do
 
     it 'should map embedded object fields' do
       properties['author']['properties']['id']['type'].should == 'integer'
-    end
-
-    it 'should set boost field' do
-      mapping['post']['_boost'].should == { 'name' => 'score', 'null_value' => 1.0 }
     end
 
     it 'should set routing param if given' do

@@ -120,7 +120,6 @@ module Elastictastic
 
       def mapping
         mapping_for_type = { 'properties' => properties }
-        mapping_for_type['_boost'] = @_boost if @_boost
         if @_routing_field
           mapping_for_type['_routing'] = {
             'path' => @_routing_field.to_s,
@@ -140,6 +139,10 @@ module Elastictastic
 
       def scoped(params)
         current_scope.scoped(params)
+      end
+
+      def _routing_field
+        @_routing_field
       end
 
       private
@@ -162,7 +165,11 @@ module Elastictastic
 
     def reload
       params = {}
-      params['routing'] = @_parent_id if @_parent_id
+      if @_parent_id
+        params['routing'] = @_parent_id
+      elsif self.class.routing_required?
+        params['routing'] = self.__send__(self.class._routing_field)
+      end
       self.elasticsearch_hit =
         Elastictastic.client.get(index, self.class.type, id, params)
     end

@@ -102,7 +102,7 @@ module Elastictastic
     end
 
     def put_mapping(index, type, mapping)
-      @connection.put("/#{index}/#{type}/_mapping", mapping).body
+      @connection.put("/#{index}/_mapping/#{type}", mapping).body
     end
 
     def delete(index = nil, type = nil, id = nil, params = {})

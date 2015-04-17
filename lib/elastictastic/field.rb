@@ -23,13 +23,10 @@ module Elastictastic
     def initialize(field_name, default_options, properties, &block)
       @field_name = field_name
       @properties = properties
+      @properties.merge!(Field.with_defaults(default_options))
       if block
-        @properties['type'] = 'multi_field'
-        @properties['fields'] =
-          { field_name.to_s => Field.with_defaults(default_options) }
+        @properties['fields'] = {}
         instance_eval(&block)
-      else
-        @properties.merge!(Field.with_defaults(default_options))
       end
     end
 
