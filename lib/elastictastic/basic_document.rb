@@ -141,6 +141,10 @@ module Elastictastic
         current_scope.scoped(params)
       end
 
+      def _routing_field
+        @_routing_field
+      end
+
       private
 
       def default_scope
@@ -161,7 +165,11 @@ module Elastictastic
 
     def reload
       params = {}
-      params['routing'] = @_parent_id if @_parent_id
+      if @_parent_id
+        params['routing'] = @_parent_id
+      elsif self.class.routing_required?
+        params['routing'] = self.__send__(self.class._routing_field)
+      end
       self.elasticsearch_hit =
         Elastictastic.client.get(index, self.class.type, id, params)
     end
