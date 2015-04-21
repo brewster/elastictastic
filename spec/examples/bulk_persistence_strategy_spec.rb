@@ -153,7 +153,11 @@ describe Elastictastic::BulkPersistenceStrategy do
       end
     end
 
+
+    let(:post_changed?) { true }
+
     before do
+      post.stub(:changed?) { post_changed? }
       stub_es_bulk(
         'index' => { '_index' => 'default', '_type' => 'post', '_id' => '123', '_version' => 2, 'ok' => true }
       )
@@ -410,7 +414,10 @@ describe Elastictastic::BulkPersistenceStrategy do
       end
     end
 
+    let(:post_changed?) { true }
+
     before do
+      posts.each { |post| post.stub(:changed?) { post_changed? } }
       stub_es_bulk(
         { 'index' => generate_es_hit('post', :id => '1').merge('ok' => true) },
         { 'index' => generate_es_hit('post', :index => 'my_index', :id => '1').merge('ok' => true) }
