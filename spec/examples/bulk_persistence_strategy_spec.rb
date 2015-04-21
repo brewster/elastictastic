@@ -174,6 +174,15 @@ describe Elastictastic::BulkPersistenceStrategy do
     it 'should set version' do
       post.version.should == 2
     end
+
+    context 'document has not changed' do
+
+      let(:post_changed?) { false }
+
+      it 'should not post the update' do
+        last_request.should be_nil
+      end
+    end
   end
 
   describe 'destroy' do
