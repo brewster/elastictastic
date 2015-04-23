@@ -95,11 +95,24 @@ module Elastictastic
       attribute_will_change!(field) unless changed_attributes.key?(field)
       old_value = changed_attributes[field]
       yield
-      attribute_not_changed!(field) if old_value == __send__(field)
+      attribute_not_changed!(field) if same_value?(old_value, __send__(field))
     end
 
     def attribute_not_changed!(field)
       changed_attributes.delete(field)
+    end
+
+    def same_value?(old_value, new_value)
+      compare_method = "same_#{old_value.class.name.underscore}_value?"
+      if old_value.class == new_value.class && respond_to?(compare_method, true)
+        __send__(compare_method, old_value, new_value)
+      else
+        old_value == new_value
+      end
+    end
+
+    def same_time_value?(old_value, new_value)
+      (old_value.to_f * 1000).floor == (new_value.to_f * 1000).floor
     end
 
     module EmbeddedDocumentMethods

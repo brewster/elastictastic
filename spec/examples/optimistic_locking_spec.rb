@@ -12,6 +12,12 @@ describe Elastictastic::OptimisticLocking do
       end
     end
 
+    let(:post_changed?) { true }
+
+    before do
+      post.stub(:changed?) { post_changed? }
+    end
+
     context 'when save is cancelled' do
       before do
         stub_request_json(

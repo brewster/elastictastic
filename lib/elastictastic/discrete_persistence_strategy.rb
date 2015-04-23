@@ -29,19 +29,21 @@ module Elastictastic
 
     def update(doc, &block)
       block ||= DEFAULT_HANDLER
-      begin
-        response = Elastictastic.client.update(
-          doc.index,
-          doc.class.type,
-          doc.id,
-          doc.elasticsearch_doc,
-          params_for_doc(doc)
-        )
-      rescue => e
-        return block.call(e)
+      if doc.changed?
+        begin
+          response = Elastictastic.client.update(
+              doc.index,
+              doc.class.type,
+              doc.id,
+              doc.elasticsearch_doc,
+              params_for_doc(doc)
+          )
+        rescue => e
+          return block.call(e)
+        end
+        doc.version = response['_version']
+        doc.persisted!
       end
-      doc.version = response['_version']
-      doc.persisted!
       block.call
     end
 

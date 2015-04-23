@@ -39,19 +39,23 @@ module Elastictastic
 
     def update(instance, &block)
       block ||= DEFAULT_HANDLER
-      instance.pending_save!
-      add(
-        instance.index,
-        instance.id,
-        { 'index' => bulk_identifier_for_instance(instance) },
-        instance.elasticsearch_doc
-      ) do |response|
-        if response['index']['error']
-          block.call(ServerError[response['index']['error']])
-        else
-          instance.version = response['index']['_version']
-          block.call
+      if instance.changed?
+        instance.pending_save!
+        add(
+            instance.index,
+            instance.id,
+            {'index' => bulk_identifier_for_instance(instance)},
+            instance.elasticsearch_doc
+        ) do |response|
+          if response['index']['error']
+            block.call(ServerError[response['index']['error']])
+          else
+            instance.version = response['index']['_version']
+            block.call
+          end
         end
+      else
+        block.call
       end
     end
 

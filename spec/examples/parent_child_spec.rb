@@ -114,6 +114,7 @@ describe Elastictastic::ParentChild do
         post = blog.posts.new
         post.id = '1'
         post.persisted!
+        post.stub(:changed?) { true }
         Elastictastic.bulk { post.save }
         bulk_requests.first.should == {
           'index' => {
@@ -212,6 +213,8 @@ describe Elastictastic::ParentChild do
         { 'index' => { '_index' => 'my_index', '_type' => 'blog', '_id' => blog.id, '_version' => 2, 'ok' => true }}
       )
       post = blog.posts.new
+      post.stub(:changed?) { true }
+      blog.stub(:changed?) { true }
       Elastictastic.bulk do
         post.save
         blog.save
@@ -347,6 +350,7 @@ describe Elastictastic::ParentChild do
 
     it 'should save post without dereferencing parent' do
       stub_es_update('default', 'post', post.id)
+      post.stub(:changed?) { true }
       post.save
       URI.parse(FakeWeb.last_request.path).query.should == 'parent=3'
     end
