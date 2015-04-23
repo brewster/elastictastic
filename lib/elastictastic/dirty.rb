@@ -112,7 +112,7 @@ module Elastictastic
     end
 
     def same_time_value?(old_value, new_value)
-      old_value.to_i == new_value.to_i
+      (old_value.to_f * 1000).floor == (new_value.to_f * 1000).floor
     end
 
     module EmbeddedDocumentMethods
