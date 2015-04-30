@@ -538,6 +538,16 @@ describe Elastictastic::Scope do
         last_request_body['from'].should == 0
         last_request_body['size'].should == 1
       end
+
+      it 'should maintain routing from search' do
+        scope.routing('routing_id').first
+        last_request_body['routing'].should == 'routing_id'
+      end
+
+      it 'should maintain preference from search' do
+        scope.preference('preference_type').first
+        last_request_body['preference'].should == 'preference_type'
+      end
     end
 
     describe 'called on class singleton' do

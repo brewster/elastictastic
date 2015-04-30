@@ -111,6 +111,8 @@ module Elastictastic
 
     def first
       params = from(0).size(1).params
+      params['routing'] = @routing if @routing
+      params['preference'] = @search.preference if @search.preference
       hit = ::Elastictastic.client.search(
         @index,
         @clazz.type,
