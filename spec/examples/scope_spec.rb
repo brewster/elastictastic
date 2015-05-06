@@ -541,12 +541,12 @@ describe Elastictastic::Scope do
 
       it 'should maintain routing from search' do
         scope.routing('routing_id').first
-        last_request_body['routing'].should == 'routing_id'
+        last_request_uri.query.split('&').should include('routing=routing_id')
       end
 
       it 'should maintain preference from search' do
         scope.preference('preference_type').first
-        last_request_body['preference'].should == 'preference_type'
+        last_request_uri.query.split('&').should include('preference=preference_type')
       end
     end
 

@@ -111,12 +111,14 @@ module Elastictastic
 
     def first
       params = from(0).size(1).params
-      params['routing'] = @routing if @routing
-      params['preference'] = @search.preference if @search.preference
+      query_params = {}
+      query_params['routing'] = @routing if @routing
+      query_params['preference'] = @search.preference if @search.preference
       hit = ::Elastictastic.client.search(
         @index,
         @clazz.type,
-        params
+        params,
+        query_params
       )['hits']['hits'].first
       materialize_hit(hit) if hit
     end
