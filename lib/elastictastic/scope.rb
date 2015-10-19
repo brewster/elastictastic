@@ -263,7 +263,7 @@ module Elastictastic
     end
 
     def inspect
-      self.entries.inspect
+      "#<#{name} id: #{object_id} >"
     end
 
     #
